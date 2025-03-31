@@ -16,8 +16,7 @@ public class LoggingAspect {
         String filterName = joinPoint.getSignature().getDeclaringTypeName();
         String methodName = joinPoint.getSignature().getName();
 
-        System.out.println("Filter: " + filterName + ", Method: " + methodName);
-
-        System.out.println("auth : "+SecurityContextHolder.getContext().getAuthentication());
+        // System.out.println("Filter: " + filterName + ", Method: " + methodName);
+        // System.out.println("auth : "+SecurityContextHolder.getContext().getAuthentication());
     }
 }

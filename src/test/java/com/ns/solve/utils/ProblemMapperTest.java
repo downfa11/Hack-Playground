@@ -1,7 +1,8 @@
 package com.ns.solve.utils;
 
-import com.ns.solve.domain.dto.ProblemSummary;
+import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.problem.ProblemType;
 import com.ns.solve.domain.problem.WargameProblem;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ class ProblemMapperTest {
         when(problem.getId()).thenReturn(1L);
         when(problem.getTitle()).thenReturn("title");
         when(problem.getCreator()).thenReturn("creator");
-        when(problem.getType()).thenReturn("type");
+        when(problem.getType()).thenReturn(ProblemType.WARGAME);
         when(problem.getCorrectCount()).thenReturn(80.0);
         when(problem.getEntireCount()).thenReturn(100.0);
 
@@ -40,7 +41,7 @@ class ProblemMapperTest {
         when(wargameProblem.getId()).thenReturn(1L);
         when(wargameProblem.getTitle()).thenReturn("title");
         when(wargameProblem.getCreator()).thenReturn("creator");
-        when(wargameProblem.getType()).thenReturn("type");
+        when(wargameProblem.getType()).thenReturn(ProblemType.WARGAME);
         when(wargameProblem.getCorrectCount()).thenReturn(75.0);
         when(wargameProblem.getEntireCount()).thenReturn(100.0);
         when(wargameProblem.getLevel()).thenReturn("hard");
@@ -65,7 +66,7 @@ class ProblemMapperTest {
         when(problem1.getId()).thenReturn(1L);
         when(problem1.getTitle()).thenReturn("title1");
         when(problem1.getCreator()).thenReturn("creator1");
-        when(problem1.getType()).thenReturn("type1");
+        when(problem1.getType()).thenReturn(ProblemType.WARGAME);
         when(problem1.getCorrectCount()).thenReturn(90.0);
         when(problem1.getEntireCount()).thenReturn(100.0);
 
@@ -73,7 +74,7 @@ class ProblemMapperTest {
         when(problem2.getId()).thenReturn(2L);
         when(problem2.getTitle()).thenReturn("title2");
         when(problem2.getCreator()).thenReturn("creator2");
-        when(problem2.getType()).thenReturn("type2");
+        when(problem2.getType()).thenReturn(ProblemType.ALGORITHM);
         when(problem2.getCorrectCount()).thenReturn(85.0);
         when(problem2.getEntireCount()).thenReturn(100.0);
         when(problem2.getLevel()).thenReturn("hard");
@@ -90,7 +91,7 @@ class ProblemMapperTest {
         ProblemSummary summary1 = summaries.get(0);
         assertEquals(1L, summary1.getId());
         assertEquals("title1", summary1.getTitle());
-        assertEquals("creator1", summary1.getCreator());
+        assertEquals(ProblemType.WARGAME, summary1.getCreator());
         assertEquals("type1", summary1.getType());
         assertEquals(0.9, summary1.getCorrectRate(), 0.01);
 
@@ -98,7 +99,7 @@ class ProblemMapperTest {
         assertEquals(2L, summary2.getId());
         assertEquals("title2", summary2.getTitle());
         assertEquals("creator2", summary2.getCreator());
-        assertEquals("type2", summary2.getType());
+        assertEquals(ProblemType.ALGORITHM, summary2.getType());
         assertEquals(0.85, summary2.getCorrectRate(), 0.01);
         assertEquals("hard", summary2.getLevel());
     }

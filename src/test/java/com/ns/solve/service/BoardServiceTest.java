@@ -6,6 +6,9 @@ import static org.mockito.Mockito.*;
 import com.ns.solve.domain.Board;
 import com.ns.solve.domain.User;
 import com.ns.solve.domain.dto.BoardSummary;
+import com.ns.solve.domain.dto.RegisterBoardDto;
+import com.ns.solve.domain.dto.ModifyBoardDto;
+import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import java.util.List;
 import java.util.Optional;
@@ -24,28 +27,40 @@ import org.springframework.data.domain.Pageable;
 class BoardServiceTest {
 
     @Mock private BoardRepository boardRepository;
+    @Mock private UserRepository userRepository;
 
     @InjectMocks private BoardService boardService;
 
     private Board testBoard;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setNickname("testUser");
+
         testBoard = new Board();
         testBoard.setId(1L);
         testBoard.setTitle("title");
         testBoard.setType("free");
+        testBoard.setCreator(testUser);
     }
 
     @Test
     void testCreateBoard() {
+        RegisterBoardDto dto = new RegisterBoardDto(1L, "title", "free", "testUser", "details");
+
+        when(userRepository.findById(dto.userId())).thenReturn(Optional.of(testUser));
         when(boardRepository.save(any(Board.class))).thenReturn(testBoard);
 
-        Board createdBoard = boardService.createBoard(testBoard);
+        Board createdBoard = boardService.createBoard(dto);
 
         assertNotNull(createdBoard);
-        assertEquals(testBoard.getTitle(), createdBoard.getTitle());
-        verify(boardRepository, times(1)).save(testBoard);
+        assertEquals(dto.title(), createdBoard.getTitle());
+        assertEquals(dto.type(), createdBoard.getType());
+        assertEquals(testUser, createdBoard.getCreator());
+        verify(boardRepository, times(1)).save(any(Board.class));
     }
 
     @Test
@@ -73,23 +88,20 @@ class BoardServiceTest {
 
     @Test
     void testUpdateBoard() {
-        Board updatedDetails = new Board();
-        User tempUser = new User();
-        updatedDetails.setTitle("title");
-        updatedDetails.setType("free");
-        updatedDetails.setCreator(tempUser);
+        ModifyBoardDto dto = new ModifyBoardDto(1L,1L, "new title", "notice", "updated details");
 
         when(boardRepository.findById(1L)).thenReturn(Optional.of(testBoard));
-        when(boardRepository.save(any(Board.class))).thenReturn(updatedDetails);
+        when(userRepository.findById(dto.userId())).thenReturn(Optional.of(testUser));
+        when(boardRepository.save(any(Board.class))).thenReturn(testBoard);
 
-        Board updatedBoard = boardService.updateBoard(1L, updatedDetails);
+        Board updatedBoard = boardService.updateBoard(dto);
 
         assertNotNull(updatedBoard);
-        assertEquals("title", updatedBoard.getTitle());
-        assertEquals("free", updatedBoard.getType());
-        assertEquals(tempUser, updatedBoard.getCreator());
+        assertEquals(dto.title(), updatedBoard.getTitle());
+        assertEquals(dto.type(), updatedBoard.getType());
+        assertEquals(testUser, updatedBoard.getCreator());
         verify(boardRepository, times(1)).findById(1L);
-        verify(boardRepository, times(1)).save(testBoard);
+        verify(boardRepository, times(1)).save(any(Board.class));
     }
 
     @Test
@@ -114,4 +126,3 @@ class BoardServiceTest {
         verify(boardRepository, times(1)).findBoardsByPage(pageable, true);
     }
 }
-

@@ -3,10 +3,19 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.ns.solve.domain.Board;
 import com.ns.solve.domain.Comment;
+import com.ns.solve.domain.User;
+import com.ns.solve.domain.dto.ModifyCommentDto;
+import com.ns.solve.domain.dto.RegisterCommentDto;
+import com.ns.solve.domain.problem.Problem;
 import com.ns.solve.repository.CommentRepository;
+import com.ns.solve.repository.UserRepository;
+import com.ns.solve.repository.board.BoardRepository;
+import com.ns.solve.repository.problem.ProblemRepository;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,28 +29,55 @@ class CommentServiceTest {
     @Mock
     private CommentRepository commentRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private ProblemRepository problemRepository;
+
+    @Mock
+    private BoardRepository boardRepository;
+
     @InjectMocks
     private CommentService commentService;
 
     private Comment testComment;
+    private User testUser;
+    private Problem testProblem;
+    private Board testBoard;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+
+        testProblem = new Problem();
+        testProblem.setId(1L);
+
+        testBoard = new Board();
+        testBoard.setId(1L);
+
         testComment = new Comment();
         testComment.setId(1L);
         testComment.setContent("Test Comment");
-        testComment.setType("free");
+        testComment.setType("problem");
+        testComment.setCreator(testUser);
+        testComment.setProblem(testProblem);
     }
 
     @Test
     void testCreateComment() {
+        RegisterCommentDto dto = new RegisterCommentDto("problem", 1L, 1L, "Test Comment");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(problemRepository.findById(1L)).thenReturn(Optional.of(testProblem));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment createdComment = commentService.createComment(testComment);
+        Comment createdComment = commentService.createComment(dto);
 
         assertNotNull(createdComment);
         assertEquals("Test Comment", createdComment.getContent());
-        verify(commentRepository, times(1)).save(testComment);
+        verify(commentRepository, times(1)).save(any(Comment.class));
     }
 
     @Test
@@ -91,13 +127,12 @@ class CommentServiceTest {
 
     @Test
     void testUpdateComment() {
-        Comment updatedDetails = new Comment();
-        updatedDetails.setContent("Updated Comment");
+        ModifyCommentDto dto = new ModifyCommentDto(1L, "free","Updated Comment");
 
         when(commentRepository.findById(1L)).thenReturn(Optional.of(testComment));
-        when(commentRepository.save(any(Comment.class))).thenReturn(updatedDetails);
+        when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment updatedComment = commentService.updateComment(1L, updatedDetails);
+        Comment updatedComment = commentService.updateComment(dto);
 
         assertNotNull(updatedComment);
         assertEquals("Updated Comment", updatedComment.getContent());

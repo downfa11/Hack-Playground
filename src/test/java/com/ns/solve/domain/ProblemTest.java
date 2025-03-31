@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.ns.solve.domain.problem.Problem;
 import java.time.LocalDateTime;
+
+import com.ns.solve.domain.problem.ProblemType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,9 +20,8 @@ class ProblemTest {
         problem = new Problem();
         problem.setTitle("title");
         problem.setIsChecked(false);
-        problem.setType("webhacking");
+        problem.setType(ProblemType.WARGAME);
         problem.setCreator("creator");
-        problem.setSolution("solution");
         problem.setAttemptCount(0);
         problem.setEntireCount(0.0);
         problem.setCorrectCount(0.0);
