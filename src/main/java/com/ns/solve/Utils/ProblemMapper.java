@@ -1,7 +1,7 @@
 package com.ns.solve.utils;
 
-import com.ns.solve.domain.dto.ProblemSummary;
-import com.ns.solve.domain.dto.WargameProblemDto;
+import com.ns.solve.domain.dto.problem.ProblemSummary;
+import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.problem.Problem;
 import com.ns.solve.domain.problem.WargameProblem;
 
@@ -18,7 +18,7 @@ public class ProblemMapper {
                     .id(problem.getId())
                     .title(problem.getTitle())
                     .creator(problem.getCreator())
-                    .type(problem.getType())
+                    .type(problem.getType().getTypeName())
                     .correctRate(problem.getCorrectCount() / problem.getEntireCount())
                     .build();
         }
@@ -29,7 +29,7 @@ public class ProblemMapper {
                 .id(problem.getId())
                 .title(problem.getTitle())
                 .creator(problem.getCreator())
-                .type(problem.getType())
+                .type(problem.getType().getTypeName())
                 .correctRate(problem.getCorrectCount() / problem.getEntireCount())
                 .level(problem.getLevel())
                 .build();
@@ -46,9 +46,7 @@ public class ProblemMapper {
                 problem.getId(),
                 problem.getTitle(),
                 problem.getIsChecked(),
-                problem.getType(),
                 problem.getCreator(),
-                problem.getSolution(),
                 problem.getAttemptCount(),
                 problem.getEntireCount(),
                 problem.getCorrectCount(),
