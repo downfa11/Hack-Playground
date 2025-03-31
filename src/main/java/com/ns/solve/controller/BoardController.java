@@ -3,6 +3,8 @@ package com.ns.solve.controller;
 import com.ns.solve.domain.Board;
 import com.ns.solve.domain.dto.BoardSummary;
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.ModifyBoardDto;
+import com.ns.solve.domain.dto.RegisterBoardDto;
 import com.ns.solve.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,8 +32,8 @@ public class BoardController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
     })
     @PostMapping
-    public ResponseEntity<MessageEntity> createBoard(@RequestBody Board board) {
-        Board createdBoard = boardService.createBoard(board);
+    public ResponseEntity<MessageEntity> createBoard(@RequestBody RegisterBoardDto registerBoardDto) {
+        Board createdBoard = boardService.createBoard(registerBoardDto);
         return new ResponseEntity<>(new MessageEntity("Board created successfully", createdBoard), HttpStatus.CREATED);
     }
 
@@ -79,8 +81,8 @@ public class BoardController {
             @ApiResponse(responseCode = "404", description = "게시판을 찾을 수 없습니다.")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<MessageEntity> updateBoard(@PathVariable Long id, @RequestBody Board boardDetails) {
-        Board updatedBoard = boardService.updateBoard(id, boardDetails);
+    public ResponseEntity<MessageEntity> updateBoard(@PathVariable Long id, @RequestBody ModifyBoardDto modifyBoardDto) {
+        Board updatedBoard = boardService.updateBoard(modifyBoardDto);
         return new ResponseEntity<>(new MessageEntity("Board updated successfully", updatedBoard), HttpStatus.OK);
     }
 
