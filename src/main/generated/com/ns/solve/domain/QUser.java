@@ -23,6 +23,8 @@ public class QUser extends EntityPathBase<User> {
 
     public final DateTimePath<java.time.LocalDateTime> created = createDateTime("created", java.time.LocalDateTime.class);
 
+    public final MapPath<String, Long, NumberPath<Long>> fieldScores = this.<String, Long, NumberPath<Long>>createMap("fieldScores", String.class, Long.class, NumberPath.class);
+
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final DateTimePath<java.time.LocalDateTime> lastActived = createDateTime("lastActived", java.time.LocalDateTime.class);

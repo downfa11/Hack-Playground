@@ -42,14 +42,14 @@ public class UserController {
         return ResponseEntity.ok(new MessageEntity("User retrieved successfully", user));
     }
 
-    @Operation(summary = "점수별로 정렬된 사용자 목록 조회", description = "점수에 따라 정렬된 사용자 목록을 조회합니다.")
+    @Operation(summary = "점수별로 정렬된 사용자 목록 조회", description = "점수에 따라 정렬된 사용자 목록을 조회합니다. sort 기준은 문제 유형별(type)으로 구분됩니다. 공백이거나 null이면 전체 스코어를 비교합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 목록이 성공적으로 조회되었습니다."),
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
     })
     @GetMapping("/users/sorted-by-score")
-    public ResponseEntity<MessageEntity> getUsersSortedByScore(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        Page<UserRankDto> users = userService.getUsersSortedByScore(page, size);
+    public ResponseEntity<MessageEntity> getUsersSortedByScore(@RequestParam(required = false) String type, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        Page<UserRankDto> users = userService.getUsersSortedByScore(type, page, size);
         return new ResponseEntity<>(new MessageEntity("Users fetched successfully", users), HttpStatus.OK);
     }
 

@@ -51,10 +51,22 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public Page<UserRankDto> getUsersSortedByScore(int page, int size) {
-        return userRepository.findAllByOrderByScoreDesc(PageRequest.of(page, size))
-                .map(user -> new UserRankDto(user.getNickname(), user.getScore(),user.getCreated(), user.getLastActived()));
+    public Page<UserRankDto> getUsersSortedByScore(String type, int page, int size) {
+        Page<User> userPage;
+
+        if (type == null || type.isEmpty()) {
+            userPage = userRepository.findAllByOrderByScoreDesc(PageRequest.of(page, size));
+        } else {
+            userPage = userRepository.findUsersByFieldScore(type, PageRequest.of(page, size));
+        }
+
+        return userPage.map(user -> new UserRankDto(
+                user.getNickname(),
+                type == null || type.isEmpty() ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L),
+                user.getCreated(),
+                user.getLastActived()));
     }
+
 
     public User getUserByAccount(String account) {
         return userRepository.findByAccount(account);

@@ -4,6 +4,8 @@ import com.ns.solve.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -16,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByAccount(String account);
     Page<User> findAllByOrderByScoreDesc(Pageable pageable);
 
+    @Query("SELECT u FROM User u WHERE key(u.fieldScores) = :type ORDER BY value(u.fieldScores) DESC")
+    Page<User> findUsersByFieldScore(@Param("type") String type, Pageable pageable);
 }
