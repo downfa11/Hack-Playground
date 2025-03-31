@@ -2,6 +2,8 @@ package com.ns.solve.controller;
 
 import com.ns.solve.domain.Comment;
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.ModifyCommentDto;
+import com.ns.solve.domain.dto.RegisterCommentDto;
 import com.ns.solve.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,8 +26,8 @@ public class CommentController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
     })
     @PostMapping
-    public ResponseEntity<MessageEntity> createComment(@RequestBody Comment comment) {
-        Comment createdComment = commentService.createComment(comment);
+    public ResponseEntity<MessageEntity> createComment(@RequestBody RegisterCommentDto registerCommentDto) {
+        Comment createdComment = commentService.createComment(registerCommentDto);
         return ResponseEntity.ok(new MessageEntity("Comment created successfully", createdComment));
     }
 
@@ -57,8 +59,8 @@ public class CommentController {
             @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없습니다.")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<MessageEntity> updateComment(@PathVariable Long id, @RequestBody Comment commentDetails) {
-        Comment updatedComment = commentService.updateComment(id, commentDetails);
+    public ResponseEntity<MessageEntity> updateComment(@PathVariable Long id, @RequestBody ModifyCommentDto modifyCommentDto) {
+        Comment updatedComment = commentService.updateComment(modifyCommentDto);
         return ResponseEntity.ok(new MessageEntity("Comment updated successfully", updatedComment));
     }
 

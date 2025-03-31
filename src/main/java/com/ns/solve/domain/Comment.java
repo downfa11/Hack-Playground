@@ -1,15 +1,9 @@
 package com.ns.solve.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ns.solve.domain.problem.Problem;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,10 +29,12 @@ public class Comment {
     private User creator;
 
     @ManyToOne(optional = true)
+    @JsonBackReference
     @JoinColumn(name = "problem_id")
     private Problem problem;
 
     @ManyToOne(optional = true)
+    @JsonBackReference
     @JoinColumn(name = "board_id")
     private Board board;
 
