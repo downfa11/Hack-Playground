@@ -1,4 +1,4 @@
-FROM openjdk:17-slim
+FROM openjdk:21-slim
 EXPOSE 8080
 
 ARG JAR_FILE

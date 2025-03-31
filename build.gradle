@@ -16,7 +16,7 @@ version = '0.0.1'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -111,7 +111,7 @@ tasks.named('bootBuildImage') {
 
 docker {
     println(tasks.bootJar.outputs.files)
-    name project.name+":"+version
+    name "downfa11/"+project.name+":latest"
     dockerfile file('./Dockerfile')
     files tasks.bootJar.outputs.files
     files file('./config')

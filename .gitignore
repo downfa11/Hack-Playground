@@ -238,3 +238,5 @@ db/data/solve/algorithm_problem.ibd
 db/data/solve/solved.ibd
 db/data/solve/boards.ibd
 db/data/solve/problems.ibd
+uploads/problems/10_thread_dump.txt
+uploads/problems/null_thread_dump.txt
