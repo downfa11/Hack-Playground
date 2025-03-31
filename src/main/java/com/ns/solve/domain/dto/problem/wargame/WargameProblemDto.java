@@ -1,4 +1,4 @@
-package com.ns.solve.domain.dto;
+package com.ns.solve.domain.dto.problem.wargame;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,9 +15,7 @@ public class WargameProblemDto {
     private Long id;
     private String title;
     private Boolean isChecked;
-    private String type;
     private String creator;
-    private String solution;
     private Integer attemptCount;
     private Double entireCount;
     private Double correctCount;

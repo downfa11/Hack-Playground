@@ -40,6 +40,9 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final StringPath creator = _super.creator;
 
     //inherited
+    public final StringPath detail = _super.detail;
+
+    //inherited
     public final NumberPath<Double> entireCount = _super.entireCount;
 
     //inherited
@@ -56,9 +59,6 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final StringPath reviewer = _super.reviewer;
 
     //inherited
-    public final StringPath solution = _super.solution;
-
-    //inherited
     public final StringPath source = _super.source;
 
     //inherited
@@ -68,7 +68,7 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final StringPath title = _super.title;
 
     //inherited
-    public final StringPath type = _super.type;
+    public final EnumPath<ProblemType> type = _super.type;
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;

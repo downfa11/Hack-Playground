@@ -36,6 +36,9 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     //inherited
     public final StringPath creator = _super.creator;
 
+    //inherited
+    public final StringPath detail = _super.detail;
+
     public final StringPath dockerfileLink = createString("dockerfileLink");
 
     //inherited
@@ -49,15 +52,14 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     //inherited
     public final BooleanPath isChecked = _super.isChecked;
 
+    public final StringPath kind = createString("kind");
+
     public final StringPath level = createString("level");
 
     public final StringPath problemFile = createString("problemFile");
 
     //inherited
     public final StringPath reviewer = _super.reviewer;
-
-    //inherited
-    public final StringPath solution = _super.solution;
 
     //inherited
     public final StringPath source = _super.source;
@@ -69,7 +71,7 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     public final StringPath title = _super.title;
 
     //inherited
-    public final StringPath type = _super.type;
+    public final EnumPath<ProblemType> type = _super.type;
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;

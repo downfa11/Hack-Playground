@@ -30,6 +30,8 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final StringPath creator = createString("creator");
 
+    public final StringPath detail = createString("detail");
+
     public final NumberPath<Double> entireCount = createNumber("entireCount", Double.class);
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
@@ -38,15 +40,13 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final StringPath reviewer = createString("reviewer");
 
-    public final StringPath solution = createString("solution");
-
     public final StringPath source = createString("source");
 
     public final ListPath<String, StringPath> tags = this.<String, StringPath>createList("tags", String.class, StringPath.class, PathInits.DIRECT2);
 
     public final StringPath title = createString("title");
 
-    public final StringPath type = createString("type");
+    public final EnumPath<ProblemType> type = createEnum("type", ProblemType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
