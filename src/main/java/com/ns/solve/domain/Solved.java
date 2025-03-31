@@ -15,16 +15,18 @@ import java.time.LocalDateTime;
 public class Solved {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "solved_id")
     private Long id;
 
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User solvedUser;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "problem_id")
     private Problem solvedProblem;
+    
+    private boolean solve; // 풀었는지 여부
 
     private LocalDateTime solvedTime;
 }

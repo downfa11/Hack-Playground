@@ -24,6 +24,8 @@ public class QSolved extends EntityPathBase<Solved> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
+    public final BooleanPath solve = createBoolean("solve");
+
     public final com.ns.solve.domain.problem.QProblem solvedProblem;
 
     public final DateTimePath<java.time.LocalDateTime> solvedTime = createDateTime("solvedTime", java.time.LocalDateTime.class);
