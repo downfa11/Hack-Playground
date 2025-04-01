@@ -3,6 +3,7 @@ package com.ns.solve.repository.problem;
 import com.ns.solve.domain.QComment;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.problem.ProblemType;
 import com.ns.solve.domain.problem.QProblem;
 import com.ns.solve.domain.problem.QWargameProblem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -62,27 +63,32 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
 
     // status가 '검수 완료'인 Problem을 type과 상속된 데이터에 맞게 리스트를 조회하는 메서드 (Pagenation)
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(String type, boolean desc, PageRequest pageRequest) {
-        return findProblemsSorted(type, pageRequest, qProblem.id, desc);
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
+        return findProblemsSorted(type, kind, pageRequest, qProblem.id, desc);
     }
 
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(String type, boolean desc, PageRequest pageRequest) {
-        return findProblemsSorted(type, pageRequest, qProblem.updatedAt, desc);
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
+        return findProblemsSorted(type, kind, pageRequest, qProblem.updatedAt, desc);
     }
 
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(String type, boolean desc, PageRequest pageRequest) {
-        return findProblemsSorted(type, pageRequest, qProblem.correctCount.divide(qProblem.entireCount), desc);
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
+        return findProblemsSorted(type, kind, pageRequest, qProblem.correctCount.divide(qProblem.entireCount), desc);
     }
 
+    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(ProblemType type, String kind, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
+        BooleanExpression condition = typeEq(type);
+        BooleanExpression kindCondition = kindEq(kind);
 
-    // 일단 WargameProblem을 조회한다. 나중에 알고리즘이나 다른 종류의 문제가 추가된다면 다시 설정하겠음
-    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(String type, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
+        if (kindCondition != null) {
+            condition = condition.and(kindCondition);
+        }
+
         List<ProblemSummary> results = jpaQueryFactory
                 .selectFrom(qWargameProblem)
                 .leftJoin(qWargameProblem.commentList, qComment)
-                .where(qWargameProblem.isChecked.isTrue().and(typeEq(type)))
+                .where(qWargameProblem.isChecked.isTrue().and(condition))
                 .offset(pageRequest.getOffset())
                 .limit(pageRequest.getPageSize())
                 .orderBy(desc ? sortField.desc() : sortField.asc())
@@ -102,23 +108,27 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
 
         long total = jpaQueryFactory
                 .selectFrom(qWargameProblem)
-                .where(qWargameProblem.isChecked.isTrue().and(typeEq(type)))
+                .where(qWargameProblem.isChecked.isTrue().and(condition))
                 .fetchCount();
 
         return new PageImpl<>(results, pageRequest, total);
     }
 
-    private BooleanExpression typeEq(String type) {
+    private BooleanExpression typeEq(ProblemType type) {
         if (type == null) {
             return null;
         }
-
         try {
-            return qWargameProblem.type.stringValue().eq(type);
+            return qWargameProblem.type.eq(type);
         } catch (IllegalArgumentException e) {
             return null;
         }
     }
 
-
+    private BooleanExpression kindEq(String kind) {
+        if (kind == null || kind.isBlank()) {
+            return null;
+        }
+        return qWargameProblem.kind.eq(kind);
+    }
 }
