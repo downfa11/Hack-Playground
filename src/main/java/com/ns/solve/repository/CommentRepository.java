@@ -8,11 +8,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    // @Query("SELECT c FROM Comment c JOIN FETCH c.creator WHERE c.problem.id = :problemId")
+    @Query("SELECT c FROM Comment c JOIN FETCH c.creator WHERE c.problem.id = :problemId")
     List<Comment> findByProblemId(Long problemId);
 
-    // @Query("SELECT c FROM Comment c JOIN FETCH c.creator WHERE c.board.id = :boardId")
+    @Query("SELECT c FROM Comment c JOIN FETCH c.creator WHERE c.board.id = :boardId")
     List<Comment> findByBoardId(Long boardId);
-
-    List<Comment> findByType(String type);
 }
