@@ -22,4 +22,7 @@ public class WargameProblem extends Problem {
 
     @Column(nullable = true)
     private String problemFile;
+
+    @Column(nullable = true)
+    private Long probelmFileSize;
 }

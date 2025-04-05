@@ -56,6 +56,8 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
 
     public final StringPath level = createString("level");
 
+    public final NumberPath<Long> probelmFileSize = createNumber("probelmFileSize", Long.class);
+
     public final StringPath problemFile = createString("problemFile");
 
     //inherited

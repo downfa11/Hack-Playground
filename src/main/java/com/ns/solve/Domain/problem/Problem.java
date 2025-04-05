@@ -44,7 +44,6 @@ public class Problem {
 
 
     private Integer attemptCount;
-
     private Double entireCount;
     private Double correctCount;
 

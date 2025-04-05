@@ -45,20 +45,24 @@ public class ProblemMapper {
         return new WargameProblemDto(
                 problem.getId(),
                 problem.getTitle(),
-                problem.getIsChecked(),
+                problem.getType(),
                 problem.getCreator(),
+                problem.getDetail(),
                 problem.getAttemptCount(),
                 problem.getEntireCount(),
                 problem.getCorrectCount(),
                 problem.getSource(),
                 problem.getReviewer(),
+                problem.getCommentList(),
                 problem.getTags(),
                 problem.getCreatedAt(),
                 problem.getUpdatedAt(),
+                problem.getKind(),
                 problem.getLevel(),
                 problem.getFlag(),
                 problem.getDockerfileLink(),
-                problem.getProblemFile()
+                problem.getProblemFile(),
+                problem.getProbelmFileSize()
         );
     }
 }

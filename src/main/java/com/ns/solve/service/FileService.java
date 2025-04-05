@@ -1,6 +1,7 @@
 package com.ns.solve.service;
 
 
+import com.ns.solve.domain.vo.FileInfo;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -16,18 +17,20 @@ import java.nio.file.StandardCopyOption;
 public class FileService {
     private final Path fileStorageLocation = Paths.get("uploads/problems").toAbsolutePath().normalize();
 
-    public String uploadFile(Long problemId, MultipartFile file) {
+    public FileInfo uploadFile(Long problemId, MultipartFile file) {
         try {
             Files.createDirectories(fileStorageLocation);
             String fileName = problemId + "_" + file.getOriginalFilename();
             Path targetLocation = fileStorageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return fileName;
+            long fileSize = Files.size(targetLocation);
+            return new FileInfo(fileName, fileSize);
         } catch (Exception e) {
             throw new RuntimeException("File upload failed", e);
         }
     }
+
 
     public void deleteFile(String filePath) {
         try {
@@ -50,5 +53,18 @@ public class FileService {
             throw new RuntimeException("File download failed", e);
         }
     }
+
+    private Long getFileSize(String filePath) {
+        try {
+            Path targetPath = fileStorageLocation.resolve(filePath).normalize();
+            if (!Files.exists(targetPath)) {
+                throw new FileNotFoundException("File not found: " + targetPath);
+            }
+            return Files.size(targetPath);
+        } catch (Exception e) {
+            throw new RuntimeException("Error getFileSize : " + filePath, e);
+        }
+    }
+
 }
 
