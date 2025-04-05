@@ -5,7 +5,9 @@ import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.problem.ProblemType;
 import com.ns.solve.service.problem.ProblemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -77,6 +79,7 @@ public class ProblemController {
     @GetMapping("/{id}")
     public ResponseEntity<MessageEntity> getProblemById(@PathVariable Long id) {
         Optional<Problem> problem = problemService.getProblemById(id);
+
         if (problem.isPresent()) {
             return ResponseEntity.ok(new MessageEntity("Problem found", problem.get()));
         } else {
@@ -95,17 +98,22 @@ public class ProblemController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형에 따라 조회합니다. 단, 정렬 조건(sortKind)은 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
+    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형(type='wargame')에 따라 조회합니다. 종류(kind='웹해킹'...)도 구분합니다. 단, 정렬 조건(sortKind)은 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "완료된 문제들이 성공적으로 조회되었습니다."),
             @ApiResponse(responseCode = "404", description = "완료된 문제들을 찾을 수 없습니다.")
     })
     @GetMapping("/completed")
-    public ResponseEntity<Page<ProblemSummary>> getCompletedProblemsByType(@RequestParam Long userId,
-                                                                           @RequestParam String type, @RequestParam(required = false) String sortKind, @RequestParam boolean desc,
-                                                                           @RequestParam(defaultValue = "0") int page,
-                                                                           @RequestParam(defaultValue = "10") int size) {
-        Page<ProblemSummary> problemSummaries = problemService.getCompletedProblemsSummary(userId, type, sortKind, desc, PageRequest.of(page, size));
+    public ResponseEntity<Page<ProblemSummary>> getCompletedProblemsByType(
+            @RequestParam Long userId,
+            @RequestParam ProblemType type,
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false) String sortKind,
+            @RequestParam boolean desc,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<ProblemSummary> problemSummaries = problemService.getCompletedProblemsSummary(userId, type, kind, sortKind, desc, PageRequest.of(page, size));
         return new ResponseEntity<>(problemSummaries, HttpStatus.OK);
     }
 

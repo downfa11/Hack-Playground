@@ -3,8 +3,8 @@ package com.ns.solve.service;
 import com.ns.solve.domain.Board;
 import com.ns.solve.domain.Comment;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.ModifyCommentDto;
-import com.ns.solve.domain.dto.RegisterCommentDto;
+import com.ns.solve.domain.dto.comment.ModifyCommentDto;
+import com.ns.solve.domain.dto.comment.RegisterCommentDto;
 import com.ns.solve.domain.problem.Problem;
 import com.ns.solve.repository.CommentRepository;
 import java.util.List;
@@ -27,7 +27,7 @@ public class CommentService {
 
     public Comment createComment(RegisterCommentDto registerCommentDto) {
         Comment comment = new Comment();
-        comment.setContent(registerCommentDto.content());
+        comment.setContent(registerCommentDto.contents());
         comment.setType(registerCommentDto.type());
 
         User creator = userRepository.findById(registerCommentDto.userId())
@@ -61,7 +61,7 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
         comment.setType(modifyCommentDto.type());
-        comment.setContent(modifyCommentDto.content());
+        comment.setContent(modifyCommentDto.contents());
         return commentRepository.save(comment);
     }
     public void deleteComment(Long id) {

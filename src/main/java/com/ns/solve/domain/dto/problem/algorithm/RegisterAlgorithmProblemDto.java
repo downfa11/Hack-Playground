@@ -1,9 +1,6 @@
-package com.ns.solve.domain.dto.problem;
+package com.ns.solve.domain.dto.problem.algorithm;
 
-import com.ns.solve.domain.problem.ProblemType;
-import jakarta.validation.constraints.NotNull;
-
-import java.util.List;
+import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 
 
 public class RegisterAlgorithmProblemDto extends RegisterProblemDto {

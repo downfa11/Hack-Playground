@@ -2,13 +2,14 @@ package com.ns.solve.service;
 
 import com.ns.solve.domain.Board;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.BoardSummary;
-import com.ns.solve.domain.dto.ModifyBoardDto;
-import com.ns.solve.domain.dto.RegisterBoardDto;
+import com.ns.solve.domain.dto.board.BoardSummary;
+import com.ns.solve.domain.dto.board.ModifyBoardDto;
+import com.ns.solve.domain.dto.board.RegisterBoardDto;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import java.util.List;
 import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ public class BoardService {
         Board board = new Board();
         board.setTitle(registerBoardDto.title());
         board.setType(registerBoardDto.type());
+        board.setContents(registerBoardDto.contents());
         board.setCreator(creator);
 
         return boardRepository.save(board);
@@ -44,6 +46,7 @@ public class BoardService {
 
         board.setTitle(modifyBoardDto.title());
         board.setType(modifyBoardDto.type());
+        board.setContents(modifyBoardDto.contents());
 
         User creator = userRepository.findById(modifyBoardDto.userId())
                 .orElseThrow(() -> new RuntimeException("User not found"));

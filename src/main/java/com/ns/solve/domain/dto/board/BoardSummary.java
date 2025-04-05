@@ -1,4 +1,4 @@
-package com.ns.solve.domain.dto;
+package com.ns.solve.domain.dto.board;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

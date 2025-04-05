@@ -24,6 +24,8 @@ public class QBoard extends EntityPathBase<Board> {
 
     public final ListPath<Comment, QComment> commentList = this.<Comment, QComment>createList("commentList", Comment.class, QComment.class, PathInits.DIRECT2);
 
+    public final StringPath contents = createString("contents");
+
     public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
     public final QUser creator;

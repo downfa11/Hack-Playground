@@ -24,6 +24,9 @@ public class Board {
     @Column(nullable = false)
     private String type;  // 공지사항, 자유게시판
 
+    @Column(nullable = false)
+    private String contents;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User creator;

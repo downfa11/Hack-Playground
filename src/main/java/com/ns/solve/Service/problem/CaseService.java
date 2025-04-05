@@ -1,6 +1,6 @@
 package com.ns.solve.service.problem;
 
-import com.ns.solve.domain.dto.CaseDto;
+import com.ns.solve.domain.dto.problem.assignment.CaseDto;
 import com.ns.solve.repository.problem.testcase.CaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

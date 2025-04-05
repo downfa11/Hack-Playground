@@ -2,8 +2,8 @@ package com.ns.solve.controller;
 
 import com.ns.solve.domain.Comment;
 import com.ns.solve.domain.dto.MessageEntity;
-import com.ns.solve.domain.dto.ModifyCommentDto;
-import com.ns.solve.domain.dto.RegisterCommentDto;
+import com.ns.solve.domain.dto.comment.ModifyCommentDto;
+import com.ns.solve.domain.dto.comment.RegisterCommentDto;
 import com.ns.solve.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

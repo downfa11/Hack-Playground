@@ -5,9 +5,9 @@ import static org.mockito.Mockito.*;
 
 import com.ns.solve.domain.Board;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.BoardSummary;
-import com.ns.solve.domain.dto.RegisterBoardDto;
-import com.ns.solve.domain.dto.ModifyBoardDto;
+import com.ns.solve.domain.dto.board.BoardSummary;
+import com.ns.solve.domain.dto.board.RegisterBoardDto;
+import com.ns.solve.domain.dto.board.ModifyBoardDto;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import java.util.List;

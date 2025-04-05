@@ -5,9 +5,9 @@ import static org.mockito.Mockito.*;
 
 import com.ns.solve.domain.Role;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.ModifyUserDto;
-import com.ns.solve.domain.dto.RegisterUserDto;
-import com.ns.solve.domain.dto.UserRankDto;
+import com.ns.solve.domain.dto.user.ModifyUserDto;
+import com.ns.solve.domain.dto.user.RegisterUserDto;
+import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;

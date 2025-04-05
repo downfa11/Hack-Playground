@@ -1,4 +1,4 @@
-package com.ns.solve.domain.dto;
+package com.ns.solve.domain.dto.user;
 
 import java.time.LocalDateTime;
 

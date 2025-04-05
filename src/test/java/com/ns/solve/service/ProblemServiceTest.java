@@ -4,7 +4,7 @@ import com.ns.solve.domain.Solved;
 import com.ns.solve.domain.User;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
-import com.ns.solve.domain.dto.UserDto;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.problem.Problem;
 import com.ns.solve.domain.problem.ProblemType;
