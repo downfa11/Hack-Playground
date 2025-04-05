@@ -2,11 +2,13 @@ package com.ns.solve.service.problem;
 
 import com.ns.solve.domain.Solved;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.*;
 import com.ns.solve.domain.dto.problem.*;
+import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.problem.*;
+import com.ns.solve.domain.vo.FileInfo;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
@@ -103,8 +105,9 @@ public class ProblemService {
                     fileService.deleteFile(wargameProblem.getProblemFile());
                 }
 
-                String filePath = fileService.uploadFile(wargameProblem.getId(), file);
-                wargameProblem.setProblemFile(filePath);
+                FileInfo fileInfo = fileService.uploadFile(wargameProblem.getId(), file);
+                wargameProblem.setProblemFile(fileInfo.fileName());
+                wargameProblem.setProbelmFileSize(fileInfo.fileSize());
                 problemRepository.save(wargameProblem);
             } else {
                 throw new UnsupportedOperationException("File upload is only supported for WargameProblem.");
@@ -151,7 +154,6 @@ public class ProblemService {
     }
 
 
-
     public Optional<Problem> getProblemById(Long id) {
         return problemRepository.findById(id);
     }
@@ -192,39 +194,46 @@ public class ProblemService {
         return problemRepository.findProblemsByStatusPending(pageRequest);
     }
 
-    private Page<ProblemSummary> getCompletedProblemsByType(String type, String sortKind, boolean desc, PageRequest pageRequest) {
-        switch(sortKind){
-            case "updatedAt":
-                return problemRepository.findProblemsByStatusAndTypeSortedByUpdatedAt(type, desc, pageRequest);
-            case "correctRate":
-                return problemRepository.findProblemsByStatusAndTypeSortedByCorrectRate(type, desc, pageRequest);
+    private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, String kind, String sortKind, boolean desc, PageRequest pageRequest) {
+        if (sortKind == null) {
+            sortKind = "problemId";
         }
-        return problemRepository.findProblemsByStatusAndTypeSortedById(type, desc, pageRequest);
+
+        switch (sortKind) {
+            case "updatedAt":
+                return problemRepository.findProblemsByStatusAndTypeSortedByUpdatedAt(type, kind, desc, pageRequest);
+            case "correctRate":
+                return problemRepository.findProblemsByStatusAndTypeSortedByCorrectRate(type, kind, desc, pageRequest);
+            default: // problemId
+                return problemRepository.findProblemsByStatusAndTypeSortedById(type, kind, desc, pageRequest);
+        }
     }
 
-    public Page<ProblemSummary> getCompletedProblemsSummary(Long userId, String type, String sortKind, boolean desc, PageRequest pageRequest) {
-        Page<ProblemSummary> problemSummaries = getCompletedProblemsByType(type, sortKind, desc, pageRequest);
+    public Page<ProblemSummary> getCompletedProblemsSummary(Long userId, ProblemType type, String kind, String sortKind, boolean desc, PageRequest pageRequest) {
+        Page<ProblemSummary> problemSummaries = getCompletedProblemsByType(type, kind, sortKind, desc, pageRequest);
 
-        for (ProblemSummary summary : problemSummaries) {
+        problemSummaries.forEach(summary -> {
             boolean solved = solvedRepository.existsSolvedProblem(userId, summary.getId());
             summary.setSolved(solved);
-        }
+        });
         return problemSummaries;
     }
+
 
     // problemId에 해당하는 문제의 First Blood가 누구인지 조회
     public Optional<UserDto> firstBlood(Long problemId, int size) {
         Page<User> firstSolverPage = solvedRepository.findFirstUserToSolveProblem(problemId, PageRequest.of(0, size));
 
         return firstSolverPage.getContent()
-                .stream()
-                .findFirst()
-                .map(user -> new UserDto(user.getNickname(), user.getScore(), user.getLastActived()));
+                        .stream()
+                        .findFirst()
+                        .map(user -> new UserDto(user.getNickname(), user.getScore(), user.getLastActived()));
     }
 
 
+
     @Transactional
-    public boolean solveProblem(Long userId, Long problemId, String attemptedFlag) {
+    public Boolean solveProblem(Long userId, Long problemId, String attemptedFlag) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
