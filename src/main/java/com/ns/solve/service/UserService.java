@@ -2,20 +2,19 @@ package com.ns.solve.service;
 
 import com.ns.solve.domain.Role;
 import com.ns.solve.domain.User;
-import com.ns.solve.domain.dto.ModifyUserDto;
-import com.ns.solve.domain.dto.RegisterUserDto;
-import com.ns.solve.domain.dto.UserDto;
-import com.ns.solve.domain.dto.UserRankDto;
+import com.ns.solve.domain.dto.user.ModifyUserDto;
+import com.ns.solve.domain.dto.user.RegisterUserDto;
+import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.repository.UserRepository;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -61,10 +60,11 @@ public class UserService {
         }
 
         return userPage.map(user -> new UserRankDto(
-                user.getNickname(),
-                type == null || type.isEmpty() ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L),
-                user.getCreated(),
-                user.getLastActived()));
+                        user.getNickname(),
+                        type == null || type.isEmpty() ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L),
+                        user.getCreated(),
+                        user.getLastActived())
+        );
     }
 
 
