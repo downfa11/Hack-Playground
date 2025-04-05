@@ -1,4 +1,4 @@
-package com.ns.solve.Domain.dto;
+package com.ns.solve.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

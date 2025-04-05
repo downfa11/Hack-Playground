@@ -1,4 +1,4 @@
-package com.ns.solve.Config;
+package com.ns.solve.config;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;

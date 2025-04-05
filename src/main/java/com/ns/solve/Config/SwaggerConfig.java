@@ -1,4 +1,4 @@
-package com.ns.solve.Config;
+package com.ns.solve.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

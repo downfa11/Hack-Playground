@@ -21,7 +21,7 @@ services:
       - MYSQL_DATABASE=solve
 
 #  solve:
-#    image: solve:0.0.1
+#    image: downfa11/solve:latest
 #    networks:
 #      - solve_network
 #    ports:
@@ -33,6 +33,7 @@ services:
 #      - SPRING_DATASOURCE_USERNAME=mysqluser
 #      - SPRING_DATASOURCE_PASSWORD=mysqlpw
 #      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+#      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
 #      - KAKAO_CLIENT_ID=
 #      - KAKAO_CLIENT_SECRET=
 #      - KAKAO_REDIRECT_URL=http://localhost/kakao/callback
