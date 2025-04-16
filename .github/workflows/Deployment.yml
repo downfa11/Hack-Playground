@@ -47,5 +47,13 @@ jobs:
           REPOSITORY: downfa11/solve-service
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          envsubst < Dockerfile.template | docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f - .
+          envsubst < Dockerfile | docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f - .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: .github/ecs/task-definition.json
+          service: solve-service
+          cluster: solve-cluster
+          wait-for-service-stability: true
