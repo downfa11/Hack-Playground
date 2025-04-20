@@ -1,14 +1,15 @@
 package com.ns.solve.service;
 
-import com.ns.solve.domain.Solved;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.dto.problem.ProblemDto;
+import com.ns.solve.domain.entity.Solved;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.ProblemType;
-import com.ns.solve.domain.problem.WargameProblem;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
@@ -68,7 +69,6 @@ class ProblemServiceTest {
         RegisterProblemDto dto = RegisterProblemDto.builder()
                 .title("Problem")
                 .type(ProblemType.WARGAME)
-                .creator("creator")
                 .detail("detail")
                 .tags(List.of("tag1", "tag2"))
                 .build();
@@ -76,18 +76,16 @@ class ProblemServiceTest {
         Problem expectedProblem = new Problem();
         expectedProblem.setTitle(dto.getTitle());
         expectedProblem.setType(dto.getType());
-        expectedProblem.setCreator(dto.getCreator());
         expectedProblem.setDetail(dto.getDetail());
         expectedProblem.setTags(dto.getTags());
 
         when(problemRepository.save(any(Problem.class))).thenReturn(expectedProblem);
 
-        Problem created = problemService.createProblem(dto);
+        ProblemDto created = problemService.createProblem(1L, dto);
 
         assertNotNull(created);
         assertEquals(dto.getTitle(), created.getTitle());
         assertEquals(dto.getType(), created.getType());
-        assertEquals(dto.getCreator(), created.getCreator());
         assertEquals(dto.getDetail(), created.getDetail());
         assertEquals(dto.getTags(), created.getTags());
 
@@ -101,28 +99,26 @@ class ProblemServiceTest {
         ModifyProblemDto dto = ModifyProblemDto.builder()
                 .title("Problem")
                 .type(ProblemType.WARGAME)
-                .creator("creator")
                 .detail("detail")
                 .tags(List.of("tag1", "tag2"))
                 .build();
+        Long userId = 1L;
 
         Problem existingProblem = new Problem();
         existingProblem.setId(1L);
         existingProblem.setTitle("Old Title");
         existingProblem.setType(ProblemType.WARGAME);
-        existingProblem.setCreator("Old Creator");
         existingProblem.setDetail("Old Detail");
         existingProblem.setTags(List.of("oldTag"));
 
         when(problemRepository.findById(1L)).thenReturn(Optional.of(existingProblem));
         when(problemRepository.save(any(Problem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Problem result = problemService.updateProblem(dto);
+        ProblemDto result = problemService.updateProblem(userId, existingProblem.getId(), dto);
 
         assertNotNull(result);
         assertEquals(dto.getTitle(), result.getTitle());
         assertEquals(dto.getType(), result.getType());
-        assertEquals(dto.getCreator(), result.getCreator());
         assertEquals(dto.getDetail(), result.getDetail());
         assertEquals(dto.getTags(), result.getTags());
 
@@ -134,8 +130,7 @@ class ProblemServiceTest {
     @Test
     void testDeleteProblem() {
         doNothing().when(problemRepository).deleteById(1L);
-
-        problemService.deleteProblem(1L);
+        problemService.deleteProblem(1L, 1L);
 
         verify(problemRepository, times(1)).deleteById(1L);
     }
@@ -144,7 +139,7 @@ class ProblemServiceTest {
     void testGetProblemById() {
         when(problemRepository.findById(1L)).thenReturn(Optional.of(sampleProblem));
 
-        Optional<Problem> result = problemService.getProblemById(1L);
+        Optional<ProblemDto> result = problemService.getProblemById(1L);
 
         assertTrue(result.isPresent());
         assertEquals(sampleProblem.getTitle(), result.get().getTitle());
@@ -178,7 +173,7 @@ class ProblemServiceTest {
         Optional<UserDto> result = problemService.firstBlood(1L, firstCount);
 
         assertTrue(result.isPresent());
-        assertEquals(sampleUser.getNickname(), result.get().nickname());
+        assertEquals(sampleUser.getNickname(), result.get().getNickname());
     }
 
 

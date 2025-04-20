@@ -3,10 +3,11 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ns.solve.domain.Role;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.Role;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.repository.UserRepository;
 import java.time.LocalDateTime;
@@ -59,7 +60,7 @@ class UserServiceTest {
         when(bCryptPasswordEncoder.encode(anyString())).thenReturn("crypt");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        User createdUser = userService.createUser(registerUserDto);
+        UserDto createdUser = userService.createUser(registerUserDto);
 
         assertNotNull(createdUser);
         assertEquals("testUser", createdUser.getNickname());
@@ -73,7 +74,7 @@ class UserServiceTest {
 
         when(userRepository.existsByNickname(anyString())).thenReturn(true);
 
-        User createdUser = userService.createUser(registerUserDto);
+        UserDto createdUser = userService.createUser(registerUserDto);
 
         assertNull(createdUser);
         verify(userRepository, never()).save(any(User.class));
@@ -94,7 +95,7 @@ class UserServiceTest {
     void testGetUserById() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        Optional<User> user = userService.getUserById(1L);
+        Optional<UserDto> user = userService.getUserById(1L);
 
         assertTrue(user.isPresent());
         assertEquals("testUser", user.get().getNickname());
@@ -134,7 +135,7 @@ class UserServiceTest {
         when(bCryptPasswordEncoder.encode(anyString())).thenReturn("crypt");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        User updatedUser = userService.updateUser(1L, modifyUserDto);
+        UserDto updatedUser = userService.updateUser(1L, 1L, modifyUserDto);
 
         assertNotNull(updatedUser);
         assertEquals("updatedUser", updatedUser.getNickname());
@@ -148,7 +149,7 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        User updatedUser = userService.updateUser(1L, modifyUserDto);
+        UserDto updatedUser = userService.updateUser(1L, 1L, modifyUserDto);
 
         assertNull(updatedUser);
         verify(userRepository, never()).save(any(User.class));
@@ -158,7 +159,7 @@ class UserServiceTest {
     void testDeleteUser() {
         doNothing().when(userRepository).deleteById(1L);
 
-        userService.deleteUser(1L);
+        userService.deleteUser(1L, 1L);
 
         verify(userRepository, times(1)).deleteById(1L);
     }

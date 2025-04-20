@@ -1,7 +1,7 @@
 package com.ns.solve.repository;
 
-import com.ns.solve.domain.Solved;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.Solved;
+import com.ns.solve.domain.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface SolvedRepository extends JpaRepository<Solved, Long> {
@@ -22,4 +22,8 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
 
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN TRUE ELSE FALSE END FROM Solved s WHERE s.solvedUser.id = :userId AND s.solvedProblem.id = :problemId AND s.solve = true")
     Boolean existsSolvedProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
+
+    @Query("SELECT DISTINCT s.solvedProblem.title FROM Solved s WHERE s.solvedUser.id = :userId AND s.solve = true")
+    List<String> findSolvedProblemTitlesByUserId(@Param("userId") Long userId);
+
 }

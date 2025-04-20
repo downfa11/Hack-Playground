@@ -3,12 +3,12 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ns.solve.domain.Board;
-import com.ns.solve.domain.Comment;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.Board;
+import com.ns.solve.domain.entity.Comment;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.comment.ModifyCommentDto;
 import com.ns.solve.domain.dto.comment.RegisterCommentDto;
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.repository.CommentRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
@@ -67,13 +67,13 @@ class CommentServiceTest {
 
     @Test
     void testCreateComment() {
-        RegisterCommentDto dto = new RegisterCommentDto("problem", 1L, 1L, "Test Comment");
+        RegisterCommentDto dto = new RegisterCommentDto("problem", 1L, "Test Comment");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(problemRepository.findById(1L)).thenReturn(Optional.of(testProblem));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment createdComment = commentService.createComment(dto);
+        Comment createdComment = commentService.createComment(1L, dto);
 
         assertNotNull(createdComment);
         assertEquals("Test Comment", createdComment.getContent());
@@ -127,12 +127,12 @@ class CommentServiceTest {
 
     @Test
     void testUpdateComment() {
-        ModifyCommentDto dto = new ModifyCommentDto(1L, "free","Updated Comment");
+        ModifyCommentDto dto = new ModifyCommentDto( "free","Updated Comment");
 
         when(commentRepository.findById(1L)).thenReturn(Optional.of(testComment));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment updatedComment = commentService.updateComment(dto);
+        Comment updatedComment = commentService.updateComment(1L, 1L, dto);
 
         assertNotNull(updatedComment);
         assertEquals("Updated Comment", updatedComment.getContent());
@@ -144,7 +144,7 @@ class CommentServiceTest {
     void testDeleteComment() {
         doNothing().when(commentRepository).deleteById(1L);
 
-        commentService.deleteComment(1L);
+        commentService.deleteComment(1L, 1L);
 
         verify(commentRepository, times(1)).deleteById(1L);
     }
