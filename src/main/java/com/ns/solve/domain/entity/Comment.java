@@ -1,7 +1,7 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ public class Comment {
     private String content;
 
     @Column(nullable = false)
-    private String type; // problem, board
+    private CommentType type;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

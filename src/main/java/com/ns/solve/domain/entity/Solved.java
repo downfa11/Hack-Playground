@@ -1,6 +1,6 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

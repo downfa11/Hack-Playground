@@ -1,4 +1,4 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -36,4 +36,8 @@ public class User {
 
     private LocalDateTime created;
     private LocalDateTime lastActived;
+
+    public boolean isMemberAbove() {
+        return this.role != null && this.role.ordinal() > Role.ROLE_MEMBER.ordinal();
+    }
 }

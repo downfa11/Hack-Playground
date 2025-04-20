@@ -1,4 +1,4 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -21,8 +21,9 @@ public class Board {
     @Column(nullable = false)
     private String title;
 
+
     @Column(nullable = false)
-    private String type;  // 공지사항, 자유게시판
+    private BoardType type;
 
     @Column(nullable = false)
     private String contents;

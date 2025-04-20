@@ -1,4 +1,4 @@
-package com.ns.solve.domain.problem;
+package com.ns.solve.domain.entity.problem;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

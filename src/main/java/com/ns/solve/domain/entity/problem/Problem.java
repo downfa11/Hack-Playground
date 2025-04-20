@@ -1,20 +1,10 @@
-package com.ns.solve.domain.problem;
+package com.ns.solve.domain.entity.problem;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.ns.solve.domain.Comment;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.ns.solve.domain.entity.Comment;
+import com.ns.solve.domain.entity.User;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
@@ -39,7 +29,10 @@ public class Problem {
     @Column(nullable = false)
     private ProblemType type;  // wargame, assignment, algorithm
 
-    private String creator;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User creator;
+
     private String detail;
 
 

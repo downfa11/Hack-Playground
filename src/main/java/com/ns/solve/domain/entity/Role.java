@@ -1,10 +1,13 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum Role {
-    ROLE_ADMIN, ROLE_VALIDATOR, ROLE_CREATOR, ROLE_MEMBER;
+    ROLE_MEMBER,     // ordinal = 0
+    ROLE_CREATOR,    // ordinal = 1
+    ROLE_VALIDATOR,  // ordinal = 2
+    ROLE_ADMIN;      // ordinal = 3
 
     public static Role fromString(String role) {
         for (Role r : Role.values()) {
