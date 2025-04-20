@@ -1,11 +1,11 @@
 package com.ns.solve.service;
 
-import com.ns.solve.domain.Board;
-import com.ns.solve.domain.Comment;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.Board;
+import com.ns.solve.domain.entity.Comment;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.comment.ModifyCommentDto;
 import com.ns.solve.domain.dto.comment.RegisterCommentDto;
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.repository.CommentRepository;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +14,7 @@ import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,12 +26,12 @@ public class CommentService {
     private final BoardRepository boardRepository;
 
 
-    public Comment createComment(RegisterCommentDto registerCommentDto) {
+    public Comment createComment(Long userId, RegisterCommentDto registerCommentDto) {
         Comment comment = new Comment();
         comment.setContent(registerCommentDto.contents());
         comment.setType(registerCommentDto.type());
 
-        User creator = userRepository.findById(registerCommentDto.userId())
+        User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         comment.setCreator(creator);
 
@@ -55,16 +56,31 @@ public class CommentService {
     public Optional<Comment> getCommentById(Long id) {
         return commentRepository.findById(id);
     }
-    public Comment updateComment(ModifyCommentDto modifyCommentDto) {
-        Long commentId = modifyCommentDto.commentId();
+    public Comment updateComment(Long userId, Long commentId, ModifyCommentDto modifyCommentDto) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
+        User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
 
+        checkAuthorizationOrThrow(user, comment);
         comment.setType(modifyCommentDto.type());
         comment.setContent(modifyCommentDto.contents());
         return commentRepository.save(comment);
     }
-    public void deleteComment(Long id) {
-        commentRepository.deleteById(id);
+    public void deleteComment(Long userId, Long commentId)
+    {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        checkAuthorizationOrThrow(user, comment);
+        commentRepository.deleteById(commentId);
+    }
+
+    private void checkAuthorizationOrThrow(User user, Comment comment) {
+        if (!user.isMemberAbove() && !comment.getCreator().equals(user)) {
+            throw new AccessDeniedException("수정/삭제 권한이 없습니다.");
+        }
     }
 }
