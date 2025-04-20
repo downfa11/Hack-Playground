@@ -1,10 +1,12 @@
 package com.ns.solve.utils;
 
 import com.ns.solve.domain.dto.problem.ProblemSummary;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.ProblemType;
-import com.ns.solve.domain.problem.WargameProblem;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameProblem;
 import java.util.List;
+
+import com.ns.solve.utils.mapper.ProblemMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +25,7 @@ class ProblemMapperTest {
         when(problem.getEntireCount()).thenReturn(100.0);
 
         // when
-        ProblemSummary summary = ProblemMapper.toProblemSummary(problem);
+        ProblemSummary summary = ProblemMapper.mapperToProblemSummary(problem);
 
         // then
         assertNotNull(summary);
@@ -47,7 +49,7 @@ class ProblemMapperTest {
         when(wargameProblem.getLevel()).thenReturn("hard");
 
         // when
-        ProblemSummary summary = ProblemMapper.toWargameProblemSummary(wargameProblem);
+        ProblemSummary summary = ProblemMapper.mapperToWargameProblemSummary(wargameProblem);
 
         // then
         assertNotNull(summary);
@@ -82,7 +84,7 @@ class ProblemMapperTest {
         List<Problem> problems = List.of(problem1, problem2);
 
         // when
-        List<ProblemSummary> summaries = ProblemMapper.toProblemSummaryList(problems);
+        List<ProblemSummary> summaries = ProblemMapper.mapperToProblemSummaryList(problems);
 
         // then
         assertNotNull(summaries);
