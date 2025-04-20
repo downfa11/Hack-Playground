@@ -1,4 +1,4 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -16,7 +16,7 @@ import com.querydsl.core.types.dsl.PathInits;
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QComment extends EntityPathBase<Comment> {
 
-    private static final long serialVersionUID = 441071552L;
+    private static final long serialVersionUID = -1094667629L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
@@ -32,9 +32,9 @@ public class QComment extends EntityPathBase<Comment> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final com.ns.solve.domain.problem.QProblem problem;
+    public final com.ns.solve.domain.entity.problem.QProblem problem;
 
-    public final StringPath type = createString("type");
+    public final EnumPath<CommentType> type = createEnum("type", CommentType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
@@ -58,7 +58,7 @@ public class QComment extends EntityPathBase<Comment> {
         super(type, metadata, inits);
         this.board = inits.isInitialized("board") ? new QBoard(forProperty("board"), inits.get("board")) : null;
         this.creator = inits.isInitialized("creator") ? new QUser(forProperty("creator")) : null;
-        this.problem = inits.isInitialized("problem") ? new com.ns.solve.domain.problem.QProblem(forProperty("problem")) : null;
+        this.problem = inits.isInitialized("problem") ? new com.ns.solve.domain.entity.problem.QProblem(forProperty("problem"), inits.get("problem")) : null;
     }
 
 }

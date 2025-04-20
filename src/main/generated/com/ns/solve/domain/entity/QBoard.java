@@ -1,4 +1,4 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -16,7 +16,7 @@ import com.querydsl.core.types.dsl.PathInits;
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QBoard extends EntityPathBase<Board> {
 
-    private static final long serialVersionUID = -791536505L;
+    private static final long serialVersionUID = -1673580518L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
@@ -34,7 +34,7 @@ public class QBoard extends EntityPathBase<Board> {
 
     public final StringPath title = createString("title");
 
-    public final StringPath type = createString("type");
+    public final EnumPath<BoardType> type = createEnum("type", BoardType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 

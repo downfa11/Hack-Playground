@@ -1,4 +1,4 @@
-package com.ns.solve.domain.problem;
+package com.ns.solve.domain.entity.problem;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -16,7 +16,7 @@ import com.querydsl.core.types.dsl.PathInits;
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QCase extends EntityPathBase<Case> {
 
-    private static final long serialVersionUID = 2054375518L;
+    private static final long serialVersionUID = -955803285L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
@@ -54,7 +54,7 @@ public class QCase extends EntityPathBase<Case> {
 
     public QCase(Class<? extends Case> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.problem = inits.isInitialized("problem") ? new QProblem(forProperty("problem")) : null;
+        this.problem = inits.isInitialized("problem") ? new QProblem(forProperty("problem"), inits.get("problem")) : null;
     }
 
 }

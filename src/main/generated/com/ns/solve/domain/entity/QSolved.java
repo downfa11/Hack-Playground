@@ -1,4 +1,4 @@
-package com.ns.solve.domain;
+package com.ns.solve.domain.entity;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -16,7 +16,7 @@ import com.querydsl.core.types.dsl.PathInits;
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QSolved extends EntityPathBase<Solved> {
 
-    private static final long serialVersionUID = 1719199364L;
+    private static final long serialVersionUID = 145638737L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
@@ -26,7 +26,7 @@ public class QSolved extends EntityPathBase<Solved> {
 
     public final BooleanPath solve = createBoolean("solve");
 
-    public final com.ns.solve.domain.problem.QProblem solvedProblem;
+    public final com.ns.solve.domain.entity.problem.QProblem solvedProblem;
 
     public final DateTimePath<java.time.LocalDateTime> solvedTime = createDateTime("solvedTime", java.time.LocalDateTime.class);
 
@@ -50,7 +50,7 @@ public class QSolved extends EntityPathBase<Solved> {
 
     public QSolved(Class<? extends Solved> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.solvedProblem = inits.isInitialized("solvedProblem") ? new com.ns.solve.domain.problem.QProblem(forProperty("solvedProblem")) : null;
+        this.solvedProblem = inits.isInitialized("solvedProblem") ? new com.ns.solve.domain.entity.problem.QProblem(forProperty("solvedProblem"), inits.get("solvedProblem")) : null;
         this.solvedUser = inits.isInitialized("solvedUser") ? new QUser(forProperty("solvedUser")) : null;
     }
 
