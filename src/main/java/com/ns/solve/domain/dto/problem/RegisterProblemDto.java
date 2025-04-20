@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
-import com.ns.solve.domain.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -23,14 +23,12 @@ import java.util.List;
 public class RegisterProblemDto {
 
     @NotNull
-    private ProblemType type;
-
     private String title;
-    private String creator;
-
+    @NotNull
+    private ProblemType type;
+    @NotNull
     private String detail;
-    private String source;
-    private String reviewer;
 
+    private String source;
     private List<String> tags;
 }

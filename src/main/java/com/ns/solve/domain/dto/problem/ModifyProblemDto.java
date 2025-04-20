@@ -3,8 +3,8 @@ package com.ns.solve.domain.dto.problem;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.ns.solve.domain.dto.problem.wargame.ModifyWargameProblemDto;
-import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
-import com.ns.solve.domain.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.ProblemType;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,11 +21,10 @@ import java.util.List;
         @JsonSubTypes.Type(value = ModifyWargameProblemDto.class, name = "WARGAME"),
 })
 public class ModifyProblemDto {
-    private Long problemId;
     private String title;
     private ProblemType type;
-    private String creator;
-    private String solution;
     private String detail;
+
+    private String source;
     private List<String> tags;
 }

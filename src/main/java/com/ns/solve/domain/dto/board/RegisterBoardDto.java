@@ -1,4 +1,6 @@
 package com.ns.solve.domain.dto.board;
 
-public record RegisterBoardDto(Long userId, String title, String type, String creator, String contents){
+import com.ns.solve.domain.entity.BoardType;
+
+public record RegisterBoardDto(String title, BoardType type, String contents){
 }

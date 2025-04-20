@@ -1,4 +1,6 @@
 package com.ns.solve.domain.dto.comment;
 
-public record RegisterCommentDto(String type, Long parentId, Long userId, String contents){
+import com.ns.solve.domain.entity.CommentType;
+
+public record RegisterCommentDto(CommentType type, Long parentId, String contents){
 }

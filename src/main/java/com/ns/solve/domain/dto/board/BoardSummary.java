@@ -12,5 +12,5 @@ public class BoardSummary {
     private String title;
     private String creator;
     private LocalDateTime lastModified;
-    private Integer commentCount;
+    private Long commentCount;
 }

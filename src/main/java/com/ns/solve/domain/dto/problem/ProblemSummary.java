@@ -1,5 +1,6 @@
 package com.ns.solve.domain.dto.problem;
 
+import com.querydsl.core.annotations.QueryProjection;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,4 +19,18 @@ public class ProblemSummary {
     private String creator;
     private String type;
     private LocalDateTime lastModified;
+
+
+
+    @QueryProjection
+    public ProblemSummary(Long id, String title, String level, Double correctRate, String creator, String type, LocalDateTime updatedAt) {
+        this.id = id;
+        this.title = title;
+        this.level = level;
+        this.correctRate = correctRate;
+        this.creator = creator;
+        this.type = type;
+        this.lastModified = updatedAt;
+    }
+
 }
