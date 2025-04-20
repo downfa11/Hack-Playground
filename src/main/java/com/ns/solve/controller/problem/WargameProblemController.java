@@ -1,18 +1,21 @@
 package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.ModifyWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.WargameProblem;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.service.problem.ProblemService;
+import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,9 +34,11 @@ public class WargameProblemController {
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageEntity> createProblem(@RequestPart(value = "data") RegisterWargameProblemDto registerProblemDto,
-                                                       @RequestPart(value = "file", required = false) MultipartFile file) {
+                                                       @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
 
-        Problem createdProblem = problemService.createProblemWithFile(registerProblemDto, file);
+        ProblemDto createdProblem = problemService.createProblemWithFile(userId, registerProblemDto, file);
         return ResponseEntity.status(201).body(new MessageEntity("Problem created successfully", createdProblem));
     }
 
@@ -45,8 +50,11 @@ public class WargameProblemController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageEntity> updateProblem(@PathVariable Long id,
                                                        @RequestPart("data") ModifyWargameProblemDto modifyProblemDto,
-                                                       @RequestPart(value = "file", required = false) MultipartFile file) {
-        Problem updatedProblem = problemService.updateProblemWithFile(modifyProblemDto, file);
+                                                       @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        ProblemDto updatedProblem = problemService.updateProblemWithFile(userId, id, modifyProblemDto, file);
         return ResponseEntity.ok(new MessageEntity("Problem updated successfully", updatedProblem));
     }
 

@@ -1,23 +1,28 @@
 package com.ns.solve.service.problem;
 
-import com.ns.solve.domain.Solved;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.Solved;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.problem.*;
 import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.problem.*;
+import com.ns.solve.domain.entity.problem.AlgorithmProblem;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.domain.vo.FileInfo;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import com.ns.solve.service.FileService;
-import com.ns.solve.utils.ProblemMapper;
+import com.ns.solve.utils.mapper.ProblemMapper;
+import com.ns.solve.utils.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,11 +52,11 @@ public class ProblemService {
      */
 
     @Transactional
-    public Problem createProblem(RegisterProblemDto registerProblemDto) {
+    public ProblemDto createProblem(Long userId, RegisterProblemDto registerProblemDto) {
         Problem problem = createProblemByType(registerProblemDto);
-        setCommonProblemFields(problem, registerProblemDto);
-
-        return problemRepository.save(problem);
+        setCommonProblemFields(problem, userId, registerProblemDto);
+        Problem saved = problemRepository.save(problem);
+        return ProblemMapper.mapperToProblemDto(saved);
     }
 
     private Problem createProblemByType(RegisterProblemDto registerProblemDto) {
@@ -76,24 +81,31 @@ public class ProblemService {
         return wargameProblem;
     }
 
-    private void setCommonProblemFields(Problem problem, RegisterProblemDto registerProblemDto) {
+    private void setCommonProblemFields(Problem problem, Long userId, RegisterProblemDto registerProblemDto) {
+        User user = userRepository.findById(userId).orElseThrow();
+        problem.setCreator(user);
+
         problem.setTitle(registerProblemDto.getTitle());
-        problem.setCreator(registerProblemDto.getCreator());
         problem.setDetail(registerProblemDto.getDetail());
         problem.setTags(registerProblemDto.getTags());
     }
 
-    private void setCommonProblemFields(Problem problem, ModifyProblemDto modifyProblemDto) {
+    private void setCommonProblemFields(Problem problem, Long userId, ModifyProblemDto modifyProblemDto) {
+        User user = userRepository.findById(userId).orElseThrow();
+        problem.setCreator(user);
+
         problem.setType(modifyProblemDto.getType());
         problem.setTitle(modifyProblemDto.getTitle());
-        problem.setCreator(modifyProblemDto.getCreator());
         problem.setDetail(modifyProblemDto.getDetail());
         problem.setTags(modifyProblemDto.getTags());
     }
 
 
-    public void uploadFile(Long problemId, MultipartFile file){
+    public void uploadFile(Long userId, Long problemId, MultipartFile file) {
         Problem problem = problemRepository.findById(problemId).orElseThrow(() -> new RuntimeException("Not found problem."));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Not found user."));
+
+        checkAuthorizationOrThrow(user, problem);
         handleFileUpload(file, problem);
     }
 
@@ -110,52 +122,67 @@ public class ProblemService {
                 wargameProblem.setProbelmFileSize(fileInfo.fileSize());
                 problemRepository.save(wargameProblem);
             } else {
-                throw new UnsupportedOperationException("File upload is only supported for WargameProblem.");
+                throw new UnsupportedOperationException("handleFileUpload only supported for WargameProblem.");
             }
         }
     }
 
 
     @Transactional
-    public Problem updateProblem(ModifyProblemDto modifyProblemDto) {
-        Problem existingProblem = problemRepository.findById(modifyProblemDto.getProblemId())
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + modifyProblemDto.getProblemId()));
+    public ProblemDto updateProblem(Long userId, Long problemId, ModifyProblemDto modifyProblemDto) {
+        Problem existingProblem = problemRepository.findById(problemId)
+                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
 
-        setCommonProblemFields(existingProblem, modifyProblemDto);
-        return problemRepository.save(existingProblem);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        checkAuthorizationOrThrow(user, existingProblem);
+        setCommonProblemFields(existingProblem, userId, modifyProblemDto);
+        Problem saved = problemRepository.save(existingProblem);
+        return ProblemMapper.mapperToProblemDto(saved);
     }
 
     @Transactional
-    public void deleteProblem(Long id) {
-        problemRepository.deleteById(id);
+    public void deleteProblem(Long userId, Long problemId) {
+        Problem problem = problemRepository.findById(problemId)
+                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        checkAuthorizationOrThrow(user, problem);
+        problemRepository.deleteById(problemId);
     }
 
     @Transactional
-    public Problem createProblemWithFile(RegisterProblemDto registerProblemDto, MultipartFile file) {
+    public ProblemDto createProblemWithFile(Long userId, RegisterProblemDto registerProblemDto, MultipartFile file) {
         Problem problem = createProblemByType(registerProblemDto);
 
-        setCommonProblemFields(problem, registerProblemDto);
-        problemRepository.save(problem);
-        handleFileUpload(file, problem);
-        return problem;
+        setCommonProblemFields(problem, userId, registerProblemDto);
+        Problem saved = problemRepository.save(problem);
+        handleFileUpload(file, saved);
+        return ProblemMapper.mapperToProblemDto(saved);
     }
 
 
     @Transactional
-    public Problem updateProblemWithFile(ModifyProblemDto modifyProblemDto, MultipartFile file) {
-        Problem existingProblem = problemRepository.findById(modifyProblemDto.getProblemId())
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + modifyProblemDto.getProblemId()));
+    public ProblemDto updateProblemWithFile(Long userId, Long problemId, ModifyProblemDto modifyProblemDto, MultipartFile file) {
+        Problem existingProblem = problemRepository.findById(problemId)
+                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
 
-        setCommonProblemFields(existingProblem, modifyProblemDto);
-        problemRepository.save(existingProblem);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        handleFileUpload(file, existingProblem);
-        return existingProblem;
+        checkAuthorizationOrThrow(user, existingProblem);
+        setCommonProblemFields(existingProblem, userId, modifyProblemDto);
+        Problem saved = problemRepository.save(existingProblem);
+        handleFileUpload(file, saved);
+        return ProblemMapper.mapperToProblemDto(saved);
     }
 
 
-    public Optional<Problem> getProblemById(Long id) {
-        return problemRepository.findById(id);
+    public Optional<ProblemDto> getProblemById(Long id) {
+        return problemRepository.findById(id).map(ProblemMapper::mapperToProblemDto);
     }
 
     public List<Problem> getAllProblems() {
@@ -171,9 +198,9 @@ public class ProblemService {
         Problem savedProblem = problemRepository.save(problem);
 
         if (savedProblem instanceof WargameProblem wargameProblem) {
-            return ProblemMapper.toWargameProblemDto(wargameProblem);
+            return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
-        throw new IllegalArgumentException("Not a WargameProblem");
+        throw new IllegalArgumentException("Not of type WargameProblem");
     }
 
     public WargameProblemDto getWargameProblemById(Long id) {
@@ -181,7 +208,7 @@ public class ProblemService {
                 .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + id));
 
         if (problem instanceof WargameProblem wargameProblem) {
-            return ProblemMapper.toWargameProblemDto(wargameProblem);
+            return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
         throw new IllegalArgumentException("Not of type WargameProblem");
     }
@@ -192,6 +219,14 @@ public class ProblemService {
 
     public Page<Problem> getPendingProblems(PageRequest pageRequest) {
         return problemRepository.findProblemsByStatusPending(pageRequest);
+    }
+
+    public Long getChekcedProblemsCount(){
+        return problemRepository.countCheckedProblems();
+    }
+
+    public Long getNewProblemsCount(LocalDateTime now){
+        return problemRepository.countNewProblems(now);
     }
 
     private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, String kind, String sortKind, boolean desc, PageRequest pageRequest) {
@@ -225,11 +260,13 @@ public class ProblemService {
         Page<User> firstSolverPage = solvedRepository.findFirstUserToSolveProblem(problemId, PageRequest.of(0, size));
 
         return firstSolverPage.getContent()
-                        .stream()
-                        .findFirst()
-                        .map(user -> new UserDto(user.getNickname(), user.getScore(), user.getLastActived()));
+                .stream()
+                .findFirst()
+                .map(user -> {
+                    List<String> solvedTitles = solvedRepository.findSolvedProblemTitlesByUserId(user.getId());
+                    return UserMapper.mapperToUserDto(user, solvedTitles);
+                });
     }
-
 
 
     @Transactional
@@ -247,7 +284,7 @@ public class ProblemService {
             problem.incrementCorrectCount();
 
             // 해당 문제를 푼 적 없는 경우, 사용자의 랭킹을 갱신합니다.
-            if(!solvedRepository.existsSolvedProblem(userId, problemId)){
+            if (!solvedRepository.existsSolvedProblem(userId, problemId)) {
                 if (user.getFieldScores() == null) {
                     user.setFieldScores(new HashMap<>());
                 }
@@ -280,7 +317,7 @@ public class ProblemService {
                     .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
 
             if (!(problem instanceof WargameProblem wargameProblem)) {
-                throw new UnsupportedOperationException("File download is only supported for WargameProblem.");
+                throw new UnsupportedOperationException("downloadProblemFile only supported for WargameProblem.");
             }
 
             if (wargameProblem.getProblemFile() == null) {
@@ -294,7 +331,24 @@ public class ProblemService {
 
             return resource;
         } catch (Exception e) {
-            throw new RuntimeException("File download failed", e);
+            throw new RuntimeException("downloadProblemFile failed:", e);
+        }
+    }
+
+    public String getImageForProblem(Long problemId) {
+        WargameProblem problem = (WargameProblem) problemRepository.findById(problemId)
+                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
+        return problem.getDockerfileLink();
+    }
+
+    public List<String> getSolvedProblemsTitle(Long userId) {
+        return solvedRepository.findSolvedProblemTitlesByUserId(userId);
+    }
+
+
+    private void checkAuthorizationOrThrow(User user, Problem problem) {
+        if (!user.isMemberAbove() && !problem.getCreator().equals(user)) {
+            throw new AccessDeniedException("수정/삭제 권한이 없습니다.");
         }
     }
 }

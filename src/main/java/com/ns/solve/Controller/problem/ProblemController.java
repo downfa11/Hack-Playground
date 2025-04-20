@@ -2,13 +2,15 @@ package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.*;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
+import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.service.problem.ProblemService;
+import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -20,10 +22,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -38,12 +43,15 @@ public class ProblemController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
     })
     @PostMapping
-    public ResponseEntity<MessageEntity> createProblem(@RequestBody RegisterProblemDto registerProblemDto) {
+    public ResponseEntity<MessageEntity> createProblem(@RequestBody RegisterProblemDto registerProblemDto, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
         if (registerProblemDto instanceof RegisterWargameProblemDto wargameDto) {
-            Problem createdProblem = problemService.createProblem(wargameDto);
+            ProblemDto createdProblem = problemService.createProblem(userId, wargameDto);
             return ResponseEntity.status(201).body(new MessageEntity("Problem created successfully", createdProblem));
         } else {
-            Problem createdProblem = problemService.createProblem(registerProblemDto);
+            ProblemDto createdProblem = problemService.createProblem(userId, registerProblemDto);
             return ResponseEntity.status(201).body(new MessageEntity("Problem created successfully", createdProblem));
         }
     }
@@ -55,8 +63,11 @@ public class ProblemController {
     })
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageEntity> updateProblem(@PathVariable Long id,
-                                                       @RequestPart ModifyProblemDto modifyProblemDto) {
-        Problem updatedProblem = problemService.updateProblem(modifyProblemDto);
+                                                       @RequestPart ModifyProblemDto modifyProblemDto, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        ProblemDto updatedProblem = problemService.updateProblem(userId, id, modifyProblemDto);
         return ResponseEntity.ok(new MessageEntity("Problem updated successfully", updatedProblem));
     }
 
@@ -68,7 +79,7 @@ public class ProblemController {
     @GetMapping
     public ResponseEntity<MessageEntity> getAllProblems() {
         List<Problem> problems = problemService.getAllProblems();
-        return ResponseEntity.ok(new MessageEntity("Problems fetched successfully", problems));
+        return ResponseEntity.ok(new MessageEntity("success", problems));
     }
 
     @Operation(summary = "문제 ID로 조회", description = "주어진 문제 ID로 문제를 조회합니다.")
@@ -78,7 +89,7 @@ public class ProblemController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<MessageEntity> getProblemById(@PathVariable Long id) {
-        Optional<Problem> problem = problemService.getProblemById(id);
+        Optional<ProblemDto> problem = problemService.getProblemById(id);
 
         if (problem.isPresent()) {
             return ResponseEntity.ok(new MessageEntity("Problem found", problem.get()));
@@ -93,8 +104,11 @@ public class ProblemController {
             @ApiResponse(responseCode = "404", description = "문제를 찾을 수 없습니다.")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<MessageEntity> deleteProblem(@PathVariable Long id) {
-        problemService.deleteProblem(id);
+    public ResponseEntity<MessageEntity> deleteProblem(@PathVariable Long id, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        problemService.deleteProblem(userId, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -123,8 +137,11 @@ public class ProblemController {
             @ApiResponse(responseCode = "404", description = "문제를 찾을 수 없습니다.")
     })
     @GetMapping("/{id}/solve")
-    public ResponseEntity<MessageEntity> solveProblem(@PathVariable Long id,@RequestParam Long userId, @RequestParam String flag){
-        return ResponseEntity.ok(new MessageEntity("Problem Solve Result", problemService.solveProblem(userId, id, flag)));
+    public ResponseEntity<MessageEntity> solveProblem(@PathVariable Long id, @RequestParam String flag, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(new MessageEntity("solveProblem Result", problemService.solveProblem(userId, id, flag)));
     }
 
     @Operation(summary = "첫 번째 문제 풀이 사용자 조회", description = "주어진 문제 ID에 대해 가장 먼저 문제를 푼 사용자를 조회합니다., size를 통해서 1명 말고 랭킹 형식으로 조회도 가능해요.")
@@ -136,16 +153,19 @@ public class ProblemController {
     public ResponseEntity<MessageEntity> firstBlood(@PathVariable Long id, @RequestParam int size) {
         Optional<UserDto> firstSolver = problemService.firstBlood(id, size);
         if (firstSolver.isPresent()) {
-            return ResponseEntity.ok(new MessageEntity("First solver found", firstSolver.get()));
+            return ResponseEntity.ok(new MessageEntity("First blood found", firstSolver.get()));
         } else {
-            return ResponseEntity.status(404).body(new MessageEntity("No solver found for this problem", null));
+            return ResponseEntity.status(404).body(new MessageEntity("Not found this problem", null));
         }
     }
 
     @PostMapping("/{problemId}/upload")
-    public ResponseEntity<MessageEntity> uploadFile(@PathVariable Long problemId, @RequestPart(value = "file") MultipartFile file) {
-        problemService.uploadFile(problemId, file);
-        return ResponseEntity.ok(new MessageEntity("fe ", "ew"));
+    public ResponseEntity<MessageEntity> uploadFile(@PathVariable Long problemId, @RequestPart(value = "file") MultipartFile file, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        problemService.uploadFile(userId, problemId, file);
+        return ResponseEntity.ok(new MessageEntity("uploadFile successfully", userId));
     }
 
     @GetMapping("/{problemId}/download")
@@ -155,4 +175,18 @@ public class ProblemController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFilename() + "\"")
                 .body(fileResource);
     }
+
+    @Operation(summary = "문제 통계 조회", description = "검수 완료된 문제 수와 최근 한 달 내 추가된 문제 수를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "통계가 성공적으로 조회되었습니다."),
+    })
+    @GetMapping("/statistics")
+    public ResponseEntity<MessageEntity> getProblemStatistics() {
+        Long checkedCount = problemService.getChekcedProblemsCount();
+        Long newCount = problemService.getNewProblemsCount(LocalDateTime.now());
+
+        return ResponseEntity.ok(new MessageEntity("successful",
+                Map.of("checkedCount", checkedCount, "newCount", newCount)));
+    }
+
 }
