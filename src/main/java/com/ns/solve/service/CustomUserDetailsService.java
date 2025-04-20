@@ -2,7 +2,7 @@ package com.ns.solve.service;
 
 
 import com.ns.solve.utils.CustomUserDetails;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -18,12 +18,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByNickname(username);
+    public UserDetails loadUserByUsername(String account) throws UsernameNotFoundException {
+        User user = userRepository.findByAccount(account);
 
-        if (user != null) {
-            return new CustomUserDetails(user);
+        if (user == null) {
+            throw new UsernameNotFoundException("Not found account: " + account);
         }
-        return null;
+
+        return new CustomUserDetails(user);
     }
 }

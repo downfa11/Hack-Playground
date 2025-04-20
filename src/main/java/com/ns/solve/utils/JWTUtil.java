@@ -11,35 +11,43 @@ import java.util.Date;
 
 @Component
 public class JWTUtil {
+    private static final String CLAIM_ID = "userId";
+    private static final String CLAIM_ACCOUNT = "account";
+    private static final String CLAIM_ROLE = "role";
 
     private SecretKey secretKey;
 
     public JWTUtil(@Value("${spring.jwt.secret}")String secret) {
-
-
-        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
-    }
-
-    public String getUsername(String token) {
-
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("username", String.class);
-    }
-
-    public String getRole(String token) {
-
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
+        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build()
+                .getAlgorithm());
     }
 
     public Boolean isExpired(String token) {
-
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
+        try {
+            return Jwts.parser().verifyWith(secretKey).build()
+                    .parseSignedClaims(token).getPayload().getExpiration().before(new Date());
+        } catch (Exception e) {
+            return true;
+        }
     }
 
-    public String createJwt(String username, String role, Long expiredMs) {
 
+
+    public String getAccount(String token) {
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload().get(CLAIM_ACCOUNT, String.class);
+    }
+
+    public String getRole(String token) {
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload().get(CLAIM_ROLE, String.class);
+    }
+
+    public String createJwt(Long userId, String account, String role, Long expiredMs) {
         return Jwts.builder()
-                .claim("username", username)
-                .claim("role", role)
+                .claim(CLAIM_ACCOUNT, account)
+                .claim(CLAIM_ROLE, role)
+                .claim(CLAIM_ID, userId)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)

@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,8 +17,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.util.Collection;
 import java.util.Iterator;
 
+@Slf4j
 @RequiredArgsConstructor
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
+    @Value("${jwt.access.expiration}")
+    public Long ACCESS_TOKEN_EXPIRATION;
 
     private final AuthenticationManager authenticationManager;
     private final JWTUtil jwtUtil;
@@ -38,22 +43,23 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
-        System.out.println("login success.");
+        log.info("login success.");
 
         Authentication auths = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("SecurityContextHolder.getContext().getAuthentication() in successfulAuthentication: " + auths);
+        log.info("SecurityContextHolder.getContext().getAuthentication() in successfulAuthentication: " + auths);
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        String username = customUserDetails.getUsername();
+        Long userId = customUserDetails.getUserId();
+        String account = customUserDetails.getUsername();
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
 
         String role = auth.getAuthority();
-
-        String token = jwtUtil.createJwt(username, role, 10*60*60*10L);
+        log.info("login to success logging userId: " + userId);
+        String token = jwtUtil.createJwt(userId, account, role, ACCESS_TOKEN_EXPIRATION);
 
         response.addHeader("Authorization", "Bearer " + token);
     }
@@ -61,8 +67,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     //로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        System.out.println("login fail.");
-
+        log.info("login fail.");
         response.setStatus(401);
     }
 }
