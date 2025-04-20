@@ -1,11 +1,14 @@
 package com.ns.solve.config;
 
+import com.ns.solve.repository.UserRepository;
+import com.ns.solve.service.UserService;
 import com.ns.solve.utils.JWTFilter;
 import com.ns.solve.utils.JWTUtil;
 import com.ns.solve.utils.LoginFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,52 +31,32 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final AuthenticationConfiguration authenticationConfiguration;
+    private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-
-                                .requestMatchers("/swagger-ui/**").permitAll()
-                                .requestMatchers("/login").permitAll()
-                                //.requestMatchers("/api/admin/**").hasRole("ADMIN")
-//                        .requestMatchers("/problem/**").hasRole("MANAGER")
-//                        .requestMatchers("/**").hasRole("USER")
-//                        .anyRequest().authenticated()
-                                .anyRequest().permitAll()
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll()
-                )
+        return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class)
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth //.anyRequest().permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**","/swagger-ui.html", "/v3/api-docs/**",
+                                "/login", "/reissue", "/token-validate"
+                                ,"/api/admin/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/problems/statistics",
+                                "/api/problems/completed",
+                                "/api/boards"
+                        ).permitAll()
+                        // .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(new JWTFilter(userRepository,jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .build();
-    }
-
-    @Bean
-    public UserDetailsService inMemoryUserDetailsService() {
-        UserDetails user = User.withUsername("user")
-                .password(bCryptPasswordEncoder().encode("password"))
-                .roles("MEMBER")
-                .build();
-
-        return new InMemoryUserDetailsManager(user);
-    }
-
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -82,20 +65,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOriginPattern("*");
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 }
-
-
 
 
