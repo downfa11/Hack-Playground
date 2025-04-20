@@ -4,11 +4,13 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GitService {
@@ -29,9 +31,9 @@ public class GitService {
                     .setDirectory(repoDir)
                     .call();
 
-            System.out.println("Repository '" + repoName + "' cloned successfully. " + fullLocalPath);
+            log.info("Repository '" + repoName + "' cloned successfully. " + fullLocalPath);
         } else {
-            System.out.println("Repository '" + repoName + "' already exists at " + fullLocalPath);
+            log.info("Repository '" + repoName + "' already exists at " + fullLocalPath);
         }
     }
 
@@ -42,7 +44,7 @@ public class GitService {
 
     public void deleteDirectory(File file) {
         if (file == null || !file.exists()) {
-            System.out.println("File or directory does not exist: " + file);
+            log.info("File or directory not exist: " + file);
             return;
         }
 
@@ -56,9 +58,9 @@ public class GitService {
         }
 
         if (file.delete()) {
-            System.out.println("Deleted: " + file.getAbsolutePath());
+            log.info("Deleted: " + file.getAbsolutePath());
         } else {
-            System.out.println("Failed to delete: " + file.getAbsolutePath());
+            log.info("Failed to delete: " + file.getAbsolutePath());
         }
     }
 

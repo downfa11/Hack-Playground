@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import java.time.LocalDateTime;
 
-import com.ns.solve.domain.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

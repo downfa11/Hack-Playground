@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecr.model.GetAuthorizationTokenResponse;
 @RequiredArgsConstructor
 public class DockerService {
 
-    @Value("${ecr.image.uri:473749683913.dkr.ecr.ap-northeast-2.amazonaws.com/downfa11/solve}")
+    @Value("${ecr.image.uri}")
     private String ecrURI;
 
     @Value("${aws.ecr.region:ap-northeast-2}")
@@ -145,7 +145,7 @@ public class DockerService {
 
             return "Docker image " + imageName + " built successfully!";
         } catch (Exception e) {
-            return "Error building Docker image: " + e.getMessage();
+            return "buildDockerImage error: " + e.getMessage();
         }
     }
 
@@ -170,9 +170,9 @@ public class DockerService {
 
             dockerClient.startContainerCmd(container.getId()).exec();
 
-            return "Container started with ID: " + container.getId();
+            return "runDockerContainer successfully: " + container.getId();
         } catch (Exception e) {
-            return "Error starting container: " + e.getMessage();
+            return "runDockerContainer error: " + e.getMessage();
         }
     }
 

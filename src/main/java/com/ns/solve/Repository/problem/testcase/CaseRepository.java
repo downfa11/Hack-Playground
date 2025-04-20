@@ -1,6 +1,6 @@
 package com.ns.solve.repository.problem.testcase;
 
-import com.ns.solve.domain.problem.Case;
+import com.ns.solve.domain.entity.problem.Case;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -2,7 +2,7 @@ package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.MessageEntity;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
-import com.ns.solve.domain.problem.Problem;
+import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.DummyGenerator;
 import io.swagger.v3.oas.annotations.Operation;

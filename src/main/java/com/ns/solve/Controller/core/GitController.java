@@ -20,7 +20,7 @@ public class GitController {
             gitService.cloneRepository(repoUrl);
             return ResponseEntity.ok("Repository cloned successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to clone repository: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to cloneGitRepository : " + e.getMessage());
         }
     }
 
@@ -30,7 +30,7 @@ public class GitController {
             gitService.deleteDirectory(repoName);
             return ResponseEntity.ok("Repository directory deleted successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to delete repository: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to deleteGitRepository : " + e.getMessage());
         }
     }
 }

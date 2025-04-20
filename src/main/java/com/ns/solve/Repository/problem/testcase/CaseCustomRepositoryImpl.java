@@ -1,7 +1,7 @@
 package com.ns.solve.repository.problem.testcase;
 
-import com.ns.solve.domain.problem.Case;
-import com.ns.solve.domain.problem.QCase;
+import com.ns.solve.domain.entity.problem.Case;
+import com.ns.solve.domain.entity.problem.QCase;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;

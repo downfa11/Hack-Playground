@@ -1,18 +1,15 @@
 package com.ns.solve.utils;
 
-import com.ns.solve.domain.Board;
-import com.ns.solve.domain.Role;
-import com.ns.solve.domain.Comment;
-import com.ns.solve.domain.Solved;
-import com.ns.solve.domain.User;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.ProblemType;
-import com.ns.solve.domain.problem.WargameProblem;
+import com.ns.solve.domain.entity.*;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.repository.CommentRepository;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Random;
 
+@Slf4j
 @Component
 public class DummyGenerator {
 
@@ -42,12 +40,12 @@ public class DummyGenerator {
         generateDummyProblemsAndComments(userCount, problemCount, probelmCommentCount);
         generateDummySolvedData(userCount, problemCount, solvedCount);
 
-        System.out.println("dummy create successfully.");
+        log.info("dummy create successfully.");
     }
 
     @Transactional
     public void generateDummyUsers(int userCount) {
-        System.out.println("generateDummyUsers");
+        log.info("generateDummyUsers");
 
         for (int i = 1; i <= userCount; i++) {
             User user = new User();
@@ -65,16 +63,16 @@ public class DummyGenerator {
 
     @Transactional
     public void generateDummyBoardsAndComments(int userCount, int problemCount, int commentCount) {
-        System.out.println("generateDummyBoardsAndComments");
+        log.info("generateDummyBoardsAndComments");
 
         for (int i = 1; i <= problemCount; i++) {
             Board board = new Board();
             board.setTitle("Board Title " + i);
-            board.setType(i % 2 == 0 ? "공지사항" : "자유게시판");
+            board.setType(i % 2 == 0 ? BoardType.ANNOUNCE : BoardType.FREE);
 
             User creator = userRepository.findById(RANDOM.nextLong(1, userCount)).orElseThrow();
             board.setCreator(creator);
-
+            board.setContents("tset contents " + i);
             board.setCreatedAt(LocalDateTime.now());
             board.setUpdatedAt(LocalDateTime.now());
             boardRepository.save(board);
@@ -82,7 +80,7 @@ public class DummyGenerator {
             for (int j = 1; j <= commentCount; j++) {
                 Comment comment = new Comment();
                 comment.setContent("Comment content for board " + i + " - " + j);
-                comment.setType("board");
+                comment.setType(CommentType.BOARD);
                 comment.setCreator(creator);
                 comment.setBoard(board);
 
@@ -95,14 +93,14 @@ public class DummyGenerator {
 
     @Transactional
     public void generateDummyProblemsAndComments(int userCount, int boardCount, int commentCount) {
-        System.out.println("generateDummyProblemsAndComments");
+        log.info("generateDummyProblemsAndComments");
 
         for (int i = 1; i <= boardCount; i++) {
             WargameProblem problem = new WargameProblem();
             problem.setTitle("Problem Title " + i);
             problem.setIsChecked(i % 2 == 0);
             problem.setType(ProblemType.WARGAME);
-            problem.setCreator("creator" + i);
+            problem.setCreator(userRepository.findById(RANDOM.nextLong(1, userCount)).orElseThrow());
             problem.setAttemptCount(0);
             problem.setEntireCount(0.0);
             problem.setCorrectCount(0.0);
@@ -117,7 +115,7 @@ public class DummyGenerator {
             for (int j = 1; j <= commentCount; j++) {
                 Comment comment = new Comment();
                 comment.setContent("Comment content for problem " + i + " - " + j);
-                comment.setType("problem");
+                comment.setType(CommentType.PROBLEM);
                 comment.setCreator(userRepository.findById(RANDOM.nextLong(1, userCount)).orElseThrow());
                 comment.setProblem(savedProblem);
 
@@ -131,7 +129,7 @@ public class DummyGenerator {
 
     @Transactional
     public void generateDummySolvedData(int userCount, int problemCount, int solvedCount) {
-        System.out.println("generateDummySolvedData");
+        log.info("generateDummySolvedData");
 
         for (int i = 1; i <= problemCount; i++) {
             Problem problem = problemRepository.findById((long) i).orElseThrow();
