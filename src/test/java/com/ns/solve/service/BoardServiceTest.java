@@ -3,8 +3,10 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ns.solve.domain.Board;
-import com.ns.solve.domain.User;
+import com.ns.solve.domain.dto.board.BoardDto;
+import com.ns.solve.domain.entity.Board;
+import com.ns.solve.domain.entity.BoardType;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.board.BoardSummary;
 import com.ns.solve.domain.dto.board.RegisterBoardDto;
 import com.ns.solve.domain.dto.board.ModifyBoardDto;
@@ -43,18 +45,19 @@ class BoardServiceTest {
         testBoard = new Board();
         testBoard.setId(1L);
         testBoard.setTitle("title");
-        testBoard.setType("free");
+        testBoard.setType(BoardType.FREE);
         testBoard.setCreator(testUser);
     }
 
     @Test
     void testCreateBoard() {
-        RegisterBoardDto dto = new RegisterBoardDto(1L, "title", "free", "testUser", "details");
+        Long userId = 1L;
+        RegisterBoardDto dto = new RegisterBoardDto("title", BoardType.FREE, "details");
 
-        when(userRepository.findById(dto.userId())).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(boardRepository.save(any(Board.class))).thenReturn(testBoard);
 
-        Board createdBoard = boardService.createBoard(dto);
+        BoardDto createdBoard = boardService.createBoard(userId, dto);
 
         assertNotNull(createdBoard);
         assertEquals(dto.title(), createdBoard.getTitle());
@@ -79,7 +82,7 @@ class BoardServiceTest {
     void testGetBoardById() {
         when(boardRepository.findById(1L)).thenReturn(Optional.of(testBoard));
 
-        Optional<Board> board = boardService.getBoardById(1L);
+        Optional<BoardDto> board = boardService.getBoardById(1L);
 
         assertTrue(board.isPresent());
         assertEquals(testBoard.getTitle(), board.get().getTitle());
@@ -88,19 +91,20 @@ class BoardServiceTest {
 
     @Test
     void testUpdateBoard() {
-        ModifyBoardDto dto = new ModifyBoardDto(1L,1L, "new title", "notice", "updated details");
+        Long userId = 1L, boardId = 1L;
+        ModifyBoardDto dto = new ModifyBoardDto( "new title", BoardType.ANNOUNCE, "updated details");
 
         when(boardRepository.findById(1L)).thenReturn(Optional.of(testBoard));
-        when(userRepository.findById(dto.userId())).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(boardRepository.save(any(Board.class))).thenReturn(testBoard);
 
-        Board updatedBoard = boardService.updateBoard(dto);
+        BoardDto updatedBoard = boardService.updateBoard(userId, boardId, dto);
 
         assertNotNull(updatedBoard);
         assertEquals(dto.title(), updatedBoard.getTitle());
         assertEquals(dto.type(), updatedBoard.getType());
         assertEquals(testUser, updatedBoard.getCreator());
-        verify(boardRepository, times(1)).findById(1L);
+        verify(boardRepository, times(1)).findById(boardId);
         verify(boardRepository, times(1)).save(any(Board.class));
     }
 
@@ -108,21 +112,22 @@ class BoardServiceTest {
     void testDeleteBoard() {
         doNothing().when(boardRepository).deleteById(1L);
 
-        boardService.deleteBoard(1L);
+        boardService.deleteBoard(1L, 1L);
 
         verify(boardRepository, times(1)).deleteById(1L);
     }
 
     @Test
     void testGetBoards() {
+        String boardType = "free";
         Pageable pageable = PageRequest.of(0, 10);
         Page<BoardSummary> page = new PageImpl<>(List.of());
 
-        when(boardRepository.findBoardsByPage(pageable, true)).thenReturn(page);
+        when(boardRepository.findBoardsByPage(boardType, pageable, true)).thenReturn(page);
 
-        Page<BoardSummary> result = boardService.getBoards(pageable, true);
+        Page<BoardSummary> result = boardService.getBoards(boardType, pageable, true);
 
         assertNotNull(result);
-        verify(boardRepository, times(1)).findBoardsByPage(pageable, true);
+        verify(boardRepository, times(1)).findBoardsByPage(boardType, pageable, true);
     }
 }
