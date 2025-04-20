@@ -1,16 +1,19 @@
 package com.ns.solve.repository.problem;
 
-import com.ns.solve.domain.QComment;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
-import com.ns.solve.domain.problem.Problem;
-import com.ns.solve.domain.problem.ProblemType;
-import com.ns.solve.domain.problem.QProblem;
-import com.ns.solve.domain.problem.QWargameProblem;
+import com.ns.solve.domain.dto.problem.QProblemSummary;
+import com.ns.solve.domain.entity.QComment;
+import com.ns.solve.domain.entity.problem.*;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +26,7 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     private final QProblem qProblem;
     private final QComment qComment;
 
-    public ProblemCustomRepositoryImpl(JPAQueryFactory jpaQueryFactory){
+    public ProblemCustomRepositoryImpl(JPAQueryFactory jpaQueryFactory) {
         this.jpaQueryFactory = jpaQueryFactory;
         this.qWargameProblem = QWargameProblem.wargameProblem;
         this.qProblem = QProblem.problem;
@@ -50,14 +53,52 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     }
 
     @Override
-    public Boolean matchFlagToProblems(Long problemId, String attemptedFlag ) {
-        String correctFlag  = jpaQueryFactory.select(qWargameProblem.flag)
+    public Boolean matchFlagToProblems(Long problemId, String attemptedFlag) {
+        String correctFlag = jpaQueryFactory.select(qWargameProblem.flag)
                 .from(qWargameProblem)
                 .where(qWargameProblem.id.eq(problemId))
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetchOne();
 
-        return Objects.equals(attemptedFlag , correctFlag );
+        return Objects.equals(attemptedFlag, correctFlag);
+    }
+
+    @Override
+    public List<WargameProblem> findByTypeWargame(ProblemType wargameType) {
+        return jpaQueryFactory.selectFrom(qWargameProblem)
+                .where(qWargameProblem.type.eq(wargameType))
+                .fetch();
+    }
+
+    @Override
+    public Problem findProblemWithLock(Long problemId) {
+        return jpaQueryFactory.selectFrom(qProblem)
+                .where(qProblem.id.eq(problemId))
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetchOne();
+    }
+
+    @Override
+    public long countCheckedProblems() {
+        Long count = jpaQueryFactory
+                .select(Wildcard.count)
+                .from(qProblem)
+                .where(qProblem.isChecked.isTrue())
+                .fetchOne();
+
+        return count != null ? count : 0L;
+    }
+
+    @Override
+    public long countNewProblems(LocalDateTime now) {
+        Long count = jpaQueryFactory
+                .select(Wildcard.count)
+                .from(qProblem)
+                .where(qProblem.isChecked.isTrue()
+                                .and(qProblem.createdAt.goe(now.minusMonths(1))))
+                .fetchOne();
+
+        return count != null ? count : 0L;
     }
 
 
@@ -78,37 +119,38 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     }
 
     private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(ProblemType type, String kind, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
-        BooleanExpression condition = typeEq(type);
+        BooleanExpression condition = qProblem.isChecked.isTrue().and(typeEq(type));
         BooleanExpression kindCondition = kindEq(kind);
 
         if (kindCondition != null) {
             condition = condition.and(kindCondition);
         }
 
+        OrderSpecifier<T> orderSpecifier = desc ? sortField.desc() : sortField.asc();
+
         List<ProblemSummary> results = jpaQueryFactory
-                .selectFrom(qWargameProblem)
-                .leftJoin(qWargameProblem.commentList, qComment)
-                .where(qWargameProblem.isChecked.isTrue().and(condition))
+                .select(new QProblemSummary(
+                        qProblem.id,
+                        qProblem.title,
+                        qWargameProblem.level,
+                        qProblem.correctCount.divide(qProblem.entireCount.coalesce(0.0)),
+                        qProblem.creator.nickname,
+                        qWargameProblem.kind,
+                        qProblem.updatedAt
+                ))
+                .from(qProblem)
+                .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
+                .where(condition)
+                .orderBy(orderSpecifier)
                 .offset(pageRequest.getOffset())
                 .limit(pageRequest.getPageSize())
-                .orderBy(desc ? sortField.desc() : sortField.asc())
-                .fetch()
-                .stream()
-                .map(problem -> new ProblemSummary(
-                        problem.getId(),
-                        null,
-                        problem.getTitle(),
-                        problem.getLevel(),
-                        problem.getCorrectCount() / (double) problem.getEntireCount(),
-                        problem.getCreator(),
-                        problem.getKind(),
-                        problem.getUpdatedAt()
-                ))
-                .toList();
+                .fetch();
+
 
         long total = jpaQueryFactory
-                .selectFrom(qWargameProblem)
-                .where(qWargameProblem.isChecked.isTrue().and(condition))
+                .selectFrom(qProblem)
+                .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
+                .where(condition)
                 .fetchCount();
 
         return new PageImpl<>(results, pageRequest, total);
