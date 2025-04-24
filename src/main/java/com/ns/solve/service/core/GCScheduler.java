@@ -20,8 +20,8 @@ public class GCScheduler {
 
     private final KubernetesAdapter kubernetesAdapter;
 
-    // 주기적으로 모든 Pod의 상태 확인 후, TTL 초과된 Pod 삭제
-    @Scheduled(fixedDelay = 60_000)
+
+    @Scheduled(fixedDelay = 10 * 60_000)
     public void cleanExpiredPods() {
         log.info("[GC] Expired pod check start");
 

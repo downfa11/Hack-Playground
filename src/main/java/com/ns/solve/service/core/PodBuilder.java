@@ -10,14 +10,16 @@ import java.util.Map;
 public class PodBuilder {
     public static V1PodSpec buildPodSpec(String name, String image, List<String> command, List<String> args) {
         return new V1PodSpec()
-                .containers(List.of(buildContainer(name, image, command, args)))
+                .containers(List.of(buildContainer(name, image, command, args), buildSidecarContainer()))
                 .restartPolicy("Never")
                 // .runtimeClassName("gvisor")
                 .securityContext(new V1PodSecurityContext()
                         //.runAsNonRoot(true)
                         .seccompProfile(new V1SeccompProfile().type("RuntimeDefault")))
-                .automountServiceAccountToken(false);
+                .automountServiceAccountToken(false)
+                .volumes(List.of(sharedVolume())); // sidecar로 받기 위해서 공유 볼륨 설정
     }
+
     private static V1Container buildContainer(String name, String image, List<String> command, List<String> args) {
         return new V1Container()
                 .name(name + "-container")
@@ -31,6 +33,7 @@ public class PodBuilder {
                         )
                 .resources(createResourceRequirements());
     }
+
     public static V1ResourceRequirements createResourceRequirements() {
         return new V1ResourceRequirements()
                 .limits(Map.of(
@@ -42,6 +45,7 @@ public class PodBuilder {
                         "memory", new Quantity("256Mi")
                 ));
     }
+
     public static String sanitizeName(String name) {
         // kubernetes 네이밍 규칙으로 변환
         return name.toLowerCase()
@@ -49,6 +53,7 @@ public class PodBuilder {
                 .replaceAll("^[^a-z0-9]+", "")
                 .replaceAll("[^a-z0-9]+$", "");
     }
+
     public static String getPodName(Long userId, Long problemId) {
         return sanitizeName(userId + "-" + problemId);
     }
@@ -93,5 +98,38 @@ public class PodBuilder {
                                         ))))));
     }
 
+    private static V1Container buildSidecarContainer() {
+        return new V1Container()
+                .name("proxy-sidecar")
+                .image("downfall/envoy:latest") // Istio의 Envoy를 써서 더 유연한 처리 가능
+                .ports(List.of(new V1ContainerPort().containerPort(1337)))
+                .env(List.of(
+                        envVar("PROXY_INBOUND_PORT", "1337"),
+                        envVar("PROXY_OUTBOUND_PORT", "1338"),
+                        envVar("LAST_ACCESS_FILE", "/shared/last-accessed")
+                ))
+                .volumeMounts(List.of(sharedVolumeMount()))
+                .resources(createResourceRequirements())
+                .securityContext(new V1SecurityContext()
+                        .allowPrivilegeEscalation(false)
+                        .runAsUser(1000L)); // 사용자 1000 권한 부여
+        // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
+    }
+
+    private static V1Volume sharedVolume() {
+        return new V1Volume()
+                .name("shared")
+                .emptyDir(new V1EmptyDirVolumeSource());
+    }
+
+    private static V1VolumeMount sharedVolumeMount() {
+        return new V1VolumeMount()
+                .name("shared")
+                .mountPath("/shared");
+    }
+
+    private static V1EnvVar envVar(String name, String value) {
+        return new V1EnvVar().name(name).value(value);
+    }
 
 }

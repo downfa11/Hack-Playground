@@ -9,10 +9,10 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -20,7 +20,9 @@ import java.util.*;
 @Slf4j
 public class KubernetesAdapter {
     public static final String NAMESPACE = "default";
-    public static final String TRAEFIK_LOG_PATH = "/var/log/traefik/access.log";
+
+    @Value("${last.accessed.file.path}")
+    private String lastAccessedFilePath;
 
     private final CoreV1Api coreApi;
     private final CustomObjectsApi customObjectsApi;
@@ -161,8 +163,7 @@ public class KubernetesAdapter {
         return false;
     }
 
-    // 해당 Pod에게 input 입력값 실행, command는 추가 명령어
-
+    // 해당 Pod에게 input 입력값 실행, command는 추가 명령어 - 기본적인 쉘 명령어 실행과 결과 반환 정도
     public String executeCommand(String podName, String... command) {
         List<String> commandList = new ArrayList<>();
         commandList.add("kubectl");
@@ -192,51 +193,41 @@ public class KubernetesAdapter {
         return shared ? "https://shared-" + podName + ".solve.your-domain.com" : "https://" + podName + ".solve.your-domain.com";
     }
 
-    // Traefik의 AccessLog 읽기
     public Optional<Long> getLatestRequestTimestamp(String podName) {
         try {
-            String logContent = executeCommand(podName, "cat", TRAEFIK_LOG_PATH);
-            return extractLatestTimestampFromLogs(logContent);
+            String commandOutput = execPodCommand(podName, NAMESPACE, List.of("cat", lastAccessedFilePath));
+
+            if (commandOutput == null || commandOutput.isBlank()) return Optional.empty();
+
+            long timestamp = Long.parseLong(commandOutput.trim()) * 1000;
+            return Optional.of(timestamp);
         } catch (Exception e) {
-            log.error("Failed to read Traefik logs from pod {}: {}", podName, e.getMessage());
+            log.warn("[K8S] Failed to read access time for {}: {}", podName, e.getMessage());
             return Optional.empty();
         }
     }
 
-    // Traefik 로그에서 최신 요청 시간 추출
-    private Optional<Long> extractLatestTimestampFromLogs(String logContent) {
+
+    // Pod 안에서 직접 작업 처리를 위한 용도
+    private String execPodCommand(String podName, String namespace, List<String> command) {
+        List<String> fullCommand = new ArrayList<>();
+        fullCommand.add("kubectl");
+        fullCommand.add("exec");
+        fullCommand.add(podName);
+        fullCommand.add("--namespace=" + namespace);
+        fullCommand.add("--");
+        fullCommand.addAll(command);
+
+        ProcessBuilder processBuilder = new ProcessBuilder(fullCommand);
+
         try {
-            String[] logLines = logContent.split("\n");
-            long latestTimestamp = 0;
-            for (String logLine : logLines) {
-                String timeStr = extractTimeFromLogLine(logLine);
-                if (timeStr != null) {
-                    long timestamp = parseDateToTimestamp(timeStr);
-                    latestTimestamp = Math.max(latestTimestamp, timestamp);
-                }
+            Process process = processBuilder.start();
+            try (Scanner scanner = new Scanner(process.getInputStream())) {
+                return scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
             }
-            return latestTimestamp > 0 ? Optional.of(latestTimestamp) : Optional.empty();
-        } catch (Exception e) {
-            log.error("Failed to extract latest timestamp from logs", e);
-            return Optional.empty();
+        } catch (IOException e) {
+            log.error("Error executing command on pod {}: {}", podName, e.getMessage());
+            return null;
         }
     }
-
-    private String extractTimeFromLogLine(String logLine) {
-        int startIdx = logLine.indexOf("\"time\":\"");
-        if (startIdx == -1) return null;
-
-        int endIdx = logLine.indexOf("\"", startIdx + 8);
-        return logLine.substring(startIdx + 8, endIdx);
-    }
-
-    private long parseDateToTimestamp(String dateStr) {
-        try {
-            return Instant.parse(dateStr).toEpochMilli();
-        } catch (Exception e) {
-            log.error("Failed to parse date: {}", dateStr, e);
-            return 0;
-        }
-    }
-
 }
