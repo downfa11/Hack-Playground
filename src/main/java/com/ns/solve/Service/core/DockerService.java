@@ -7,24 +7,18 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
-import com.github.dockerjava.core.command.PushImageResultCallback;
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.ecr.EcrClient;
-import software.amazon.awssdk.services.ecr.model.GetAuthorizationTokenRequest;
-import software.amazon.awssdk.services.ecr.model.GetAuthorizationTokenResponse;
+
+import java.io.File;
+import java.nio.file.Path;
 
 @Service
 @RequiredArgsConstructor
 public class DockerService {
 
-    @Value("${ecr.image.uri}")
+    @Value("${ecr.image.uri:}")
     private String ecrURI;
 
     @Value("${aws.ecr.region:ap-northeast-2}")
@@ -50,43 +44,6 @@ public class DockerService {
             return DOCKERFILE_BUILD_SUCCESS_MESSAGE + repoName;
         } catch (Exception e) {
             return DOCKERFILE_BUILD_FAIL_MESSAGE + e.getMessage();
-        }
-    }
-
-    public String pushImage(String repoName){
-        String ecrTag = ecrURI + ":" + repoName;
-
-        try {
-            String authToken = getECRAuthorizationToken(region);
-            String usernamePassword = new String(Base64.getDecoder().decode(authToken));
-            String[] split = usernamePassword.split(":");
-            String username = split[0];
-            String password = split[1];
-
-            dockerClient.authConfig().withUsername(username).withPassword(password)
-                    .withRegistryAddress(ecrURI);
-
-            dockerClient.pushImageCmd(ecrTag)
-                    .exec(new PushImageResultCallback())
-                    .awaitCompletion();
-
-            return  ECR_IMAGE_PUSH_SUCCESS_MESSAGE + ecrTag;
-
-        } catch(Exception e){
-            e.printStackTrace();
-            return  ECR_IMAGE_PUSH_FAIL_MESSAGE + ecrTag;
-        }
-    }
-
-    private String getECRAuthorizationToken(String region) {
-        try (EcrClient ecrClient = EcrClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .build()) {
-
-            GetAuthorizationTokenResponse response = ecrClient.getAuthorizationToken(
-                    GetAuthorizationTokenRequest.builder().build());
-            return response.authorizationData().get(0).authorizationToken();
         }
     }
 

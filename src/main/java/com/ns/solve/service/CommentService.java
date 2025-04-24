@@ -13,6 +13,8 @@ import java.util.Optional;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
+import com.ns.solve.utils.exception.ErrorCode.CommentErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -32,16 +34,16 @@ public class CommentService {
         comment.setType(registerCommentDto.type());
 
         User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
         comment.setCreator(creator);
 
         if ("problem".equals(registerCommentDto.type())) {
             Problem problem = problemRepository.findById(registerCommentDto.parentId())
-                    .orElseThrow(() -> new RuntimeException("Problem not found"));
+                    .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Problem not found"));
             comment.setProblem(problem);
         } else {
             Board board = boardRepository.findById(registerCommentDto.parentId())
-                    .orElseThrow(() -> new RuntimeException("Free Board not found"));
+                    .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Free Board not found"));
             comment.setBoard(board);
         }
 
@@ -58,9 +60,9 @@ public class CommentService {
     }
     public Comment updateComment(Long userId, Long commentId, ModifyCommentDto modifyCommentDto) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Comment not found"));
         User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
 
         checkAuthorizationOrThrow(user, comment);
         comment.setType(modifyCommentDto.type());
@@ -70,9 +72,9 @@ public class CommentService {
     public void deleteComment(Long userId, Long commentId)
     {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Comment not found"));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
 
         checkAuthorizationOrThrow(user, comment);
         commentRepository.deleteById(commentId);
