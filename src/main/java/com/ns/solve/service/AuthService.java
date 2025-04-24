@@ -5,6 +5,8 @@ import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.user.JWtToken;
 import com.ns.solve.domain.dto.user.LoginUserRequest;
 import com.ns.solve.utils.JWTUtil;
+import com.ns.solve.utils.exception.SolvedException;
+import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +31,10 @@ public class AuthService {
 
     public JWtToken login(LoginUserRequest request) {
         User user = userService.getUserByAccount(request.getAccount());
-        if (user == null) return null;
+        if (user == null) throw new SolvedException(UserErrorCode.USER_NOT_FOUND);
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return null;
+            throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
         }
 
         String jwt = jwtUtil.createJwt(user.getId(), user.getAccount(), user.getRole().name(), ACCESS_TOKEN_EXPIRATION);
@@ -60,13 +62,15 @@ public class AuthService {
     }
 
     public JWtToken reissue(String refreshToken) {
-        if (!validateJwtToken(refreshToken)) return null;
+        if (!validateJwtToken(refreshToken)) {
+            throw new SolvedException(UserErrorCode.ACCESS_DENIED);
+        }
 
         String account = jwtUtil.getAccount(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
 
         User user = userService.getUserByAccount(account);
-        if (user == null) return null;
+        if (user == null) throw new SolvedException(UserErrorCode.USER_NOT_FOUND);
 
         String newAccessToken = jwtUtil.createJwt(user.getId(), user.getAccount(), role, ACCESS_TOKEN_EXPIRATION);
         return JWtToken.generateJwtToken(String.valueOf(user.getId()), user.getNickname(), newAccessToken, refreshToken);
