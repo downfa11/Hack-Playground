@@ -1,12 +1,15 @@
 package com.ns.solve.service.problem;
 
-import com.ns.solve.domain.entity.Solved;
-import com.ns.solve.domain.entity.User;
-import com.ns.solve.domain.dto.problem.*;
+import com.ns.solve.domain.dto.problem.ModifyProblemDto;
+import com.ns.solve.domain.dto.problem.ProblemDto;
+import com.ns.solve.domain.dto.problem.ProblemSummary;
+import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
+import com.ns.solve.domain.entity.Solved;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.entity.problem.AlgorithmProblem;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.ProblemType;
@@ -16,18 +19,18 @@ import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import com.ns.solve.service.FileService;
+import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import com.ns.solve.utils.mapper.ProblemMapper;
 import com.ns.solve.utils.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -64,8 +67,8 @@ public class ProblemService {
             return createWargameProblem(wargameDto);
         } else if (registerProblemDto instanceof RegisterAlgorithmProblemDto algorithmDto) {
             return new AlgorithmProblem();
-        } else {
-            throw new IllegalArgumentException("Unsupported problem type: " + registerProblemDto.getClass().getName());
+        }  else {
+            throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION, "type: " + registerProblemDto.getClass().getName());
         }
     }
 
@@ -82,7 +85,7 @@ public class ProblemService {
     }
 
     private void setCommonProblemFields(Problem problem, Long userId, RegisterProblemDto registerProblemDto) {
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
         problem.setCreator(user);
 
         problem.setTitle(registerProblemDto.getTitle());
@@ -91,7 +94,7 @@ public class ProblemService {
     }
 
     private void setCommonProblemFields(Problem problem, Long userId, ModifyProblemDto modifyProblemDto) {
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
         problem.setCreator(user);
 
         problem.setType(modifyProblemDto.getType());
@@ -102,8 +105,8 @@ public class ProblemService {
 
 
     public void uploadFile(Long userId, Long problemId, MultipartFile file) {
-        Problem problem = problemRepository.findById(problemId).orElseThrow(() -> new RuntimeException("Not found problem."));
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Not found user."));
+        Problem problem = problemRepository.findById(problemId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, problem);
         handleFileUpload(file, problem);
@@ -122,7 +125,7 @@ public class ProblemService {
                 wargameProblem.setProbelmFileSize(fileInfo.fileSize());
                 problemRepository.save(wargameProblem);
             } else {
-                throw new UnsupportedOperationException("handleFileUpload only supported for WargameProblem.");
+                throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
             }
         }
     }
@@ -130,11 +133,8 @@ public class ProblemService {
 
     @Transactional
     public ProblemDto updateProblem(Long userId, Long problemId, ModifyProblemDto modifyProblemDto) {
-        Problem existingProblem = problemRepository.findById(problemId)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        Problem existingProblem = problemRepository.findById(problemId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, existingProblem);
         setCommonProblemFields(existingProblem, userId, modifyProblemDto);
@@ -144,11 +144,8 @@ public class ProblemService {
 
     @Transactional
     public void deleteProblem(Long userId, Long problemId) {
-        Problem problem = problemRepository.findById(problemId)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        Problem problem = problemRepository.findById(problemId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, problem);
         problemRepository.deleteById(problemId);
@@ -168,10 +165,9 @@ public class ProblemService {
     @Transactional
     public ProblemDto updateProblemWithFile(Long userId, Long problemId, ModifyProblemDto modifyProblemDto, MultipartFile file) {
         Problem existingProblem = problemRepository.findById(problemId)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
-
+                .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, existingProblem);
         setCommonProblemFields(existingProblem, userId, modifyProblemDto);
@@ -191,26 +187,23 @@ public class ProblemService {
 
     @Transactional
     public WargameProblemDto toggleProblemCheckStatus(Long id) {
-        Problem problem = problemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + id));
-
+        Problem problem = problemRepository.findById(id).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + id));
         problem.setIsChecked(!problem.getIsChecked());
         Problem savedProblem = problemRepository.save(problem);
 
         if (savedProblem instanceof WargameProblem wargameProblem) {
             return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
-        throw new IllegalArgumentException("Not of type WargameProblem");
+        throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
     }
 
     public WargameProblemDto getWargameProblemById(Long id) {
-        Problem problem = problemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + id));
+        Problem problem = problemRepository.findById(id).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + id));
 
         if (problem instanceof WargameProblem wargameProblem) {
             return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
-        throw new IllegalArgumentException("Not of type WargameProblem");
+        throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
     }
 
     public List<WargameProblem> getAllWargameProblems() {
@@ -271,12 +264,11 @@ public class ProblemService {
 
     @Transactional
     public Boolean solveProblem(Long userId, Long problemId, String attemptedFlag) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         Problem problem = problemRepository.findProblemWithLock(problemId);
         if (problem == null) {
-            throw new IllegalArgumentException("Problem not found: " + problemId);
+            new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId);
         }
 
         boolean isCorrect = problemRepository.matchFlagToProblems(problemId, attemptedFlag);
@@ -293,13 +285,13 @@ public class ProblemService {
                 String problemType = String.valueOf(problem.getType());
 
                 fieldScores.put(problemType, fieldScores.getOrDefault(problemType, 0L) + 1);
+                user.setScore(user.getScore()+1);
                 userRepository.save(user);
             }
         }
 
         problem.incrementEntireCount();
         problemRepository.save(problem);
-
 
         Solved solved = new Solved();
         solved.setSolvedUser(user);
@@ -314,30 +306,31 @@ public class ProblemService {
     public Resource downloadProblemFile(Long problemId) {
         try {
             Problem problem = problemRepository.findById(problemId)
-                    .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
+                    .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
 
             if (!(problem instanceof WargameProblem wargameProblem)) {
-                throw new UnsupportedOperationException("downloadProblemFile only supported for WargameProblem.");
+                throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION, "only supported for wargame");
             }
 
             if (wargameProblem.getProblemFile() == null) {
-                throw new FileNotFoundException("No file found for problem: " + problemId);
+                throw new SolvedException(ProblemErrorCode.FILE_NOT_FOUND, "problemId : " + problemId);
             }
 
             Resource resource = fileService.downloadFile(wargameProblem.getProblemFile());
             if (!resource.exists()) {
-                throw new FileNotFoundException("File not found: " + wargameProblem.getProblemFile());
+                throw new SolvedException(ProblemErrorCode.FILE_NOT_FOUND, wargameProblem.getProblemFile());
             }
 
             return resource;
         } catch (Exception e) {
-            throw new RuntimeException("downloadProblemFile failed:", e);
+            throw new SolvedException(ProblemErrorCode.FILE_UPLOAD_FAILED, "downloadProblemFile failed: " + e.getMessage());
         }
     }
 
     public String getImageForProblem(Long problemId) {
         WargameProblem problem = (WargameProblem) problemRepository.findById(problemId)
-                .orElseThrow(() -> new IllegalArgumentException("Problem not found: " + problemId));
+                .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+
         return problem.getDockerfileLink();
     }
 
@@ -348,7 +341,7 @@ public class ProblemService {
 
     private void checkAuthorizationOrThrow(User user, Problem problem) {
         if (!user.isMemberAbove() && !problem.getCreator().equals(user)) {
-            throw new AccessDeniedException("수정/삭제 권한이 없습니다.");
+            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED);
         }
     }
 }
