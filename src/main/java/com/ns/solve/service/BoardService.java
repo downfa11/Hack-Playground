@@ -13,6 +13,8 @@ import com.ns.solve.repository.board.BoardRepository;
 import java.util.List;
 import java.util.Optional;
 
+import com.ns.solve.utils.exception.ErrorCode.BoardErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import com.ns.solve.utils.mapper.BoardMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,10 +36,10 @@ public class BoardService {
     @Transactional
     public BoardDto createBoard(Long userId, RegisterBoardDto registerBoardDto) {
         User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         if (BoardType.ANNOUNCE.equals(registerBoardDto.type()) && !Role.ROLE_ADMIN.equals(creator.getRole())) {
-            throw new AccessDeniedException("공지사항은 관리자만 작성할 수 있습니다.");
+            throw new SolvedException(BoardErrorCode.ACCESS_DENIED);
         }
 
         Board board = new Board();
@@ -52,13 +54,12 @@ public class BoardService {
     @Transactional
     public BoardDto updateBoard(Long userId, Long boardId, ModifyBoardDto modifyBoardDto) {
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new RuntimeException("Board not found"));
-
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "boardId: " + boardId));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         if (BoardType.ANNOUNCE.equals(modifyBoardDto.type()) && !Role.ROLE_ADMIN.equals(user.getRole())) {
-            throw new AccessDeniedException("공지사항은 관리자만 작성할 수 있습니다.");
+            throw new SolvedException(BoardErrorCode.ACCESS_DENIED);
         }
 
         checkAuthorizationOrThrow(user, board);
@@ -68,7 +69,8 @@ public class BoardService {
         board.setContents(modifyBoardDto.contents());
 
         User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
+
         board.setCreator(creator);
 
         return BoardMapper.mapperToBoardDto(boardRepository.save(board));
@@ -84,9 +86,9 @@ public class BoardService {
     }
     public void deleteBoard(Long userId, Long boardId) {
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new RuntimeException("Board not found"));
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "boardId: " + boardId));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, board);
         boardRepository.deleteById(boardId);
@@ -98,7 +100,7 @@ public class BoardService {
 
     private void checkAuthorizationOrThrow(User user, Board board) {
         if (!user.isMemberAbove() && !board.getCreator().equals(user)) {
-            throw new AccessDeniedException("수정/삭제 권한이 없습니다.");
+            throw new SolvedException(BoardErrorCode.ACCESS_DENIED);
         }
     }
 }
