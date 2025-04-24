@@ -1,4 +1,4 @@
-package com.ns.solve.service;
+package com.ns.solve.utils;
 
 
 import com.ns.solve.utils.CustomUserDetails;

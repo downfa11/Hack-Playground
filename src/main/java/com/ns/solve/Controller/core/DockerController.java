@@ -19,9 +19,4 @@ public class DockerController {
         return ResponseEntity.ok(dockerService.buildImage(repoName));
     }
 
-    @GetMapping("/push")
-    public ResponseEntity<String> pushECRImage(@RequestParam String repoName){
-        return ResponseEntity.ok(dockerService.pushImage(repoName));
-    }
-
 }

@@ -28,8 +28,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JWtToken> loginMembership(@RequestBody LoginUserRequest request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getAccount(), request.getPassword()));
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getAccount(), request.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             JWtToken token = authService.login(request);

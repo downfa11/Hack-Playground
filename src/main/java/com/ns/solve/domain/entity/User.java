@@ -37,6 +37,8 @@ public class User {
     private LocalDateTime created;
     private LocalDateTime lastActived;
 
+    private String provider;
+
     public boolean isMemberAbove() {
         return this.role != null && this.role.ordinal() > Role.ROLE_MEMBER.ordinal();
     }
