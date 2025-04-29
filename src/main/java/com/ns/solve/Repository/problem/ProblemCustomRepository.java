@@ -20,7 +20,7 @@ public interface ProblemCustomRepository {
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
-    Boolean matchFlagToProblems(Long problemId, String attemptedFlag);
+    Boolean matchFlagToWargameProblem(Long problemId, String attemptedFlag);
 
     List<WargameProblem> findByTypeWargame(ProblemType wargameType);
     Problem findProblemWithLock(Long problemId);

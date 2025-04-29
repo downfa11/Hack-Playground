@@ -18,18 +18,20 @@ public class ProblemSummary {
     private Double correctRate;
     private String creator;
     private String type;
+    private String kind;
     private LocalDateTime lastModified;
 
 
 
     @QueryProjection
-    public ProblemSummary(Long id, String title, String level, Double correctRate, String creator, String type, LocalDateTime updatedAt) {
+    public ProblemSummary(Long id, String title, String level, Double correctRate, String creator, String type, String kind, LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.level = level;
         this.correctRate = correctRate;
         this.creator = creator;
         this.type = type;
+        this.kind = kind;
         this.lastModified = updatedAt;
     }
 

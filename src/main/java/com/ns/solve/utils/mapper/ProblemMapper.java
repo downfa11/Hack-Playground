@@ -22,6 +22,7 @@ public class ProblemMapper {
                     .title(problem.getTitle())
                     .creator(problem.getCreator().getNickname())
                     .type(problem.getType().getTypeName())
+                    .kind("not have kind in this type") // Todo. 확장한다면 다른 타입별로 다 kind를 부여해야함
                     .correctRate(problem.getCorrectCount() / problem.getEntireCount())
                     .build();
         }
@@ -33,6 +34,7 @@ public class ProblemMapper {
                 .title(problem.getTitle())
                 .creator(problem.getCreator().getNickname())
                 .type(problem.getType().getTypeName())
+                .kind(problem.getKind().getTypeName())
                 .correctRate(problem.getCorrectCount() / problem.getEntireCount())
                 .level(problem.getLevel())
                 .build();

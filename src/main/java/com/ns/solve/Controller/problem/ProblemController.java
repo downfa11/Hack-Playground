@@ -1,14 +1,16 @@
 package com.ns.solve.controller.problem;
 
-import com.ns.solve.domain.dto.*;
+import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.board.BoardSummary;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
-import com.ns.solve.domain.dto.user.UserDto;
+import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,7 +91,7 @@ public class ProblemController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<MessageEntity> getProblemById(@PathVariable Long id) {
-        Optional<ProblemDto> problem = problemService.getProblemById(id);
+        Optional<ProblemDto> problem = problemService.getProblemDtoById(id);
 
         if (problem.isPresent()) {
             return ResponseEntity.ok(new MessageEntity("Problem found", problem.get()));
@@ -121,7 +123,7 @@ public class ProblemController {
     public ResponseEntity<Page<ProblemSummary>> getCompletedProblemsByType(
             @RequestParam Long userId,
             @RequestParam ProblemType type,
-            @RequestParam(required = false) String kind,
+            @RequestParam(required = false) WargameKind kind,
             @RequestParam(required = false) String sortKind,
             @RequestParam boolean desc,
             @RequestParam(defaultValue = "0") int page,
@@ -151,12 +153,8 @@ public class ProblemController {
     })
     @GetMapping("/{id}/firstblood")
     public ResponseEntity<MessageEntity> firstBlood(@PathVariable Long id, @RequestParam int size) {
-        Optional<UserDto> firstSolver = problemService.firstBlood(id, size);
-        if (firstSolver.isPresent()) {
-            return ResponseEntity.ok(new MessageEntity("First blood found", firstSolver.get()));
-        } else {
-            return ResponseEntity.status(404).body(new MessageEntity("Not found this problem", null));
-        }
+        List<UserFirstBloodDto> firstSolver = problemService.firstBlood(id, size);
+        return ResponseEntity.ok(new MessageEntity("First blood found", firstSolver));
     }
 
     @PostMapping("/{problemId}/upload")
@@ -189,4 +187,18 @@ public class ProblemController {
                 Map.of("checkedCount", checkedCount, "newCount", newCount)));
     }
 
+    @Operation(summary = "문제 검색", description = "ProblemType(wargame, assignment, algorithm)과 WargameType(webhacking, system, reversing, crypto), 키워드로 게시판을 검색합니다. 단, WargameType은 null로 보내면 전체 검색합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시판 검색 결과가 성공적으로 조회되었습니다."),
+            @ApiResponse(responseCode = "404", description = "검색된 게시판이 없습니다.")})
+    @GetMapping("/search")
+    public ResponseEntity<MessageEntity> searchProblem(@RequestParam ProblemType type, @RequestParam WargameKind kind, @RequestParam String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        Page<ProblemSummary> results = problemService.searchProblems(type, kind, keyword, PageRequest.of(page, size));
+
+        if (results.hasContent()) {
+            return ResponseEntity.ok(new MessageEntity("문제 검색 성공", results));
+        } else {
+            return new ResponseEntity<>(new MessageEntity("검색된 문제가 없습니다.", null), HttpStatus.NOT_FOUND);
+        }
+    }
 }

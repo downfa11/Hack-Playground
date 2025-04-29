@@ -287,7 +287,7 @@ public class ProblemService {
 
         // 해당 문제를 푼 적 없는 경우, 사용자의 랭킹을 갱신합니다.
         if (!solvedRepository.existsSolvedProblem(userId, problemId)) {
-            isCorrect = problemRepository.matchFlagToProblems(problemId, attemptedFlag);
+            isCorrect = problemRepository.matchFlagToWargameProblem(problemId, attemptedFlag);
             if (isCorrect) {
                 if (user.getFieldScores() == null) {
                     user.setFieldScores(new HashMap<>());

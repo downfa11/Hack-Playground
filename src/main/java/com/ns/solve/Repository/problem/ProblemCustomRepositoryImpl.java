@@ -2,21 +2,23 @@ package com.ns.solve.repository.problem;
 
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.QProblemSummary;
-import com.ns.solve.domain.entity.QComment;
 import com.ns.solve.domain.entity.problem.*;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -24,14 +26,73 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     private final JPAQueryFactory jpaQueryFactory;
     private final QWargameProblem qWargameProblem;
     private final QProblem qProblem;
-    private final QComment qComment;
 
     public ProblemCustomRepositoryImpl(JPAQueryFactory jpaQueryFactory) {
         this.jpaQueryFactory = jpaQueryFactory;
         this.qWargameProblem = QWargameProblem.wargameProblem;
         this.qProblem = QProblem.problem;
-        this.qComment = QComment.comment;
     }
+
+    // Todo. 현재 조회는 QWargameProblem 이라고 가정한 상황임. 추후 확장된다면 개선해야한다.
+    @Override
+    public Page<ProblemSummary> searchKeywordInTitle(ProblemType type, WargameKind kind, String keyword, Pageable pageable) {
+        boolean desc = pageable.getSort().stream()
+                .anyMatch(order -> order.getProperty().equals("createdAt") && order.isDescending());
+
+        BooleanExpression condition = qProblem.type.eq(type)
+                .and(qProblem.title.containsIgnoreCase(keyword));
+
+        NumberExpression<Double> correctRatePercent = qProblem.correctCount.doubleValue()
+                .multiply(100.0)
+                .divide(qProblem.entireCount.coalesce(1.0).doubleValue());
+
+        if (kind != null) {
+            condition = condition.and(qWargameProblem.kind.eq(kind));
+        }
+
+        List<Long> boardIds = jpaQueryFactory
+                .select(qProblem.id)
+                .from(qProblem)
+                .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
+                .where(condition)
+                .orderBy(desc ? qProblem.createdAt.desc() : qProblem.createdAt.asc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        if (boardIds.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+
+        List<ProblemSummary> results = jpaQueryFactory
+                .select(new QProblemSummary(
+                        qProblem.id,
+                        qProblem.title,
+                        qWargameProblem.level,
+                        correctRatePercent,
+                        qProblem.creator.nickname,
+                        qProblem.type.stringValue(),
+                        qWargameProblem.kind.stringValue(),
+                        qProblem.updatedAt
+                ))
+                .from(qProblem)
+                .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
+                .where(condition)
+                .orderBy(qProblem.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = jpaQueryFactory
+                .select(qProblem.count())
+                .from(qProblem)
+                .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
+                .where(condition)
+                .fetchOne();
+
+        return new PageImpl<>(results, pageable, total != null ? total : 0);
+    }
+
 
     // status가 '검수 전'인 Problem의 전체 목록을 조회하는 메서드 (Pagenation)
     @Override
@@ -53,7 +114,7 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     }
 
     @Override
-    public Boolean matchFlagToProblems(Long problemId, String attemptedFlag) {
+    public Boolean matchFlagToWargameProblem(Long problemId, String attemptedFlag) {
         String correctFlag = jpaQueryFactory.select(qWargameProblem.flag)
                 .from(qWargameProblem)
                 .where(qWargameProblem.id.eq(problemId))
@@ -104,21 +165,22 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
 
     // status가 '검수 완료'인 Problem을 type과 상속된 데이터에 맞게 리스트를 조회하는 메서드 (Pagenation)
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
         return findProblemsSorted(type, kind, pageRequest, qProblem.id, desc);
     }
 
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
         return findProblemsSorted(type, kind, pageRequest, qProblem.updatedAt, desc);
     }
 
     @Override
-    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, String kind, boolean desc, PageRequest pageRequest) {
-        return findProblemsSorted(type, kind, pageRequest, qProblem.correctCount.divide(qProblem.entireCount), desc);
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
+        return findProblemsSorted(type, kind, pageRequest, qProblem.correctCount.doubleValue().divide(qProblem.entireCount.doubleValue()), desc);
     }
 
-    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(ProblemType type, String kind, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
+    // Todo. 현재 조회는 QWargameProblem 이라고 가정한 상황임. 추후 확장된다면 개선해야한다.
+    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(ProblemType type, WargameKind kind, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
         BooleanExpression condition = qProblem.isChecked.isTrue().and(typeEq(type));
         BooleanExpression kindCondition = kindEq(kind);
 
@@ -127,15 +189,19 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
         }
 
         OrderSpecifier<T> orderSpecifier = desc ? sortField.desc() : sortField.asc();
+        NumberExpression<Double> correctRatePercent = qProblem.correctCount.doubleValue()
+                .multiply(100.0)
+                .divide(qProblem.entireCount.coalesce(1.0).doubleValue());
 
         List<ProblemSummary> results = jpaQueryFactory
                 .select(new QProblemSummary(
                         qProblem.id,
                         qProblem.title,
                         qWargameProblem.level,
-                        qProblem.correctCount.divide(qProblem.entireCount.coalesce(0.0)),
+                        correctRatePercent,
                         qProblem.creator.nickname,
-                        qWargameProblem.kind,
+                        qProblem.type.stringValue(),
+                        qWargameProblem.kind.stringValue(),
                         qProblem.updatedAt
                 ))
                 .from(qProblem)
@@ -147,7 +213,7 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
                 .fetch();
 
 
-        long total = jpaQueryFactory
+        Long total = jpaQueryFactory
                 .selectFrom(qProblem)
                 .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
                 .where(condition)
@@ -167,8 +233,8 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
         }
     }
 
-    private BooleanExpression kindEq(String kind) {
-        if (kind == null || kind.isBlank()) {
+    private BooleanExpression kindEq(WargameKind kind) {
+        if (kind == null) {
             return null;
         }
         return qWargameProblem.kind.eq(kind);

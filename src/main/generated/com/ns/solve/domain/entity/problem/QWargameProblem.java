@@ -55,7 +55,7 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     //inherited
     public final BooleanPath isChecked;
 
-    public final StringPath kind = createString("kind");
+    public final EnumPath<WargameKind> kind = createEnum("kind", WargameKind.class);
 
     public final StringPath level = createString("level");
 
