@@ -80,10 +80,13 @@ public class BoardService {
         return boardRepository.findAll();
     }
 
-    public Optional<BoardDto> getBoardById(Long id) {
-        return boardRepository.findById(id)
-                .map(BoardMapper::mapperToBoardDto);
+    public Optional<BoardDto> getBoardById(Long id) { return boardRepository.findById(id).map(BoardMapper::mapperToBoardDto); }
+
+    public Page<BoardSummary> searchBoard(BoardType type, String keyword, Pageable pageable) {
+        return boardRepository.searchKeywordInTitle(type, keyword, pageable);
     }
+
+
     public void deleteBoard(Long userId, Long boardId) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "boardId: " + boardId));

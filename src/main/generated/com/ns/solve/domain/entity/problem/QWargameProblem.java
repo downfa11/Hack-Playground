@@ -25,10 +25,10 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     public final QProblem _super;
 
     //inherited
-    public final NumberPath<Integer> attemptCount;
+    public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList;
 
     //inherited
-    public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList;
+    public final EnumPath<ContainerResourceType> containerResourceType;
 
     //inherited
     public final NumberPath<Double> correctCount;
@@ -59,12 +59,18 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
 
     public final StringPath level = createString("level");
 
-    public final NumberPath<Long> probelmFileSize = createNumber("probelmFileSize", Long.class);
+    //inherited
+    public final NumberPath<Integer> portNumber;
 
     public final StringPath problemFile = createString("problemFile");
 
+    public final NumberPath<Long> problemFileSize = createNumber("problemFileSize", Long.class);
+
     //inherited
-    public final StringPath reviewer;
+    public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
+
+    // inherited
+    public final com.ns.solve.domain.entity.QUser reviewer;
 
     //inherited
     public final StringPath source;
@@ -100,8 +106,8 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     public QWargameProblem(Class<? extends WargameProblem> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this._super = new QProblem(type, metadata, inits);
-        this.attemptCount = _super.attemptCount;
         this.commentList = _super.commentList;
+        this.containerResourceType = _super.containerResourceType;
         this.correctCount = _super.correctCount;
         this.createdAt = _super.createdAt;
         this.creator = _super.creator;
@@ -109,6 +115,8 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
         this.entireCount = _super.entireCount;
         this.id = _super.id;
         this.isChecked = _super.isChecked;
+        this.portNumber = _super.portNumber;
+        this.resourceLimit = _super.resourceLimit;
         this.reviewer = _super.reviewer;
         this.source = _super.source;
         this.tags = _super.tags;

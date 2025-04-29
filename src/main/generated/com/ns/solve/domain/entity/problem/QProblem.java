@@ -22,9 +22,9 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public static final QProblem problem = new QProblem("problem");
 
-    public final NumberPath<Integer> attemptCount = createNumber("attemptCount", Integer.class);
-
     public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList = this.<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment>createList("commentList", com.ns.solve.domain.entity.Comment.class, com.ns.solve.domain.entity.QComment.class, PathInits.DIRECT2);
+
+    public final EnumPath<ContainerResourceType> containerResourceType = createEnum("containerResourceType", ContainerResourceType.class);
 
     public final NumberPath<Double> correctCount = createNumber("correctCount", Double.class);
 
@@ -40,7 +40,11 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final BooleanPath isChecked = createBoolean("isChecked");
 
-    public final StringPath reviewer = createString("reviewer");
+    public final NumberPath<Integer> portNumber = createNumber("portNumber", Integer.class);
+
+    public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit = this.<String, Integer, NumberPath<Integer>>createMap("resourceLimit", String.class, Integer.class, NumberPath.class);
+
+    public final com.ns.solve.domain.entity.QUser reviewer;
 
     public final StringPath source = createString("source");
 
@@ -71,6 +75,7 @@ public class QProblem extends EntityPathBase<Problem> {
     public QProblem(Class<? extends Problem> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.creator = inits.isInitialized("creator") ? new com.ns.solve.domain.entity.QUser(forProperty("creator")) : null;
+        this.reviewer = inits.isInitialized("reviewer") ? new com.ns.solve.domain.entity.QUser(forProperty("reviewer")) : null;
     }
 
 }

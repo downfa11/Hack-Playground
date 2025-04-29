@@ -24,13 +24,13 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
 
     public final QProblem _super;
 
-    //inherited
-    public final NumberPath<Integer> attemptCount;
-
     public final ListPath<Case, QCase> caseList = this.<Case, QCase>createList("caseList", Case.class, QCase.class, PathInits.DIRECT2);
 
     //inherited
     public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList;
+
+    //inherited
+    public final EnumPath<ContainerResourceType> containerResourceType;
 
     //inherited
     public final NumberPath<Double> correctCount;
@@ -58,7 +58,13 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final NumberPath<Long> level = createNumber("level", Long.class);
 
     //inherited
-    public final StringPath reviewer;
+    public final NumberPath<Integer> portNumber;
+
+    //inherited
+    public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
+
+    // inherited
+    public final com.ns.solve.domain.entity.QUser reviewer;
 
     //inherited
     public final StringPath source;
@@ -94,8 +100,8 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public QAlgorithmProblem(Class<? extends AlgorithmProblem> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this._super = new QProblem(type, metadata, inits);
-        this.attemptCount = _super.attemptCount;
         this.commentList = _super.commentList;
+        this.containerResourceType = _super.containerResourceType;
         this.correctCount = _super.correctCount;
         this.createdAt = _super.createdAt;
         this.creator = _super.creator;
@@ -103,6 +109,8 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
         this.entireCount = _super.entireCount;
         this.id = _super.id;
         this.isChecked = _super.isChecked;
+        this.portNumber = _super.portNumber;
+        this.resourceLimit = _super.resourceLimit;
         this.reviewer = _super.reviewer;
         this.source = _super.source;
         this.tags = _super.tags;
