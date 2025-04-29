@@ -1,8 +1,11 @@
 package com.ns.solve.utils.mapper;
 
+import com.ns.solve.domain.dto.user.UserFirstBloodDto;
+import com.ns.solve.domain.entity.Role;
 import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.user.UserDto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class UserMapper {
@@ -33,5 +36,9 @@ public class UserMapper {
                 user.getCreated(),
                 user.getLastActived()
         );
+    }
+
+    public static UserFirstBloodDto mapperToUserFirstDto(Long userId, String nickname, Role role, LocalDateTime firstBlood){
+        return new UserFirstBloodDto(userId, nickname, role, firstBlood);
     }
 }

@@ -1,5 +1,6 @@
 package com.ns.solve.repository;
 
+import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.Solved;
 import com.ns.solve.domain.entity.User;
 import org.springframework.data.domain.Page;
@@ -14,10 +15,14 @@ import java.util.List;
 @Repository
 public interface SolvedRepository extends JpaRepository<Solved, Long> {
     // problemId를 통해서 가장 처음 해당 문제를 푼 사람을 확인하는 메서드
-    @Query("SELECT u FROM Solved s JOIN s.solvedUser u WHERE s.solvedProblem.id = :problemId and s.solve=true ORDER BY s.solvedTime ASC")
-    Page<User> findFirstUserToSolveProblem(@Param("problemId") Long problemId, Pageable pageable);
-
-    // JPA의 N+1 문제는 생기지 않지만 User 엔티티까지 한번의 쿼리로 가져오도록 설계
+    @Query("""
+    SELECT new com.ns.solve.domain.dto.user.UserFirstBloodDto(u.id, u.nickname, u.role, MIN(s.solvedTime))
+    FROM Solved s
+    JOIN s.solvedUser u
+    WHERE s.solvedProblem.id = :problemId AND s.solve = true
+    GROUP BY u.id, u.nickname, u.role
+    ORDER BY MIN(s.solvedTime) ASC""")
+    List<UserFirstBloodDto> findFirstBloodByProblemId(@Param("problemId") Long problemId, Pageable pageable);
 
 
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN TRUE ELSE FALSE END FROM Solved s WHERE s.solvedUser.id = :userId AND s.solvedProblem.id = :problemId AND s.solve = true")
