@@ -5,10 +5,12 @@ import static org.mockito.Mockito.*;
 
 import com.ns.solve.domain.entity.Board;
 import com.ns.solve.domain.entity.Comment;
+import com.ns.solve.domain.entity.CommentType;
 import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.comment.ModifyCommentDto;
 import com.ns.solve.domain.dto.comment.RegisterCommentDto;
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.repository.CommentRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
@@ -60,14 +62,14 @@ class CommentServiceTest {
         testComment = new Comment();
         testComment.setId(1L);
         testComment.setContent("Test Comment");
-        testComment.setType("problem");
+        testComment.setType(CommentType.BOARD);
         testComment.setCreator(testUser);
         testComment.setProblem(testProblem);
     }
 
     @Test
     void testCreateComment() {
-        RegisterCommentDto dto = new RegisterCommentDto("problem", 1L, "Test Comment");
+        RegisterCommentDto dto = new RegisterCommentDto(CommentType.BOARD, 1L, "Test Comment");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(problemRepository.findById(1L)).thenReturn(Optional.of(testProblem));
@@ -127,7 +129,7 @@ class CommentServiceTest {
 
     @Test
     void testUpdateComment() {
-        ModifyCommentDto dto = new ModifyCommentDto( "free","Updated Comment");
+        ModifyCommentDto dto = new ModifyCommentDto( CommentType.BOARD,"Updated Comment");
 
         when(commentRepository.findById(1L)).thenReturn(Optional.of(testComment));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);

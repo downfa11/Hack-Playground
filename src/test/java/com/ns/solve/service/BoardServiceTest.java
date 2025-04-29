@@ -119,7 +119,7 @@ class BoardServiceTest {
 
     @Test
     void testGetBoards() {
-        String boardType = "free";
+        BoardType boardType = BoardType.FREE;
         Pageable pageable = PageRequest.of(0, 10);
         Page<BoardSummary> page = new PageImpl<>(List.of());
 

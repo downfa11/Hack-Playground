@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import java.time.LocalDateTime;
 
@@ -21,8 +22,7 @@ class ProblemTest {
         problem.setTitle("title");
         problem.setIsChecked(false);
         problem.setType(ProblemType.WARGAME);
-        problem.setCreator("creator");
-        problem.setAttemptCount(0);
+        problem.setCreator(new User());
         problem.setEntireCount(0.0);
         problem.setCorrectCount(0.0);
     }

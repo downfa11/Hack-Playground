@@ -1,12 +1,15 @@
 package com.ns.solve.service;
 
+import com.ns.solve.domain.dto.problem.ProblemCheckDto;
 import com.ns.solve.domain.dto.problem.ProblemDto;
+import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.Solved;
 import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
+import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;
@@ -139,7 +142,7 @@ class ProblemServiceTest {
     void testGetProblemById() {
         when(problemRepository.findById(1L)).thenReturn(Optional.of(sampleProblem));
 
-        Optional<ProblemDto> result = problemService.getProblemById(1L);
+        Optional<ProblemDto> result = problemService.getProblemDtoById(1L);
 
         assertTrue(result.isPresent());
         assertEquals(sampleProblem.getTitle(), result.get().getTitle());
@@ -147,41 +150,58 @@ class ProblemServiceTest {
 
     @Test
     void testToggleProblemCheckStatus() {
+        ProblemCheckDto problemCheckDto = ProblemCheckDto.builder()
+                .containerResourceType(ContainerResourceType.DEDICATED)
+                .portNumber(8080)
+                .cpuLimit(250)
+                .memoryLimit(128)
+                .build();
+
         when(problemRepository.findById(1L)).thenReturn(Optional.of(wargameProblem));
         when(problemRepository.save(any(Problem.class))).thenReturn(wargameProblem);
 
-        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L);
+        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L,1L, problemCheckDto);
 
         assertNotNull(result);
         assertEquals(wargameProblem.getTitle(), result.getTitle());
         verify(problemRepository, times(1)).save(wargameProblem);
     }
 
+
+
     @Test
     void testFirstBlood() {
+        Long problemId = 1L;
         int firstCount = 1;
-        User sampleUser = new User();
-        sampleUser.setNickname("testUser");
-        sampleUser.setScore(100L);
-        sampleUser.setLastActived(LocalDateTime.now());
 
-        Pageable pageable = PageRequest.of(0, firstCount);
-        Page<User> page = new PageImpl<>(List.of(sampleUser), pageable, 1);
+        UserFirstBloodDto dto = new UserFirstBloodDto(
+                sampleUser.getId(),
+                sampleUser.getNickname(),
+                sampleUser.getRole(),
+                sampleUser.getLastActived()
+        );
 
-        when(solvedRepository.findFirstUserToSolveProblem(1L, pageable)).thenReturn(page);
+        List<UserFirstBloodDto> firstSolverList = List.of(dto);
 
-        Optional<UserDto> result = problemService.firstBlood(1L, firstCount);
+        when(solvedRepository.findFirstBloodByProblemId(problemId, PageRequest.of(0, firstCount)))
+                .thenReturn(firstSolverList);
 
-        assertTrue(result.isPresent());
-        assertEquals(sampleUser.getNickname(), result.get().getNickname());
+        List<UserFirstBloodDto> result = problemService.firstBlood(problemId, firstCount);
+
+        assertFalse(result.isEmpty());
+        assertEquals(sampleUser.getNickname(), result.get(0).getNickname());
+        assertEquals(sampleUser.getRole(), result.get(0).getRole());
+        assertEquals(sampleUser.getLastActived(), result.get(0).getFirstBlood());
     }
+
+
 
 
     @Test
     void testSolveProblem_CorrectFlag() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(problemRepository.findProblemWithLock(1L)).thenReturn(sampleProblem);
-        when(problemRepository.matchFlagToProblems(1L, "correct")).thenReturn(true);
+        when(problemRepository.matchFlagToWargameProblem(1L, "correct")).thenReturn(true);
         when(solvedRepository.save(any(Solved.class))).thenReturn(new Solved());
         when(problemRepository.save(any(Problem.class))).thenReturn(sampleProblem);
 
@@ -195,7 +215,7 @@ class ProblemServiceTest {
     void testSolveProblem_WrongFlag() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(problemRepository.findProblemWithLock(1L)).thenReturn(sampleProblem);
-        when(problemRepository.matchFlagToProblems(1L, "wrong")).thenReturn(false);
+        when(problemRepository.matchFlagToWargameProblem(1L, "wrong")).thenReturn(false);
         when(problemRepository.save(any(Problem.class))).thenReturn(sampleProblem);
 
         boolean result = problemService.solveProblem(1L, 1L, "wrong");

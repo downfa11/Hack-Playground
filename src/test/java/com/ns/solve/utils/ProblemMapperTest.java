@@ -1,6 +1,7 @@
 package com.ns.solve.utils;
 
 import com.ns.solve.domain.dto.problem.ProblemSummary;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;
@@ -19,7 +20,7 @@ class ProblemMapperTest {
         Problem problem = mock(Problem.class);
         when(problem.getId()).thenReturn(1L);
         when(problem.getTitle()).thenReturn("title");
-        when(problem.getCreator()).thenReturn("creator");
+        when(problem.getCreator()).thenReturn(new User());
         when(problem.getType()).thenReturn(ProblemType.WARGAME);
         when(problem.getCorrectCount()).thenReturn(80.0);
         when(problem.getEntireCount()).thenReturn(100.0);
@@ -42,7 +43,7 @@ class ProblemMapperTest {
         WargameProblem wargameProblem = mock(WargameProblem.class);
         when(wargameProblem.getId()).thenReturn(1L);
         when(wargameProblem.getTitle()).thenReturn("title");
-        when(wargameProblem.getCreator()).thenReturn("creator");
+        when(wargameProblem.getCreator()).thenReturn(new User());
         when(wargameProblem.getType()).thenReturn(ProblemType.WARGAME);
         when(wargameProblem.getCorrectCount()).thenReturn(75.0);
         when(wargameProblem.getEntireCount()).thenReturn(100.0);
@@ -67,7 +68,7 @@ class ProblemMapperTest {
         Problem problem1 = mock(Problem.class);
         when(problem1.getId()).thenReturn(1L);
         when(problem1.getTitle()).thenReturn("title1");
-        when(problem1.getCreator()).thenReturn("creator1");
+        when(problem1.getCreator()).thenReturn(new User());
         when(problem1.getType()).thenReturn(ProblemType.WARGAME);
         when(problem1.getCorrectCount()).thenReturn(90.0);
         when(problem1.getEntireCount()).thenReturn(100.0);
@@ -75,7 +76,7 @@ class ProblemMapperTest {
         WargameProblem problem2 = mock(WargameProblem.class);
         when(problem2.getId()).thenReturn(2L);
         when(problem2.getTitle()).thenReturn("title2");
-        when(problem2.getCreator()).thenReturn("creator2");
+        when(problem2.getCreator()).thenReturn(new User());
         when(problem2.getType()).thenReturn(ProblemType.ALGORITHM);
         when(problem2.getCorrectCount()).thenReturn(85.0);
         when(problem2.getEntireCount()).thenReturn(100.0);
