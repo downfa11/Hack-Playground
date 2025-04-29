@@ -24,31 +24,15 @@ public class PodController {
     })
     @PostMapping("/create")
     public ResponseEntity<String> createPod(@RequestParam Long userId, @RequestParam Long problemId) {
-        String url = podService.createProblemPod(userId, problemId);
-        return url != null ?
-                ResponseEntity.ok(url) :
-                ResponseEntity.internalServerError().body("Create pod Failed");
+        return ResponseEntity.ok(podService.createProblemPod(userId, problemId));
     }
 
-    @Operation(summary = "Pod 외부 노출", description = "문제에 해당하는 Pod를 외부에 노출합니다. 웹 문제일 경우 Ingress도 생성합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "외부 접속 가능한 URL 반환"),
-            @ApiResponse(responseCode = "500", description = "Service 또는 Ingress 생성 실패")
-    })
-    @PostMapping("/expose")
-    public ResponseEntity<String> exposePod(@RequestParam Long userId,
-                                            @RequestParam Long problemId,
-                                            @RequestParam boolean isWebProblem) {
-        String url = podService.exposePod(userId, problemId, isWebProblem);
-        return url != null ? ResponseEntity.ok(url) : ResponseEntity.internalServerError().body("ExposePod Failed.");
-    }
-
-    @Operation(summary = "현재 Dedicated 문제 풀이중인 사용자 목록 조회", description = "app=solve, type=dedicated 라벨을 가진 Pod를 기반으로 현재 문제 풀이중인 사용자-문제 매핑을 조회합니다.")
+    @Operation(summary = "현재 Dedicated 문제 풀이중인 사용자 목록 조회", description = "namespace는 wargame으로 고정. 현재 문제 풀이중인 사용자-문제 매핑을 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 ID -> 문제 ID 매핑 반환")
     })
     @GetMapping("/active")
-    public ResponseEntity<Map<String, String>> getCurrentSolveMembers() {
-        return ResponseEntity.ok(podService.findCurrentSolveMember());
+    public ResponseEntity<Map<String, String>> getCurrentSolveMembers(@RequestParam String namespace) {
+        return ResponseEntity.ok(podService.findCurrentSolveMember(namespace));
     }
 }
