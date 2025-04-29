@@ -1,9 +1,11 @@
 package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.problem.ProblemCheckDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.service.problem.ProblemService;
+import com.ns.solve.utils.CustomUserDetails;
 import com.ns.solve.utils.DummyGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,8 +37,11 @@ public class AdminController {
 
     @Operation(summary = "검수 완료", description = "해당 문제의 검수를 완료해서 사용자들에게 보여집니다.")
     @PutMapping("/check/{id}")
-    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id) {
-        WargameProblemDto checkedProblem = problemService.toggleProblemCheckStatus(id);
+    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id, ProblemCheckDto problemCheckDto, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long reviewerId = userDetails.getUserId();
+
+        WargameProblemDto checkedProblem = problemService.toggleProblemCheckStatus(reviewerId, id, problemCheckDto);
         return ResponseEntity.ok(new MessageEntity("Problem marked as checked", checkedProblem));
     }
 

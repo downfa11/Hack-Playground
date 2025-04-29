@@ -1,22 +1,24 @@
 package com.ns.solve.service.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ns.solve.domain.entity.problem.ContainerResourceType;
+import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
+import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.ns.solve.service.core.PodBuilder.getPodName;
@@ -25,75 +27,117 @@ import static com.ns.solve.service.core.PodBuilder.getPodName;
 @Service
 @RequiredArgsConstructor
 public class PodService {
-    private static final String TRAEFIK_LOG_PATH = "/var/log/traefik/access.log";
+    @Value("${server.url}")
+    private String serverUrl;
 
     private final KubernetesAdapter kubernetesAdapter;
     private final ProblemService problemService;
+    private final UserService userService;
+
 
     public String createProblemPod(Long userId, Long problemId) {
-        String podName = PodBuilder.getPodName(userId, problemId);
-        String image = problemService.getImageForProblem(problemId);
-        return ensureRunningOrCreate(podName, image);
+        Problem problem = problemService.getProblemById(problemId);
+        if (!problem.getIsChecked()) {
+            return "Problem is not checked yet";
+        }
+
+        String namespace = problem.getType().getTypeName(); // wargame
+        V1PodList podList = kubernetesAdapter.getPodsByLabelSelector(namespace, String.format("userId={}",userId));
+        if (!podList.getItems().isEmpty()) {
+            return "Another problem container is already running";
+        }
+
+        userService.getUserById(userId)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+
+        String type = problem.getType().getTypeName();
+        if ("wargame".equals(type)) {
+            WargameProblem wargameProblem = (WargameProblem) problem;
+            return ensureRunningOrCreate(wargameProblem, userId);
+        }
+
+        return "Invalid Problem type: " + type;
     }
+
 
     /**
      * Pod이 존재하면 상태에 따라 처리하고, 없으면 새로 생성한다.
      * 실패 시 null 반환.
      */
-    public String ensureRunningOrCreate(String podName, String image) {
+    public String ensureRunningOrCreate(WargameProblem wargameProblem, Long userId) {
+        String namespace = wargameProblem.getType().getTypeName();
+        String podName = getPodName(userId, wargameProblem.getId());
+
         try {
-            Optional<String> phaseOpt = kubernetesAdapter.getPodPhase(podName);
+            Optional<String> phaseOpt = kubernetesAdapter.getPodPhase(namespace, podName);
             if (phaseOpt.isPresent()) {
-                return handleExistingPod(podName, phaseOpt.get());
+                return handleExistingPod(namespace, podName, phaseOpt.get());
             }
 
-            return createAndExposePod(podName, image);
+            return createAndExposePod(wargameProblem, userId);
         } catch (Exception e) {
             log.error("Failed to ensureRunningOrCreate {}: {}", podName, e.getMessage(), e);
-            return null;
+            return "Error creating pod";
         }
     }
 
-    private String handleExistingPod(String podName, String phase) {
-
-        if ("Running".equals(phase)) {
-            if (kubernetesAdapter.isPodReady(podName)) {
-                log.info("Pod {} - running and ready.", podName);
-                return kubernetesAdapter.getExternalUrl(podName, true); // todo. 일단 대충 shared 문제
-            } else {
-                log.warn("Pod {} - running... but not ready.", podName);
-                return null;
-            }
+    private String handleExistingPod(String namespace, String podName, String phase) {
+        if ("Running".equals(phase) && !kubernetesAdapter.isPodReady(namespace, podName)) {
+            return "Pod is not ready yet.";
         }
 
-        log.warn("Pod {} - phase: {}.", podName, phase);
-        return null;
+        log.warn("Pod {} is in phase: {}", podName, phase);
+        return "Pod is not running.";
     }
 
-    private String createAndExposePod(String podName, String image) throws ApiException {
-        log.info("Creating pod {} with image {}", podName, image);
-        kubernetesAdapter.createPod(podName, image, null, null);
+    private String createAndExposePod(WargameProblem wargameProblem, Long userId) throws ApiException {
+        Long problemId = wargameProblem.getId();
+        String namespace = wargameProblem.getType().getTypeName();
+        Integer port = wargameProblem.getPortNumber();
+        ContainerResourceType containerResourceType = wargameProblem.getContainerResourceType();
+        Map<String, Integer> resourceLimits = wargameProblem.getResourceLimit();
+        String image = wargameProblem.getDockerfileLink();
+        String kind = wargameProblem.getKind().getTypeName();
 
-        if (kubernetesAdapter.waitPodToReady(podName, 60)) {
-            return kubernetesAdapter.getExternalUrl(podName, true); // todo. 일단 대충 shared 문제
+        kubernetesAdapter.createPod(userId, problemId, namespace, image, resourceLimits);
+        String podName = getPodName(userId, problemId);
+
+        if (kubernetesAdapter.waitPodToReady(namespace, podName, 60)) {
+            return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
         } else {
-            log.error("createAndExposePod Timeout - Pod {} failed to waitPodToReady", podName);
-            return null;
+            return "createAndExposePod error - timed out.";
         }
     }
+
+    // Traefik Ingress Route 스타일의 External URL 반환
+    public String getExternalUrl(Long problemId, String nickname, ContainerResourceType containerResourceType) {
+        String uuid = UUID.randomUUID().toString();
+        String dedicatedUrl = String.format("%s/problems/%d/%s/%s", serverUrl, problemId, nickname, uuid);
+        String sharedUrl = String.format("%s/problems/%d/%s", serverUrl, problemId, uuid);
+
+        return containerResourceType==ContainerResourceType.SHARED ? sharedUrl : dedicatedUrl;
+    }
+
 
     /**
      * 현재 dedicated 유형 문제를 푸는 사용자 목록 조회
      */
-    public Map<String, String> findCurrentSolveMember() {
+    public Map<String, String> findCurrentSolveMember(String namespace) {
         try {
-            V1PodList pods = kubernetesAdapter.getPodsByLabelSelector("app=solve,type=dedicated");
-
+            V1PodList pods = kubernetesAdapter.getPodList(namespace);
             return pods.getItems().stream()
                     .map(pod -> {
                         Map<String, String> labels = pod.getMetadata().getLabels();
-                        return Map.entry(labels.get("userId"), labels.get("problemId"));
+                        String userId = labels.get("userId");
+                        String problemId = labels.get("problemId");
+
+                        if (userId == null || problemId == null) {
+                            return null;
+                        }
+
+                        return Map.entry(userId, problemId);
                     })
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> b));
 
         } catch (Exception e) {
@@ -102,22 +146,23 @@ public class PodService {
         }
     }
 
+
     /**
      * Pod를 외부 노출 (Service + Ingress 생성)
      */
-    public String exposePod(Long userId, Long problemId, boolean isWebProblem) {
+    public String exposePod(Long userId, Long problemId, String namespace, String kind, Integer port, ContainerResourceType containerResourceType) {
         String podName = getPodName(userId, problemId);
 
         try {
-            V1Service service = PodBuilder.buildService(podName);
-            kubernetesAdapter.createService(service);
+            V1Service service = PodBuilder.buildService(podName, port);
+            kubernetesAdapter.createService(namespace, service);
 
-            if (isWebProblem) {
-                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(podName);
-                kubernetesAdapter.createIngressRoute(ingressRoute);
+            if (kind.equals("웹해킹")) {
+                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(podName, port);
+                kubernetesAdapter.createIngressRoute(namespace, ingressRoute);
             }
 
-            return kubernetesAdapter.getExternalUrl(podName, isWebProblem);
+            return getExternalUrl(problemId, podName, containerResourceType);
         } catch (Exception e) {
             log.error("exposePod Failed  {}: {}", podName, e.getMessage(), e);
             return null;

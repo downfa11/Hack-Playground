@@ -3,10 +3,12 @@ package com.ns.solve.utils.mapper;
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ProblemMapper {
@@ -43,17 +45,21 @@ public class ProblemMapper {
     }
 
     public static WargameProblemDto mapperToWargameProblemDto(WargameProblem problem) {
+        String reviewerNickname = Optional.ofNullable(problem.getReviewer())
+                .map(User::getNickname)
+                .orElse("None");
+
+
         return WargameProblemDto.builder()
                 .id(problem.getId())
                 .title(problem.getTitle())
                 .type(problem.getType())
                 .creator(problem.getCreator().getNickname())
                 .detail(problem.getDetail())
-                .attemptCount(problem.getAttemptCount())
                 .entireCount(problem.getEntireCount())
                 .correctCount(problem.getCorrectCount())
                 .source(problem.getSource())
-                .reviewer(problem.getReviewer())
+                .reviewer(reviewerNickname)
                 .commentList(problem.getCommentList())
                 .tags(problem.getTags())
                 .createdAt(problem.getCreatedAt())
@@ -63,7 +69,7 @@ public class ProblemMapper {
                 .flag(problem.getFlag())
                 .dockerfileLink(problem.getDockerfileLink())
                 .problemFile(problem.getProblemFile())
-                .probelmFileSize(problem.getProbelmFileSize())
+                .probelmFileSize(problem.getProblemFileSize())
                 .build();
     }
 

@@ -3,10 +3,7 @@ package com.ns.solve.service.core;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +16,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class KubernetesAdapter {
-    public static final String NAMESPACE = "default";
 
     @Value("${last.accessed.file.path}")
     private String lastAccessedFilePath;
@@ -29,15 +25,22 @@ public class KubernetesAdapter {
 
 
     // 특정 Pod 생성
-    public V1Pod createPod(String podName, String image, List<String> command, List<String> args) throws ApiException {
+    public V1Pod createPod(Long userId, Long problemId, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
+        String podName = PodBuilder.getPodName(userId, problemId);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", "solve");
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
         try {
             V1Pod pod = new V1Pod()
                     .metadata(new V1ObjectMeta()
                             .name(podName)
-                            .namespace(NAMESPACE)
-                        .labels(Map.of("app", podName)))
-                    .spec(PodBuilder.buildPodSpec(podName, image, command, args));
-            return coreApi.createNamespacedPod(NAMESPACE, pod, null, null, null, null);
+                            .namespace(namespace)
+                            .labels(labels))
+                    .spec(PodBuilder.buildPodSpec(podName, image, resourceLimits));
+            return coreApi.createNamespacedPod(namespace, pod, null, null, null, null);
         } catch (ApiException e) {
             log.error("createPod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -45,9 +48,9 @@ public class KubernetesAdapter {
     }
 
     // 특정 Pod을 삭제
-    public void deletePod(String podName) throws ApiException {
+    public void deletePod(String namespace, String podName) throws ApiException {
         try {
-            coreApi.deleteNamespacedPod(podName, NAMESPACE, null, null, null, null, null, null);
+            coreApi.deleteNamespacedPod(podName, namespace, null, null, null, null, null, null);
         } catch (ApiException e) {
             log.error("deletePod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -55,9 +58,9 @@ public class KubernetesAdapter {
     }
 
     // NAMESPACE 내의 전체 Pod 목록 반환
-    public V1PodList getPodList() throws ApiException {
+    public V1PodList getPodList(String namespace) throws ApiException {
         try {
-            return coreApi.listNamespacedPod(NAMESPACE, null, null, null, null, null, null, null, null, null, null);
+            return coreApi.listNamespacedPod(namespace, null, null, null, null, null, null, null, null, null, null);
         } catch (ApiException e) {
             log.error("getPodList 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -65,9 +68,9 @@ public class KubernetesAdapter {
     }
 
     // 특정 Pod 조회 (V1Pod)
-    public V1Pod getPod(String podName) throws ApiException {
+    public V1Pod getPod(String namespace, String podName) throws ApiException {
         try {
-            return coreApi.readNamespacedPod(podName, NAMESPACE, null);
+            return coreApi.readNamespacedPod(podName, namespace, null);
         } catch (ApiException e) {
             log.error("getPod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -75,14 +78,14 @@ public class KubernetesAdapter {
     }
 
     // 기존 Pod 갱신
-    public void replacePod(V1Pod pod) throws ApiException {
-        coreApi.replaceNamespacedPod(pod.getMetadata().getName(), NAMESPACE, pod, null, null, null, null);
+    public void replacePod(String namespace, V1Pod pod) throws ApiException {
+        coreApi.replaceNamespacedPod(pod.getMetadata().getName(), namespace, pod, null, null, null, null);
     }
 
     // Kubernetes Service 생성
-    public void createService(V1Service service) throws ApiException {
+    public void createService(String namespace, V1Service service) throws ApiException {
         try {
-            coreApi.createNamespacedService(NAMESPACE, service, null, null, null, null);
+            coreApi.createNamespacedService(namespace, service, null, null, null, null);
         } catch (ApiException e) {
             log.error("createService 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -90,9 +93,9 @@ public class KubernetesAdapter {
     }
 
     // Traefik IngressRoute 생성
-    public void createIngressRoute(Map<String, Object> ingressRoute) throws ApiException {
+    public void createIngressRoute(String namespace, Map<String, Object> ingressRoute) throws ApiException {
         try {
-            customObjectsApi.createNamespacedCustomObject("traefik.io", "v1alpha1", NAMESPACE, "ingressroutes", ingressRoute, null, null, null);
+            customObjectsApi.createNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "ingressroutes", ingressRoute, null, null, null);
         } catch (ApiException e) {
             log.error("createIngressRoute 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
             throw e;
@@ -100,19 +103,20 @@ public class KubernetesAdapter {
     }
 
     // labelSelector 조건에 맞는 Pod 목록을 반환
-    public V1PodList getPodsByLabelSelector(String labelSelector) throws ApiException {
+    public V1PodList getPodsByLabelSelector(String namespace, String labelSelector) {
         try {
-            return coreApi.listNamespacedPod(NAMESPACE, null, null, null, null, labelSelector, null, null, null, null, null);
+            // labelSelector "app=solve,type=dedicated"
+            return coreApi.listNamespacedPod(namespace, null, null, null, null, labelSelector, null, null, null, null, null);
         } catch (ApiException e) {
             log.error("getPodsByLabelSelector 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
-            throw e;
+            return new V1PodList();
         }
     }
 
     // 특정 Pod의 상태(phase)를 반환
-    public Optional<String> getPodPhase(String podName) {
+    public Optional<String> getPodPhase(String namespace, String podName) {
         try {
-            V1Pod pod = getPod(podName);
+            V1Pod pod = getPod(namespace, podName);
             return Optional.ofNullable(pod.getStatus().getPhase());
         } catch (Exception e) {
             log.warn("Could not get phase for pod {}: {}", podName, e.getMessage());
@@ -121,9 +125,9 @@ public class KubernetesAdapter {
     }
 
     // 특정 Pod의 Log를 반환
-    public String getPodLogs(String podName) {
+    public String getPodLogs(String namespace, String podName) {
         try {
-            return coreApi.readNamespacedPodLog(podName, NAMESPACE, null, null, null, null, null, null, null, null, null);
+            return coreApi.readNamespacedPodLog(podName, namespace, null, null, null, null, null, null, null, null, null);
         } catch (ApiException e) {
             log.error("Failed to get logs for pod {}: {}", podName, e.getResponseBody());
             return "Log fetch failed: " + e.getMessage();
@@ -131,9 +135,9 @@ public class KubernetesAdapter {
     }
 
     // 특정 Pod이 Ready 상태인지 확인
-    public boolean isPodReady(String podName) {
+    public boolean isPodReady(String namespace, String podName) {
         try {
-            V1Pod pod = getPod(podName);
+            V1Pod pod = getPod(namespace, podName);
             return pod.getStatus().getConditions().stream()
                     .anyMatch(cond -> "Ready".equals(cond.getType()) && "True".equals(cond.getStatus()));
         } catch (Exception e) {
@@ -143,13 +147,13 @@ public class KubernetesAdapter {
     }
 
     // 주어진 시간동안 Pod이 Ready 상태 될때까지 대기
-    public boolean waitPodToReady(String podName, int timeoutSeconds) {
+    public boolean waitPodToReady(String namespace, String podName, int timeoutSeconds) {
         int waited = 0;
         int interval = 2;
 
         while (waited < timeoutSeconds) {
             try {
-                if (isPodReady(podName)) return true;
+                if (isPodReady(namespace, podName)) return true;
                 Thread.sleep(interval * 1000L);
                 waited += interval;
             } catch (InterruptedException e) {
@@ -188,14 +192,10 @@ public class KubernetesAdapter {
     }
 
 
-    // Traefik Ingress Route 스타일의 External URL 반환
-    public String getExternalUrl(String podName, boolean shared) {
-        return shared ? "https://shared-" + podName + ".solve.your-domain.com" : "https://" + podName + ".solve.your-domain.com";
-    }
-
-    public Optional<Long> getLatestRequestTimestamp(String podName) {
+    public Optional<Long> getLatestRequestTimestamp(String namespace, String podName) {
         try {
-            String commandOutput = execPodCommand(podName, NAMESPACE, List.of("cat", lastAccessedFilePath));
+            String filePath = String.format("%s:%s.json", lastAccessedFilePath, podName);
+            String commandOutput = execPodCommand(podName, namespace, List.of("cat", "/shared/" + filePath));
 
             if (commandOutput == null || commandOutput.isBlank()) return Optional.empty();
 
@@ -228,6 +228,19 @@ public class KubernetesAdapter {
         } catch (IOException e) {
             log.error("Error executing command on pod {}: {}", podName, e.getMessage());
             return null;
+        }
+    }
+
+    public void createNamespace(String namespaceName) throws ApiException {
+        V1Namespace namespace = new V1Namespace()
+                .metadata(new V1ObjectMeta()
+                        .name(namespaceName))
+                .spec(new V1NamespaceSpec());
+        try {
+            coreApi.createNamespace(namespace, null, null, null, null);
+        } catch (ApiException e) {
+            log.error("createNamespace 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
+            throw e;
         }
     }
 }

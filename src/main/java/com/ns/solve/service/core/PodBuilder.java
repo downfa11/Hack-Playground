@@ -3,47 +3,61 @@ package com.ns.solve.service.core;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.*;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class PodBuilder {
-    public static V1PodSpec buildPodSpec(String name, String image, List<String> command, List<String> args) {
+
+    private static String lastAccessedFilePath = "/last-accessed";
+
+    public static V1PodSpec buildPodSpec(String name, String image, Map<String, Integer> resourceLimits) {
+
         return new V1PodSpec()
-                .containers(List.of(buildContainer(name, image, command, args), buildSidecarContainer()))
-                .restartPolicy("Never")
+                .containers(List.of(buildContainer(name, image, resourceLimits), buildSidecarContainer(name)))
+                .restartPolicy("OnFailure") // 비정상적인 종료시 재시작
                 // .runtimeClassName("gvisor")
                 .securityContext(new V1PodSecurityContext()
-                        //.runAsNonRoot(true)
-                        .seccompProfile(new V1SeccompProfile().type("RuntimeDefault")))
+                        .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))) //.runAsNonRoot(true)
                 .automountServiceAccountToken(false)
                 .volumes(List.of(sharedVolume())); // sidecar로 받기 위해서 공유 볼륨 설정
+
     }
 
-    private static V1Container buildContainer(String name, String image, List<String> command, List<String> args) {
+    private static V1Container buildContainer(String podName, String image, Map<String, Integer> resourceLimits) {
         return new V1Container()
-                .name(name + "-container")
+                .name(podName + "-container")
                 .image(image)
-                .command(command)
-                .args(args)
                 .securityContext(new V1SecurityContext()
-                        //.readOnlyRootFilesystem(true)
-                        .allowPrivilegeEscalation(false)
-                        //.runAsNonRoot(true)
-                        )
-                .resources(createResourceRequirements());
+                        .allowPrivilegeEscalation(false)) // readOnlyRootFilesystem(true), runAsNonRoot(true)
+                .resources(createResourceRequirements(resourceLimits));
     }
 
-    public static V1ResourceRequirements createResourceRequirements() {
+    public static V1ResourceRequirements createResourceRequirements(Map<String, Integer> resourceLimits) {
+        // 좀 더 섬세한 조절이 가능하도록 할지는 고민
+        if (resourceLimits == null) {
+            resourceLimits = new HashMap<>();
+            resourceLimits.put("cpu", 100);
+            resourceLimits.put("memory", 256);
+        }
+
+        Integer cpuLimit = resourceLimits.getOrDefault("cpu", 100);
+        Integer memoryLimit = resourceLimits.getOrDefault("memory", 256);
+
+        Integer cpuRequest = Math.max(cpuLimit / 2, 50);
+        Integer memoryRequest = Math.max(memoryLimit / 2, 128);
+
         return new V1ResourceRequirements()
-                .limits(Map.of(
-                        "cpu", new Quantity("500m"),
-                        "memory", new Quantity("512Mi")
-                ))
-                .requests(Map.of(
-                        "cpu", new Quantity("250m"),
-                        "memory", new Quantity("256Mi")
-                ));
+                .limits(Map.of("cpu", new Quantity(cpuLimit + "m"), "memory", new Quantity(memoryLimit + "Mi")))
+                .requests(Map.of("cpu", new Quantity(cpuRequest + "m"), "memory", new Quantity(memoryRequest + "Mi")));
+    }
+
+    public static V1ResourceRequirements createSideCarResourceRequirements() {
+        return new V1ResourceRequirements()
+                .limits(Map.of("cpu", new Quantity("200m"), "memory", new Quantity("256Mi")))
+                .requests(Map.of("cpu", new Quantity("50m"), "memory", new Quantity("64Mi")));
     }
 
     public static String sanitizeName(String name) {
@@ -62,7 +76,7 @@ public class PodBuilder {
         return sanitizeName(String.valueOf(problemId));
     }
 
-    public static V1Service buildService(String podName) {
+    public static V1Service buildService(String podName, Integer port) {
         V1Service service = new V1Service();
 
         V1ObjectMeta metadata = new V1ObjectMeta();
@@ -73,47 +87,42 @@ public class PodBuilder {
         V1ServiceSpec spec = new V1ServiceSpec();
         spec.setSelector(Map.of("app", podName));
         spec.setPorts(List.of(new V1ServicePort()
-                .port(80)
-                .targetPort(new IntOrString(80))));
+                .port(port)
+                .targetPort(new IntOrString(port))));
         spec.setType("ClusterIP");
 
         service.setSpec(spec);
         return service;
     }
 
-    public static Map<String, Object> buildIngressRoute(String podName) {
+    public static Map<String, Object> buildIngressRoute(String podName, Integer port) {
         return Map.of(
-                "apiVersion", "traefik.io/v1alpha1",
-                "kind", "IngressRoute",
+                "apiVersion", "traefik.io/v1alpha1", "kind", "IngressRoute",
                 "metadata", Map.of("name", podName),
-                "spec", Map.of(
-                        "entryPoints", List.of("web"),
+                "spec", Map.of("entryPoints", List.of("websecure"),
                         "routes", List.of(
-                                Map.of(
-                                        "match", "PathPrefix(`/" + podName + "`)",
-                                        "kind", "Rule",
-                                        "services", List.of(Map.of(
-                                                "name", podName,
-                                                "port", 80
-                                        ))))));
+                                Map.of("match", "PathPrefix(`/" + podName + "`)", "kind", "Rule",
+                                        "services", List.of(Map.of("name", podName, "port", port))
+                                )
+                        )
+                )
+        );
     }
 
-    private static V1Container buildSidecarContainer() {
+    // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
+    private static V1Container buildSidecarContainer(String getPodName) {
         return new V1Container()
-                .name("proxy-sidecar")
-                .image("downfall/envoy:latest") // Istio의 Envoy를 써서 더 유연한 처리 가능
-                .ports(List.of(new V1ContainerPort().containerPort(1337)))
-                .env(List.of(
-                        envVar("PROXY_INBOUND_PORT", "1337"),
-                        envVar("PROXY_OUTBOUND_PORT", "1338"),
-                        envVar("LAST_ACCESS_FILE", "/shared/last-accessed")
-                ))
+                .name("attache-sidecar")
+                .image("downfa11/attache:latest")
+                .ports(List.of(new V1ContainerPort().containerPort(8080)))
+                .env(List.of(envVar("filePath", String.format("/shared/%s:%s.json", lastAccessedFilePath, getPodName))))
                 .volumeMounts(List.of(sharedVolumeMount()))
-                .resources(createResourceRequirements())
+                .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()
                         .allowPrivilegeEscalation(false)
-                        .runAsUser(1000L)); // 사용자 1000 권한 부여
-        // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
+                        .runAsUser(1000L)
+                        .capabilities(new V1Capabilities().addAddItem("NET_ADMIN"))
+                );
     }
 
     private static V1Volume sharedVolume() {

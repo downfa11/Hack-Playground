@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 
 @Entity
@@ -35,11 +37,8 @@ public class Problem {
 
     private String detail;
 
-
-    private Integer attemptCount;
     private Double entireCount;
     private Double correctCount;
-
 
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL)
     @JsonManagedReference
@@ -47,16 +46,34 @@ public class Problem {
 
     private String source;
 
-    private String reviewer;
-
     @ElementCollection
     private List<String> tags;
+
+
+    @ManyToOne
+    @JoinColumn(name = "reviewer_id")
+    private User reviewer;
+
+    private ContainerResourceType containerResourceType; // dedicated, shared
+
+    @Column(nullable = true)
+    private Integer portNumber;
+
+    @ElementCollection
+    @CollectionTable(name = "container_resource_limits", joinColumns = @JoinColumn(name = "problem_id"))
+    @MapKeyColumn(name = "resource")
+    @Column(name = "limits")
+    private Map<String, Integer> resourceLimit; // CPU: 250m, Memory: 128Mi
+
+
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 
     @PrePersist
     public void prePersist() {
