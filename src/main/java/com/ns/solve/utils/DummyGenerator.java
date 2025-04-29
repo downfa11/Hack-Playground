@@ -101,11 +101,10 @@ public class DummyGenerator {
             problem.setIsChecked(i % 2 == 0);
             problem.setType(ProblemType.WARGAME);
             problem.setCreator(userRepository.findById(RANDOM.nextLong(1, userCount)).orElseThrow());
-            problem.setAttemptCount(0);
             problem.setEntireCount(0.0);
             problem.setCorrectCount(0.0);
             problem.setSource("source" + i);
-            problem.setReviewer("reviewer" + i);
+            problem.setReviewer(null);
             problem.setTags(Arrays.asList("tag" + i, "tag2"));
             problem.setCreatedAt(LocalDateTime.now());
             problem.setUpdatedAt(LocalDateTime.now());

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=true)
 public class WargameProblem extends Problem {
-    private String kind;  // 웹해킹, 시스템해킹, 리버싱, 암호학
+    private WargameKind kind;  // 웹해킹, 시스템해킹, 리버싱, 암호학
     private String level;
     private String flag;
 
@@ -24,5 +24,5 @@ public class WargameProblem extends Problem {
     private String problemFile;
 
     @Column(nullable = true)
-    private Long probelmFileSize;
+    private Long problemFileSize;
 }
