@@ -2,6 +2,7 @@ package com.ns.solve.service.core;
 
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
@@ -30,9 +31,10 @@ public class PodService {
     @Value("${server.url}")
     private String serverUrl;
 
-    private final KubernetesAdapter kubernetesAdapter;
+    private final KubernetesService kubernetesService;
     private final ProblemService problemService;
     private final UserService userService;
+
 
 
     public String createProblemPod(Long userId, Long problemId) {
@@ -42,7 +44,7 @@ public class PodService {
         }
 
         String namespace = problem.getType().getTypeName(); // wargame
-        V1PodList podList = kubernetesAdapter.getPodsByLabelSelector(namespace, String.format("userId={}",userId));
+        V1PodList podList = kubernetesService.getPodsByLabelSelector(namespace, String.format("userId={}",userId));
         if (!podList.getItems().isEmpty()) {
             return "Another problem container is already running";
         }
@@ -69,7 +71,7 @@ public class PodService {
         String podName = getPodName(userId, wargameProblem.getId());
 
         try {
-            Optional<String> phaseOpt = kubernetesAdapter.getPodPhase(namespace, podName);
+            Optional<String> phaseOpt = kubernetesService.getPodPhase(namespace, podName);
             if (phaseOpt.isPresent()) {
                 return handleExistingPod(namespace, podName, phaseOpt.get());
             }
@@ -82,7 +84,7 @@ public class PodService {
     }
 
     private String handleExistingPod(String namespace, String podName, String phase) {
-        if ("Running".equals(phase) && !kubernetesAdapter.isPodReady(namespace, podName)) {
+        if ("Running".equals(phase) && !kubernetesService.isPodReady(namespace, podName)) {
             return "Pod is not ready yet.";
         }
 
@@ -97,12 +99,12 @@ public class PodService {
         ContainerResourceType containerResourceType = wargameProblem.getContainerResourceType();
         Map<String, Integer> resourceLimits = wargameProblem.getResourceLimit();
         String image = wargameProblem.getDockerfileLink();
-        String kind = wargameProblem.getKind().getTypeName();
+        WargameKind kind = wargameProblem.getKind();
 
-        kubernetesAdapter.createPod(userId, problemId, namespace, image, resourceLimits);
+        kubernetesService.createPod(userId, problemId, namespace, image, resourceLimits);
         String podName = getPodName(userId, problemId);
 
-        if (kubernetesAdapter.waitPodToReady(namespace, podName, 60)) {
+        if (kubernetesService.waitPodToReady(namespace, podName, 60)) {
             return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
         } else {
             return "createAndExposePod error - timed out.";
@@ -110,11 +112,11 @@ public class PodService {
     }
 
     // Traefik Ingress Route 스타일의 External URL 반환
-    public String getExternalUrl(Long problemId, String nickname, ContainerResourceType containerResourceType) {
-        String uuid = UUID.randomUUID().toString();
-        String dedicatedUrl = String.format("%s/problems/%d/%s/%s", serverUrl, problemId, nickname, uuid);
-        String sharedUrl = String.format("%s/problems/%d/%s", serverUrl, problemId, uuid);
+    public String getExternalUrl(Long problemId, String uuid, ContainerResourceType containerResourceType) {
+        String dedicatedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
+        String sharedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
 
+        log.info("getExternalUrl: "+ dedicatedUrl +", " + sharedUrl);
         return containerResourceType==ContainerResourceType.SHARED ? sharedUrl : dedicatedUrl;
     }
 
@@ -124,7 +126,7 @@ public class PodService {
      */
     public Map<String, String> findCurrentSolveMember(String namespace) {
         try {
-            V1PodList pods = kubernetesAdapter.getPodList(namespace);
+            V1PodList pods = kubernetesService.getPodList(namespace);
             return pods.getItems().stream()
                     .map(pod -> {
                         Map<String, String> labels = pod.getMetadata().getLabels();
@@ -150,21 +152,22 @@ public class PodService {
     /**
      * Pod를 외부 노출 (Service + Ingress 생성)
      */
-    public String exposePod(Long userId, Long problemId, String namespace, String kind, Integer port, ContainerResourceType containerResourceType) {
-        String podName = getPodName(userId, problemId);
-
+    public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
         try {
-            V1Service service = PodBuilder.buildService(podName, port);
-            kubernetesAdapter.createService(namespace, service);
+            V1Service service = PodBuilder.buildService(userId, problemId, port);
+            kubernetesService.createService(namespace, service);
 
-            if (kind.equals("웹해킹")) {
-                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(podName, port);
-                kubernetesAdapter.createIngressRoute(namespace, ingressRoute);
+            String uuid = UUID.randomUUID().toString();
+            String url = getExternalUrl(problemId, uuid, containerResourceType);
+
+            if (kind.equals(WargameKind.WEBHACKING)) {
+                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace);
+                kubernetesService.createIngressRoute(namespace, ingressRoute);
             }
 
-            return getExternalUrl(problemId, podName, containerResourceType);
+            return url;
         } catch (Exception e) {
-            log.error("exposePod Failed  {}: {}", podName, e.getMessage(), e);
+            log.error("exposePod Failed  {}: {}", userId, e.getMessage(), e);
             return null;
         }
     }

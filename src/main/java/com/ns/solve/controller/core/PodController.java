@@ -1,11 +1,13 @@
 package com.ns.solve.controller.core;
 
 import com.ns.solve.service.core.PodService;
+import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -23,7 +25,10 @@ public class PodController {
             @ApiResponse(responseCode = "500", description = "Pod 생성 또는 상태 확인 중 오류 발생")
     })
     @PostMapping("/create")
-    public ResponseEntity<String> createPod(@RequestParam Long userId, @RequestParam Long problemId) {
+    public ResponseEntity<String> createPod(@RequestParam Long problemId,  Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
         return ResponseEntity.ok(podService.createProblemPod(userId, problemId));
     }
 

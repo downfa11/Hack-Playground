@@ -28,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -187,12 +188,12 @@ public class ProblemController {
                 Map.of("checkedCount", checkedCount, "newCount", newCount)));
     }
 
-    @Operation(summary = "문제 검색", description = "ProblemType(wargame, assignment, algorithm)과 WargameType(webhacking, system, reversing, crypto), 키워드로 게시판을 검색합니다. 단, WargameType은 null로 보내면 전체 검색합니다.")
+    @Operation(summary = "문제 검색", description = "ProblemType(WARGAME, ASSIGNMENT, ALGORITHM)과 WargameKind(WEBHACKING, SYSTEM, REVERSING, CRYPTO), 키워드로 게시판을 검색합니다. 단, WargameType은 null로 보내면 전체 검색합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시판 검색 결과가 성공적으로 조회되었습니다."),
             @ApiResponse(responseCode = "404", description = "검색된 게시판이 없습니다.")})
     @GetMapping("/search")
-    public ResponseEntity<MessageEntity> searchProblem(@RequestParam ProblemType type, @RequestParam WargameKind kind, @RequestParam String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<MessageEntity> searchProblem(@RequestParam ProblemType type, @RequestParam(required = false) WargameKind kind, @RequestParam String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
         Page<ProblemSummary> results = problemService.searchProblems(type, kind, keyword, PageRequest.of(page, size));
 
         if (results.hasContent()) {
