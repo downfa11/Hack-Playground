@@ -11,18 +11,18 @@ import java.util.Map;
 
 public class PodBuilder {
 
-    private static String lastAccessedFilePath = "/last-accessed";
-
     public static V1PodSpec buildPodSpec(String name, String image, Map<String, Integer> resourceLimits) {
 
         return new V1PodSpec()
-                .containers(List.of(buildContainer(name, image, resourceLimits), buildSidecarContainer(name)))
+                .containers(List.of(buildContainer(name, image, resourceLimits), buildSidecarContainer()))
                 .restartPolicy("OnFailure") // 비정상적인 종료시 재시작
                 // .runtimeClassName("gvisor")
                 .securityContext(new V1PodSecurityContext()
-                        .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))) //.runAsNonRoot(true)
+                        // .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))
+                        .seccompProfile(new V1SeccompProfile().type("Unconfined"))
+                        .runAsNonRoot(false))
                 .automountServiceAccountToken(false)
-                .volumes(List.of(sharedVolume())); // sidecar로 받기 위해서 공유 볼륨 설정
+                .hostNetwork(false);
 
     }
 
@@ -39,15 +39,15 @@ public class PodBuilder {
         // 좀 더 섬세한 조절이 가능하도록 할지는 고민
         if (resourceLimits == null) {
             resourceLimits = new HashMap<>();
-            resourceLimits.put("cpu", 100);
+            resourceLimits.put("cpu", 200);
             resourceLimits.put("memory", 256);
         }
 
-        Integer cpuLimit = resourceLimits.getOrDefault("cpu", 100);
+        Integer cpuLimit = resourceLimits.getOrDefault("cpu", 200);
         Integer memoryLimit = resourceLimits.getOrDefault("memory", 256);
 
         Integer cpuRequest = Math.max(cpuLimit / 2, 50);
-        Integer memoryRequest = Math.max(memoryLimit / 2, 128);
+        Integer memoryRequest = Math.max(memoryLimit / 2, 64);
 
         return new V1ResourceRequirements()
                 .limits(Map.of("cpu", new Quantity(cpuLimit + "m"), "memory", new Quantity(memoryLimit + "Mi")))
@@ -69,23 +69,29 @@ public class PodBuilder {
     }
 
     public static String getPodName(Long userId, Long problemId) {
-        return sanitizeName(userId + "-" + problemId);
+        return sanitizeName("Problem" + problemId + "-" + userId);
     }
 
     public static String getPodName(Long problemId) {
-        return sanitizeName(String.valueOf(problemId));
+        return sanitizeName("Problem" + problemId);
     }
 
-    public static V1Service buildService(String podName, Integer port) {
+    public static V1Service buildService(Long userId, Long problemId, Integer port) {
         V1Service service = new V1Service();
-
         V1ObjectMeta metadata = new V1ObjectMeta();
+        String podName = getPodName(userId, problemId);
         metadata.setName(podName);
-        metadata.setLabels(Map.of("app", "solve", "podName", podName));
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", podName);
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
+        metadata.setLabels(labels);
         service.setMetadata(metadata);
 
         V1ServiceSpec spec = new V1ServiceSpec();
-        spec.setSelector(Map.of("app", podName));
+        spec.setSelector(Map.of("app", podName)); // 해당 Pod를 찾는다.
         spec.setPorts(List.of(new V1ServicePort()
                 .port(port)
                 .targetPort(new IntOrString(port))));
@@ -95,50 +101,73 @@ public class PodBuilder {
         return service;
     }
 
-    public static Map<String, Object> buildIngressRoute(String podName, Integer port) {
-        return Map.of(
-                "apiVersion", "traefik.io/v1alpha1", "kind", "IngressRoute",
-                "metadata", Map.of("name", podName),
-                "spec", Map.of("entryPoints", List.of("websecure"),
-                        "routes", List.of(
-                                Map.of("match", "PathPrefix(`/" + podName + "`)", "kind", "Rule",
-                                        "services", List.of(Map.of("name", podName, "port", port))
-                                )
-                        )
-                )
-        );
+    public static Map<String, Object> buildReplacePathRegexMiddleware(String middlewareName) {
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", middlewareName);
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name", middlewareName);
+        metadata.put("labels", labels);
+
+        Map<String, Object> middleware = new HashMap<>();
+        middleware.put("apiVersion", "traefik.io/v1alpha1");
+        middleware.put("kind", "Middleware");
+        middleware.put("metadata", metadata);
+        middleware.put("spec", Map.of(
+                "replacePathRegex", Map.of(
+                        "regex", "^/problems/\\d+/[a-f0-9\\-]+(?:/(.*))?",
+                        "replacement", "/$1")
+        ));
+
+        return middleware;
+    }
+
+
+    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace) {
+        String podName = getPodName(userId, problemId);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", podName);
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name", podName);
+        metadata.put("labels", labels);
+
+        Map<String, Object> route = new HashMap<>();
+        route.put("match", "PathPrefix(`/`)");
+        route.put("kind", "Rule");
+        route.put("middlewares", List.of(Map.of("name", KubernetesService.TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME, "namespace", namespace)));
+
+        route.put("services", List.of(Map.of("name", podName, "port", port)));
+
+        Map<String, Object> spec = new HashMap<>();
+        spec.put("entryPoints", List.of("web"));
+        spec.put("routes", List.of(route));
+
+        Map<String, Object> ingressRoute = new HashMap<>();
+        ingressRoute.put("apiVersion", "traefik.io/v1alpha1");
+        ingressRoute.put("kind", "IngressRoute");
+        ingressRoute.put("metadata", metadata);
+        ingressRoute.put("spec", spec);
+
+        return ingressRoute;
     }
 
     // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
-    private static V1Container buildSidecarContainer(String getPodName) {
+    private static V1Container buildSidecarContainer() {
         return new V1Container()
                 .name("attache-sidecar")
                 .image("downfa11/attache:latest")
-                .ports(List.of(new V1ContainerPort().containerPort(8080)))
-                .env(List.of(envVar("filePath", String.format("/shared/%s:%s.json", lastAccessedFilePath, getPodName))))
-                .volumeMounts(List.of(sharedVolumeMount()))
+                .ports(List.of(new V1ContainerPort().containerPort(8888)))
                 .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()
-                        .allowPrivilegeEscalation(false)
-                        .runAsUser(1000L)
-                        .capabilities(new V1Capabilities().addAddItem("NET_ADMIN"))
+                        .allowPrivilegeEscalation(true)
+                        .runAsUser(0L)
+                        .capabilities(new V1Capabilities().addAddItem("NET_ADMIN")
+                                .addAddItem("NET_RAW"))
                 );
-    }
-
-    private static V1Volume sharedVolume() {
-        return new V1Volume()
-                .name("shared")
-                .emptyDir(new V1EmptyDirVolumeSource());
-    }
-
-    private static V1VolumeMount sharedVolumeMount() {
-        return new V1VolumeMount()
-                .name("shared")
-                .mountPath("/shared");
-    }
-
-    private static V1EnvVar envVar(String name, String value) {
-        return new V1EnvVar().name(name).value(value);
     }
 
 }
