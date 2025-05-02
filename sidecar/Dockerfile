@@ -24,6 +24,6 @@ ENV LD_LIBRARY_PATH=/usr/lib:/lib:/usr/local/lib
 
 RUN chmod +x /attache
 
-EXPOSE 8080
+EXPOSE 8888
 
 ENTRYPOINT ["/attache"]

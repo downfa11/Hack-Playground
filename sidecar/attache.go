@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -15,7 +16,6 @@ import (
 )
 
 const (
-	device      = "eth0"
 	snapshotLen = 1024
 	promiscuous = true
 	filter      = "tcp[tcpflags] & (tcp-syn) != 0 and tcp[tcpflags] & (tcp-ack) == 0"
@@ -38,13 +38,18 @@ func init() {
 	if filePath == "" {
 		filePath = "/tmp/last_connections.json"
 	}
-
 	if httpPort == "" {
-		httpPort = ":8080"
+		httpPort = ":8888"
 	}
 }
 
 func main() {
+	device, err := findCaptureInterface()
+	if err != nil {
+		log.Fatal("Failed to find suitable network interface:", err)
+	}
+	log.Println("Using network interface:", device)
+
 	handle, err := pcap.OpenLive(device, snapshotLen, promiscuous, pcap.BlockForever)
 	if err != nil {
 		log.Fatal("Error opening device:", err)
@@ -59,7 +64,6 @@ func main() {
 	go startHTTPServer(httpPort)
 
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-
 	for packet := range packetSource.Packets() {
 		tcpLayer := packet.Layer(layers.LayerTypeTCP)
 		if tcpLayer == nil {
@@ -75,9 +79,7 @@ func main() {
 
 			ip, _ := ipLayer.(*layers.IPv4)
 			srcIP := ip.SrcIP.String()
-
 			protocol := "TCP"
-
 			now := time.Now()
 
 			mu.Lock()
@@ -97,6 +99,27 @@ func main() {
 	}
 }
 
+func findCaptureInterface() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, iface := range interfaces {
+		// loopback 제외
+		if (iface.Flags&net.FlagLoopback) == 0 &&
+			(iface.Flags&net.FlagUp) != 0 {
+			addrs, err := iface.Addrs()
+			if err != nil || len(addrs) == 0 {
+				continue
+			}
+			log.Println("Available interface:", iface.Name)
+			return iface.Name, nil
+		}
+	}
+	return "", fmt.Errorf("no suitable interface found")
+}
+
 func writeToFile() error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -105,11 +128,9 @@ func writeToFile() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal IP timestamps: %v", err)
 	}
-
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
-
 	return nil
 }
 
