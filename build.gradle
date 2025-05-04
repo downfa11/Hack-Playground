@@ -16,7 +16,7 @@ version = '0.0.1'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -32,24 +32,29 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
     runtimeOnly 'com.mysql:mysql-connector-j'
+    // runtimeOnly 'com.h2database:h2:2.1.214'
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-
-    // AWS ECR
-    implementation 'software.amazon.awssdk:ecr:2.20.28'
-    implementation 'software.amazon.awssdk:sts:2.20.28'
 
     //json
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 
     //jwt
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.11.2'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // micrometer
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     //Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
@@ -63,8 +68,7 @@ dependencies {
     implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
 
     // JGit
-    implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '4.4.1.201607150455-r'
-    implementation 'software.amazon.awssdk:ecr:2.20.5'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:6.8.0.202311291450-r'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -75,6 +79,7 @@ dependencies {
     //QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
+    annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jpa"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 
@@ -108,7 +113,7 @@ tasks.named('bootBuildImage') {
 
 docker {
     println(tasks.bootJar.outputs.files)
-    name project.name+":"+version
+    name "downfa11/"+project.name+":latest"
     dockerfile file('./Dockerfile')
     files tasks.bootJar.outputs.files
     files file('./config')

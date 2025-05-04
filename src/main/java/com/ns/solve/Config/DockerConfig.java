@@ -1,4 +1,4 @@
-package com.ns.solve.Config;
+package com.ns.solve.config;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;

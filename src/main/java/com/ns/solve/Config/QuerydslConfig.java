@@ -1,4 +1,4 @@
-package com.ns.solve.Config;
+package com.ns.solve.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

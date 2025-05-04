@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/volume:/prometheus
+      - ./prometheus/config:/etc/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./grafana/volume:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    user: root
