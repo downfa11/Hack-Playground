@@ -82,7 +82,8 @@ public class ProblemService {
     private void setCommonProblemFields(Problem problem, Long userId, RegisterProblemDto registerProblemDto) {
         User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
         problem.setCreator(user);
-
+        problem.setCorrectCount(0.0);
+        problem.setEntireCount(0.0);
         problem.setTitle(registerProblemDto.getTitle());
         problem.setDetail(registerProblemDto.getDetail());
         problem.setTags(registerProblemDto.getTags());

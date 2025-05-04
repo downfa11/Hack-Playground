@@ -115,7 +115,7 @@ public class ProblemController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형(type='wargame')에 따라 조회합니다. 종류(kind='웹해킹'...)도 구분합니다. 단, 정렬 조건(sortKind)은 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
+    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형(type='WARGAME')에 따라 조회합니다. 종류(kind='WEBHACKING'...)도 구분합니다. 단, 정렬 조건(sortKind)은 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "완료된 문제들이 성공적으로 조회되었습니다."),
             @ApiResponse(responseCode = "404", description = "완료된 문제들을 찾을 수 없습니다.")

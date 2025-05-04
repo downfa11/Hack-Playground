@@ -68,10 +68,8 @@ public class ProblemMapper {
                 .updatedAt(problem.getUpdatedAt())
                 .kind(problem.getKind())
                 .level(problem.getLevel())
-                .flag(problem.getFlag())
-                .dockerfileLink(problem.getDockerfileLink())
                 .problemFile(problem.getProblemFile())
-                .probelmFileSize(problem.getProblemFileSize())
+                .problemFileSize(problem.getProblemFileSize())
                 .build();
     }
 

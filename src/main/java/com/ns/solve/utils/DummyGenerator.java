@@ -34,10 +34,10 @@ public class DummyGenerator {
 
     private static final Random RANDOM = new Random();
 
-    public void generateDummyData(int userCount, int boardCount, int boardCommentCount, int problemCount, int probelmCommentCount, int solvedCount) {
+    public void generateDummyData(int userCount, int boardCount, int boardCommentCount, int problemCount, int problemCommentCount, int solvedCount) {
         generateDummyUsers(userCount);
         generateDummyBoardsAndComments(userCount, boardCount, boardCommentCount);
-        generateDummyProblemsAndComments(userCount, problemCount, probelmCommentCount);
+        generateDummyProblemsAndComments(userCount, problemCount, problemCommentCount);
         generateDummySolvedData(userCount, problemCount, solvedCount);
 
         log.info("dummy create successfully.");

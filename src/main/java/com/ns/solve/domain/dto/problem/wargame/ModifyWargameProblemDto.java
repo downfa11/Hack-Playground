@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public class ModifyWargameProblemDto extends ModifyProblemDto {
     @NotNull
-    private Long probelmId;
+    private Long problemId;
 
     private WargameKind kind;  // 웹해킹, 시스템해킹, 리버싱, 암호학
     private String level;
