@@ -3,6 +3,8 @@ package com.ns.solve.repository.problem;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.dto.problem.QProblemSummary;
 import com.ns.solve.domain.entity.problem.*;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -176,22 +178,34 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
 
     @Override
     public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
-        return findProblemsSorted(type, kind, pageRequest, qProblem.correctCount.doubleValue().divide(qProblem.entireCount.doubleValue()), desc);
+        NumberExpression<Double> correctRateExpr = qProblem.correctCount
+                .doubleValue()
+                .multiply(100.0)
+                .divide(qProblem.entireCount.coalesce(1.0));
+
+        return findProblemsSorted(type, kind, pageRequest, correctRateExpr, desc);
     }
 
-    // Todo. 현재 조회는 QWargameProblem 이라고 가정한 상황임. 추후 확장된다면 개선해야한다.
-    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(ProblemType type, WargameKind kind, PageRequest pageRequest, com.querydsl.core.types.dsl.ComparableExpressionBase<T> sortField, boolean desc) {
-        BooleanExpression condition = qProblem.isChecked.isTrue().and(typeEq(type));
-        BooleanExpression kindCondition = kindEq(kind);
 
-        if (kindCondition != null) {
-            condition = condition.and(kindCondition);
+    // Todo. 현재 조회는 QWargameProblem 이라고 가정한 상황임. 추후 확장된다면 개선해야한다.
+    private <T extends Comparable<?>> Page<ProblemSummary> findProblemsSorted(
+            ProblemType type,
+            WargameKind kind,
+            PageRequest pageRequest,
+            Expression<T> sortField,
+            boolean desc
+    ){
+        BooleanExpression condition = qProblem.isChecked.isTrue().and(typeEq(type));
+
+        if (kind != null) {
+            condition = condition.and(kindEq(kind));
         }
 
-        OrderSpecifier<T> orderSpecifier = desc ? sortField.desc() : sortField.asc();
+        OrderSpecifier<T> orderSpecifier = desc ? new OrderSpecifier<>(Order.DESC, sortField) : new OrderSpecifier<>(Order.ASC, sortField);
+
         NumberExpression<Double> correctRatePercent = qProblem.correctCount.doubleValue()
                 .multiply(100.0)
-                .divide(qProblem.entireCount.coalesce(1.0).doubleValue());
+                .divide(qProblem.entireCount.coalesce(1.0));
 
         List<ProblemSummary> results = jpaQueryFactory
                 .select(new QProblemSummary(
@@ -212,15 +226,16 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
                 .limit(pageRequest.getPageSize())
                 .fetch();
 
-
-        Long total = jpaQueryFactory
-                .selectFrom(qProblem)
+        long total = jpaQueryFactory
+                .select(qProblem.count())
+                .from(qProblem)
                 .leftJoin(qWargameProblem).on(qProblem.id.eq(qWargameProblem.id))
                 .where(condition)
-                .fetchCount();
+                .fetchOne();
 
         return new PageImpl<>(results, pageRequest, total);
     }
+
 
     private BooleanExpression typeEq(ProblemType type) {
         if (type == null) {
