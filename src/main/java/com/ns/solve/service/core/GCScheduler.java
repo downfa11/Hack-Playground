@@ -18,7 +18,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GCScheduler {
 
-    private static final long TTL_SECONDS = 1800; // 30min
+    private static final long LAST_TTL_SECONDS = 1800; // 30min
+    private static final long CREATED_TTL_SECONDS = 3 * 3600; // 3hour
     private static final String WARGAME_NAMESPACE = "wargame";
     private final KubernetesService kubernetesService;
 
@@ -48,11 +49,14 @@ public class GCScheduler {
                     long lastRequestTimestamp = lastRequestTimestampOpt.get();
                     long elapsed = Duration.between(Instant.ofEpochMilli(lastRequestTimestamp), Instant.now()).getSeconds();
 
-                    if (elapsed > TTL_SECONDS) {
-                        log.info("[GC] Deleting pod: {} (elapsed={}s > ttl={}s, label={})", podName, elapsed, TTL_SECONDS, labelSelector);
+                    Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
+                    long elapsedSinceCreation = Duration.between(creationTime, Instant.now()).getSeconds();
+
+                    if (elapsed > LAST_TTL_SECONDS || elapsedSinceCreation > CREATED_TTL_SECONDS) {
+                        log.info("[GC] Deleting pod: {} - elapsed={}s > last_ttl={}s or create_ttl={}s, label={}", podName, elapsed, LAST_TTL_SECONDS, elapsedSinceCreation, labelSelector);
                         kubernetesService.deleteAllResourcesByLabel(WARGAME_NAMESPACE, labelSelector);
                     } else {
-                        log.info("[GC] Skipping pod: {} (elapsed={}s <= ttl={}s)", podName, elapsed, TTL_SECONDS);
+                        log.info("[GC] Skipping pod: {} - elapsed={}s <= last_ttl={}s or create_ttl={}s", podName, elapsed, LAST_TTL_SECONDS, elapsedSinceCreation);
                     }
 
                 } catch (Exception e) {
