@@ -5,6 +5,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,7 @@ public class GCScheduler {
 
 
     @Scheduled(fixedDelay = 10 * 60_000)
+    @SchedulerLock(name = "gcExpiredK8sPods", lockAtLeastFor = "PT30S", lockAtMostFor = "PT4M")
     public void cleanExpiredPods() {
         log.info("[GC] Expired pod check start");
 
