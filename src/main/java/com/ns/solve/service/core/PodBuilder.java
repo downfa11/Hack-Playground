@@ -123,7 +123,7 @@ public class PodBuilder {
     }
 
 
-    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace) {
+    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace, String uuid) {
         String podName = getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
@@ -132,11 +132,13 @@ public class PodBuilder {
         labels.put("problemId", String.valueOf(problemId));
 
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("name", podName);
+        metadata.put("name", podName+"-"+uuid);
         metadata.put("labels", labels);
 
         Map<String, Object> route = new HashMap<>();
-        route.put("match", "PathPrefix(`/`)");
+
+        String pathPrefix = String.format("/problems/%d/%s", problemId, uuid);
+        route.put("match",  String.format("PathPrefix(`%s`)", pathPrefix));
         route.put("kind", "Rule");
         route.put("middlewares", List.of(Map.of("name", KubernetesService.TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME, "namespace", namespace)));
 

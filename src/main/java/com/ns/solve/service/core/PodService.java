@@ -1,14 +1,18 @@
 package com.ns.solve.service.core;
 
+import com.ns.solve.domain.dto.problem.SolveInfo;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
+import com.ns.solve.utils.exception.ErrorCode.BaseErrorCode;
+import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.ns.solve.service.core.PodBuilder.getPodName;
@@ -38,28 +41,95 @@ public class PodService {
 
 
     public String createProblemPod(Long userId, Long problemId) {
-        Problem problem = problemService.getProblemById(problemId);
-        if (!problem.getIsChecked()) {
-            return "Problem is not checked yet";
+        Problem problem = validateUserAndProblemChecked(userId, problemId);
+        String namespace = problem.getType().getTypeName();
+        V1PodList podList = kubernetesService.getPodsByLabelSelector(namespace, String.format("userId=%s", userId));
+
+        Optional<String> existingUrl = getExistingPodUrlIfExists(podList, userId, problemId, problem);
+        if (existingUrl.isPresent()) {
+            return existingUrl.get();
         }
 
-        String namespace = problem.getType().getTypeName(); // wargame
-        V1PodList podList = kubernetesService.getPodsByLabelSelector(namespace, String.format("userId={}",userId));
-        if (!podList.getItems().isEmpty()) {
+        if (isOtherProblemPodRunning(podList)) {
             return "Another problem container is already running";
         }
 
+        return handleProblemType(problem, userId);
+    }
+
+    private Problem validateUserAndProblemChecked(Long userId, Long problemId) {
         userService.getUserById(userId)
                 .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
-        String type = problem.getType().getTypeName();
-        if ("wargame".equals(type)) {
-            WargameProblem wargameProblem = (WargameProblem) problem;
-            return ensureRunningOrCreate(wargameProblem, userId);
+        Problem problem = problemService.getProblemById(problemId);
+        if (!problem.getIsChecked()) {
+            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED);
         }
 
+        return problem;
+    }
+
+    private Optional<String> getExistingPodUrlIfExists(V1PodList podList, Long userId, Long problemId, Problem problem) {
+        return findMatchingPod(podList, userId, problemId)
+                .flatMap(pod -> resolveIngressRouteUrl(problem, userId, problemId));
+    }
+
+    private Optional<V1Pod> findMatchingPod(V1PodList podList, Long userId, Long problemId) {
+        return podList.getItems().stream()
+                .filter(pod -> {
+                    Map<String, String> labels = pod.getMetadata().getLabels();
+                    return labels != null &&
+                            String.valueOf(userId).equals(labels.get("userId")) &&
+                            String.valueOf(problemId).equals(labels.get("problemId"));
+                })
+                .findFirst();
+    }
+
+    private Optional<String> resolveIngressRouteUrl(Problem problem, Long userId, Long problemId) {
+        String namespace = problem.getType().getTypeName();
+        String podName = PodBuilder.getPodName(userId, problemId);
+
+        Map<String, Object> ingressRoute;
+        try {
+            ingressRoute = kubernetesService.getIngressRouteByName(namespace, podName);
+        } catch (ApiException e) {
+            throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION);
+        }
+
+        if (ingressRoute == null) return Optional.empty();
+
+        Map<String, Object> spec = (Map<String, Object>) ingressRoute.get("spec");
+        if (spec == null) return Optional.empty();
+
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) spec.get("routes");
+        if (routes == null) return Optional.empty();
+
+        for (Map<String, Object> route : routes) {
+            String match = (String) route.get("match");
+            Matcher matcher = Pattern.compile("^PathPrefix\\(`/problems/\\d+/([a-f0-9\\-]+)`\\)").matcher(match);
+
+            if (matcher.find()) {
+                String uuid = matcher.group(1);
+                return Optional.of(getExternalUrl(problemId, uuid, problem.getContainerResourceType()));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+
+    private boolean isOtherProblemPodRunning(V1PodList podList) {
+        return !podList.getItems().isEmpty();
+    }
+
+    private String handleProblemType(Problem problem, Long userId) {
+        String type = problem.getType().getTypeName();
+        if ("wargame".equals(type)) {
+            return ensureRunningOrCreate((WargameProblem) problem, userId);
+        }
         return "Invalid Problem type: " + type;
     }
+
 
 
     /**
@@ -124,7 +194,9 @@ public class PodService {
     /**
      * 현재 dedicated 유형 문제를 푸는 사용자 목록 조회
      */
-    public Map<String, String> findCurrentSolveMember(String namespace) {
+
+
+    public List<SolveInfo> findCurrentSolveMembers(String namespace) {
         try {
             V1PodList pods = kubernetesService.getPodList(namespace);
             return pods.getItems().stream()
@@ -137,16 +209,17 @@ public class PodService {
                             return null;
                         }
 
-                        return Map.entry(userId, problemId);
+                        return new SolveInfo(userId, problemId);
                     })
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> b));
+                    .collect(Collectors.toList());
 
         } catch (Exception e) {
             log.error("fetch pod list failed : {}", e.getMessage(), e);
-            return Map.of();
+            return List.of();
         }
     }
+
 
 
     /**
@@ -161,7 +234,7 @@ public class PodService {
             String url = getExternalUrl(problemId, uuid, containerResourceType);
 
             if (kind.equals(WargameKind.WEBHACKING)) {
-                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace);
+                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
             }
 
