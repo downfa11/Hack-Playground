@@ -21,7 +21,7 @@ import java.util.List;
 
 @Service
 public class FileService {
-    private static final List<String> ALLOWED_EXTENSIONS = List.of("pdf", "txt", "md", "png", "jpg"); // 허용 확장자
+    private static final List<String> ALLOWED_EXTENSIONS = List.of("pdf", "txt", "md", "png", "jpg","zip", "gzip", "gz", "tar", "tgz", "yaml", "yml", "c", "cpp", "go", "java", "h", "py", "sh", "js"); // 허용 확장자
 
     @Value("${file.upload.dir}")
     private String uploadDir;
