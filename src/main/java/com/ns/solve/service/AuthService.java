@@ -37,10 +37,10 @@ public class AuthService {
             throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
         }
 
-        String jwt = jwtUtil.createJwt(user.getId(), user.getAccount(), user.getRole().name(), ACCESS_TOKEN_EXPIRATION);
-        String refreshToken = jwtUtil.createJwt(user.getId(), user.getAccount(), user.getRole().name(), REFRESH_TOKEN_EXPIRATION);
+        String jwt = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), ACCESS_TOKEN_EXPIRATION);
+        String refreshToken = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), REFRESH_TOKEN_EXPIRATION);
 
-        return JWtToken.generateJwtToken(String.valueOf(user.getId()),user.getAccount(),jwt,refreshToken);
+        return JWtToken.generateJwtToken(String.valueOf(user.getId()),user.getNickname(),jwt,refreshToken);
     }
 
     public boolean validateJwtToken(String token) {
@@ -54,8 +54,8 @@ public class AuthService {
     public User getUserByJwtToken(String token) {
         try {
             if (jwtUtil.isExpired(token)) return null;
-            String account = jwtUtil.getAccount(token);
-            return userService.getUserByAccount(account);
+            String nickname = jwtUtil.getNickname(token);
+            return userService.getUserByNickname(nickname);
         } catch (Exception e) {
             return null;
         }
@@ -66,15 +66,14 @@ public class AuthService {
             throw new SolvedException(UserErrorCode.ACCESS_DENIED);
         }
 
-        String account = jwtUtil.getAccount(refreshToken);
+        String nickname = jwtUtil.getNickname(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
 
-        User user = userService.getUserByAccount(account);
+        User user = userService.getUserByNickname(nickname);
         if (user == null) throw new SolvedException(UserErrorCode.USER_NOT_FOUND);
 
-        String newAccessToken = jwtUtil.createJwt(user.getId(), user.getAccount(), role, ACCESS_TOKEN_EXPIRATION);
+        String newAccessToken = jwtUtil.createJwt(user.getId(), user.getNickname(), role, ACCESS_TOKEN_EXPIRATION);
         return JWtToken.generateJwtToken(String.valueOf(user.getId()), user.getNickname(), newAccessToken, refreshToken);
-
     }
 
 }

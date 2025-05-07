@@ -12,7 +12,7 @@ import java.util.Date;
 @Component
 public class JWTUtil {
     private static final String CLAIM_ID = "userId";
-    private static final String CLAIM_ACCOUNT = "account";
+    private static final String CLAIM_NICKNAME = "nickname";
     private static final String CLAIM_ROLE = "role";
 
     private SecretKey secretKey;
@@ -33,9 +33,9 @@ public class JWTUtil {
 
 
 
-    public String getAccount(String token) {
+    public String getNickname(String token) {
         return Jwts.parser().verifyWith(secretKey).build()
-                .parseSignedClaims(token).getPayload().get(CLAIM_ACCOUNT, String.class);
+                .parseSignedClaims(token).getPayload().get(CLAIM_NICKNAME, String.class);
     }
 
     public String getRole(String token) {
@@ -45,7 +45,7 @@ public class JWTUtil {
 
     public String createJwt(Long userId, String account, String role, Long expiredMs) {
         return Jwts.builder()
-                .claim(CLAIM_ACCOUNT, account)
+                .claim(CLAIM_NICKNAME, account)
                 .claim(CLAIM_ROLE, role)
                 .claim(CLAIM_ID, userId)
                 .issuedAt(new Date(System.currentTimeMillis()))

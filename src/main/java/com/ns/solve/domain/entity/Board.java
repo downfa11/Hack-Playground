@@ -25,6 +25,7 @@ public class Board {
     @Column(nullable = false)
     private BoardType type;
 
+    @Lob // text 타입으로 명시
     @Column(nullable = false)
     private String contents;
 
