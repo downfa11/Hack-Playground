@@ -1,5 +1,6 @@
 package com.ns.solve.controller.core;
 
+import com.ns.solve.domain.dto.problem.SolveInfo;
 import com.ns.solve.service.core.PodService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -37,7 +39,7 @@ public class PodController {
             @ApiResponse(responseCode = "200", description = "사용자 ID -> 문제 ID 매핑 반환")
     })
     @GetMapping("/active")
-    public ResponseEntity<Map<String, String>> getCurrentSolveMembers(@RequestParam String namespace) {
-        return ResponseEntity.ok(podService.findCurrentSolveMember(namespace));
+    public ResponseEntity<List<SolveInfo>> getCurrentSolveMembers(@RequestParam String namespace) {
+        return ResponseEntity.ok(podService.findCurrentSolveMembers(namespace));
     }
 }
