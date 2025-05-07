@@ -60,6 +60,21 @@ public class KubernetesService {
         }
     }
 
+    // 특정 Pod을 강제로 삭제
+    public void forceDeletePod(String namespace, String podName) throws ApiException {
+        try {
+            V1DeleteOptions deleteOptions = new V1DeleteOptions()
+                    .gracePeriodSeconds(0L)
+                    .propagationPolicy("Foreground");
+
+            coreApi.deleteNamespacedPod(podName, namespace, null, null, 0, false, "Foreground", deleteOptions);
+        } catch (ApiException e) {
+            log.error("forceDeletePod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
+            throw e;
+        }
+    }
+
+
     // NAMESPACE 내의 전체 Pod 목록 반환
     public V1PodList getPodList(String namespace) throws ApiException {
         try {
@@ -128,6 +143,21 @@ public class KubernetesService {
             throw e;
         }
     }
+
+    public Map<String, Object> getIngressRouteByName(String namespace, String ingressRouteName) throws ApiException {
+        try {
+            Object obj = customObjectsApi.getNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "ingressroutes", ingressRouteName);
+            return (Map<String, Object>) obj;
+        } catch (ApiException e) {
+            if (e.getCode() == 404) {
+                log.warn("IngressRoute 미존재: {}", ingressRouteName);
+                return null;
+            }
+            log.error("getIngressRouteByName 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
+            throw e;
+        }
+    }
+
 
     public Map<String, Object> getIngressRouteList(String namespace) throws ApiException {
         try {

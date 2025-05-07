@@ -28,9 +28,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/k8s")
 @Slf4j
 public class KubernetesController {
-
     private final KubernetesService kubernetesService;
-    private final PodService podService;
 
     @Operation(summary = "Pod 생성", description = "지정한 이름과 이미지로 Pod를 생성합니다.")
     @PostMapping("/pod")
@@ -48,6 +46,15 @@ public class KubernetesController {
                           @Parameter(description = "생성할 Pod의 namespace") @RequestParam String namespace) throws ApiException {
         kubernetesService.deletePod(namespace, podName);
     }
+
+    @Operation(summary = "Pod 강제 삭제", description = "지정한 이름의 Pod를 강제로 삭제합니다.")
+    @DeleteMapping("/pod/force")
+    public void forceDeletePod(
+            @Parameter(description = "삭제할 Pod 이름") @RequestParam String podName,
+            @Parameter(description = "Pod가 위치한 namespace") @RequestParam String namespace) throws ApiException {
+        kubernetesService.forceDeletePod(namespace, podName);
+    }
+
 
     @Operation(summary = "Pod 목록 조회", description = "현재 네임스페이스의 모든 Pod를 반환합니다.")
     @GetMapping("/pods")
