@@ -1,10 +1,7 @@
 package com.ns.solve.config;
 
 import com.ns.solve.repository.UserRepository;
-import com.ns.solve.utils.CustomOAuth2UserService;
-import com.ns.solve.utils.JWTFilter;
-import com.ns.solve.utils.JWTUtil;
-import com.ns.solve.utils.LoginFilter;
+import com.ns.solve.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +32,7 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
@@ -55,7 +52,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
-                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService)))
                 .logout(logout -> logout.logoutSuccessUrl("/"))
                 .addFilterBefore(new JWTFilter(userRepository,jwtUtil), UsernamePasswordAuthenticationFilter.class)
