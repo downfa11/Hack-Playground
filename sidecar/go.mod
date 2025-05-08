@@ -1,4 +1,4 @@
-module solve
+module sidecar
 
 go 1.24.2
 
