@@ -1,15 +1,15 @@
 package com.ns.solve.service;
 
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
 import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
 import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
+import com.ns.solve.domain.entity.Role;
+import com.ns.solve.domain.entity.User;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.service.problem.ProblemService;
-import com.ns.solve.utils.exception.SolvedException;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import com.ns.solve.utils.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -132,4 +132,14 @@ public class UserService {
     private Boolean isValidUser(String nickname, String account) {
         return !(userRepository.existsByNickname(nickname) || userRepository.existsByAccount(account));
     }
+
+    public Optional<User> findByUserId(Long userId) {
+        return userRepository.findById(userId);
+    }
+
+    public void updateLastActived(User user) {
+        user.setLastActived(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
 }

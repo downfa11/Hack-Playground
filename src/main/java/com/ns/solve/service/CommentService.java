@@ -23,17 +23,17 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
     private final ProblemRepository problemRepository;
     private final BoardRepository boardRepository;
 
+    private final UserService userService;
 
     public Comment createComment(Long userId, RegisterCommentDto registerCommentDto) {
         Comment comment = new Comment();
         comment.setContent(registerCommentDto.contents());
         comment.setType(registerCommentDto.type());
 
-        User creator = userRepository.findById(userId)
+        User creator = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
         comment.setCreator(creator);
 
@@ -47,6 +47,7 @@ public class CommentService {
             comment.setBoard(board);
         }
 
+        userService.updateLastActived(creator);
         return commentRepository.save(comment);
     }
 
@@ -61,22 +62,25 @@ public class CommentService {
     public Comment updateComment(Long userId, Long commentId, ModifyCommentDto modifyCommentDto) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Comment not found"));
-        User user = userRepository.findById(userId)
+        User user = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
 
         checkAuthorizationOrThrow(user, comment);
         comment.setType(modifyCommentDto.type());
         comment.setContent(modifyCommentDto.contents());
+
+        userService.updateLastActived(user);
         return commentRepository.save(comment);
     }
     public void deleteComment(Long userId, Long commentId)
     {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "Comment not found"));
-        User user = userRepository.findById(userId)
+        User user = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(CommentErrorCode.COMMENT_NOT_FOUND, "User not found"));
 
         checkAuthorizationOrThrow(user, comment);
+        userService.updateLastActived(user);
         commentRepository.deleteById(commentId);
     }
 

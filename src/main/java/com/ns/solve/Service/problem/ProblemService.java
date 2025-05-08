@@ -13,6 +13,7 @@ import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import com.ns.solve.service.FileService;
+import com.ns.solve.service.UserService;
 import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
@@ -37,8 +38,9 @@ import java.util.Optional;
 public class ProblemService {
     private final FileService fileService;
 
-    private final ProblemRepository problemRepository;
     private final UserRepository userRepository;
+    private final ProblemRepository problemRepository;
+
     private final SolvedRepository solvedRepository;
 
 
@@ -135,6 +137,7 @@ public class ProblemService {
         checkAuthorizationOrThrow(user, existingProblem);
         setCommonProblemFields(existingProblem, userId, modifyProblemDto);
         Problem saved = problemRepository.save(existingProblem);
+        updateLastActived(user);
         return ProblemMapper.mapperToProblemDto(saved);
     }
 
@@ -144,6 +147,7 @@ public class ProblemService {
         User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, problem);
+        updateLastActived(user);
         problemRepository.deleteById(problemId);
     }
 
@@ -169,6 +173,7 @@ public class ProblemService {
         setCommonProblemFields(existingProblem, userId, modifyProblemDto);
         Problem saved = problemRepository.save(existingProblem);
         handleFileUpload(file, saved);
+        updateLastActived(user);
         return ProblemMapper.mapperToProblemDto(saved);
     }
 
@@ -211,7 +216,6 @@ public class ProblemService {
             resourceLimit.put("memory", problemCheckDto.getMemoryLimit());
         }
         problem.setResourceLimit(resourceLimit);
-
         Problem savedProblem = problemRepository.save(problem);
 
         if (savedProblem instanceof WargameProblem wargameProblem) {
@@ -299,6 +303,7 @@ public class ProblemService {
 
                 fieldScores.put(problemType, fieldScores.getOrDefault(problemType, 0L) + 1);
                 user.setScore(user.getScore() + 1);
+                user.setLastActived(LocalDateTime.now());
                 userRepository.save(user);
 
                 problem.incrementCorrectCount();
@@ -361,5 +366,10 @@ public class ProblemService {
 
     public Page<ProblemSummary> searchProblems(ProblemType type, WargameKind kind, String keyword, Pageable pageable) {
         return problemRepository.searchKeywordInTitle(type, kind, keyword, pageable);
+    }
+    
+    private void updateLastActived(User user){
+        user.setLastActived(LocalDateTime.now());
+        userRepository.save(user);
     }
 }

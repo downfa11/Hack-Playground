@@ -39,7 +39,7 @@ public class AuthService {
 
         String jwt = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), ACCESS_TOKEN_EXPIRATION);
         String refreshToken = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), REFRESH_TOKEN_EXPIRATION);
-
+        userService.updateLastActived(user);
         return JWtToken.generateJwtToken(String.valueOf(user.getId()),user.getNickname(),jwt,refreshToken);
     }
 
