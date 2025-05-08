@@ -335,6 +335,7 @@ public class KubernetesService {
         deletePodsByLabel(namespace, labelSelector);
         deleteServicesByLabel(namespace, labelSelector);
         deleteIngressRoutesByLabel(namespace, labelSelector);
+        deleteMiddlewaresBySelector(namespace, labelSelector);
     }
 
     private void deletePodsByLabel(String namespace, String labelSelector) throws ApiException {
@@ -383,46 +384,43 @@ public class KubernetesService {
         }
     }
 
-    public void createMiddlewareIfNotExists(String namespace) {
-        try {
-            Map<String, Object> existing = getMiddleware(namespace, TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME);
-            if (existing != null) {
-                log.info("Middleware '{}' already exists in namespace '{}'", TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME, namespace);
-                return;
-            }
-        } catch (ApiException e) {
-            if (e.getCode() != 404) {
-                log.error("Error checking middleware existence: code={}, body={}", e.getCode(), e.getResponseBody(), e);
-                return;
-            }
-        }
-
-        try {
-            Map<String, Object> middlewareSpec = PodBuilder.buildReplacePathRegexMiddleware(TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME);
-            customObjectsApi.createNamespacedCustomObject(
-                    "traefik.io", "v1alpha1", namespace, "middlewares", middlewareSpec, null, null, null);
-            log.info("Middleware '{}' created in namespace '{}'", TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME, namespace);
-        } catch (ApiException e) {
-            log.error("Failed to create middleware: code={}, body={}", e.getCode(), e.getResponseBody(), e);
-        }
+    public List<Map<String, Object>> listAllMiddlewares(String namespace, String labelSelector) throws ApiException {
+        Map<String, Object> response = (Map<String, Object>) customObjectsApi.listNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "middlewares", null, null, null, null, labelSelector, null, null, null, null, null);
+        return (List<Map<String, Object>>) response.getOrDefault("items", List.of());
     }
 
-    public Map<String, Object> getMiddleware(String namespace, String name) throws ApiException {
-        return (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
-                "traefik.io", "v1alpha1", namespace, "middlewares", name);
-    }
+    public void deleteMiddlewaresBySelector(String namespace, String labelSelector) throws ApiException {
+        List<Map<String, Object>> middlewares = listAllMiddlewares(namespace, labelSelector);
 
-    public void deleteMiddleware(String namespace, String name) {
-        try {
-            customObjectsApi.deleteNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "middlewares", name, null, null, null, null, null);log.info("Middleware '{}' deleted from namespace '{}'", name, namespace);
-        } catch (ApiException e) {
-            if (e.getCode() == 404) {
-                log.warn("Middleware '{}' not found in namespace '{}'", name, namespace);
-            } else {
-                log.error("Failed to delete middleware: code={}, body={}", e.getCode(), e.getResponseBody(), e);
-            }
+        for (Map<String, Object> middleware : middlewares) {
+            Map<String, Object> metadata = (Map<String, Object>) middleware.get("metadata");
+            String name = (String) metadata.get("name");
+
+            V1DeleteOptions deleteOptions = new V1DeleteOptions();
+            deleteOptions.setPropagationPolicy("Foreground");
+            customObjectsApi.deleteNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "middlewares", name, null, null, "Foreground", null, deleteOptions);
+
+            log.info("Traefik Middleware 삭제됨: {}", name);
         }
+
+        log.info("총 {}개의 미들웨어 삭제됨 - selector: {}", middlewares.size(), labelSelector);
     }
 
+
+    // StripPrefix 생성
+    public void createStripPrefixMiddleware(String namespace, Long userId, Long problemId, String uuid) throws ApiException {
+        Map<String, Object> middleware = PodBuilder.buildStripPrefixMiddleware(userId, problemId, uuid);
+        customObjectsApi.createNamespacedCustomObject(
+                "traefik.io", "v1alpha1", namespace, "middlewares", middleware, null, null, null
+        );
+    }
+
+    // ReplacePathRegex 생성
+    public void createReplacePathRegexMiddleware(String namespace, String name, String regex, String replacement) throws ApiException {
+        Map<String, Object> middleware = PodBuilder.buildReplacePathRegexMiddleware(TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME);
+        customObjectsApi.createNamespacedCustomObject(
+                "traefik.io", "v1alpha1", namespace, "middlewares", middleware, null, null, null
+        );
+    }
 
 }

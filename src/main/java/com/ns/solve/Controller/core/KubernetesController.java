@@ -165,8 +165,7 @@ public class KubernetesController {
 
     @Operation(summary = "IngressRoute 목록 조회", description = "지정한 네임스페이스의 Kubernetes IngressRoute 목록을 반환합니다.")
     @GetMapping("/ingressRoute")
-    public ResponseEntity<Map<String, Object>> getIngressRouteList(
-            @Parameter(description = "대상 네임스페이스") @RequestParam String namespace) {
+    public ResponseEntity<Map<String, Object>> getIngressRouteList(@Parameter(description = "대상 네임스페이스") @RequestParam String namespace) {
         try {
             Map<String, Object> ingressRouteList = kubernetesService.getIngressRouteList(namespace);
             return ResponseEntity.ok(ingressRouteList);
@@ -193,8 +192,7 @@ public class KubernetesController {
 
     @Operation(summary = "Namespace 생성", description = "지정한 이름으로 Kubernetes Namespace를 생성합니다.")
     @PostMapping("/namespace")
-    public ResponseEntity<String> createNamespace(
-            @Parameter(description = "생성할 Namespace 이름") @RequestParam String namespaceName) {
+    public ResponseEntity<String> createNamespace(@Parameter(description = "생성할 Namespace 이름") @RequestParam String namespaceName) {
         try {
             kubernetesService.createNamespace(namespaceName);
             return ResponseEntity.ok("Namespace created successfully: " + namespaceName);
@@ -204,44 +202,31 @@ public class KubernetesController {
         }
     }
 
-    @Operation(summary = "Middleware 생성", description = "지정한 네임스페이스에 Traefik 미들웨어를 생성합니다.")
-    @PostMapping("/middleware")
-    public ResponseEntity<String> createMiddlewareIfNotExists(
-            @Parameter(description = "미들웨어를 생성할 네임스페이스") @RequestParam String namespace) {
-        try {
-            kubernetesService.createMiddlewareIfNotExists(namespace);
-            return ResponseEntity.ok("Middleware 생성 완료: " + "TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME");
-        } catch (Exception e) {
-            log.error("Middleware 생성 실패: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Middleware 생성 실패: " + e.getMessage());
-        }
-    }
-
-    @Operation(summary = "미들웨어 조회", description = "지정한 네임스페이스와 이름으로 미들웨어 정보를 조회합니다.")
     @GetMapping("/middleware")
-    public ResponseEntity<Map<String, Object>> getMiddleware(
-            @Parameter(description = "미들웨어를 조회할 네임스페이스") @RequestParam String namespace,
-            @Parameter(description = "조회할 미들웨어의 이름") @RequestParam String middlewareName) {
+    @Operation(summary = "Traefik 미들웨어 목록 조회", description = "네임스페이스 내 Traefik 미들웨어를 조회하며, labelSelector로 필터링할 수 있습니다.")
+    public ResponseEntity<List<Map<String, Object>>> getAllMiddlewares(@RequestParam String namespace, @RequestParam(required = false) String labelSelector) {
         try {
-            Map<String, Object> middleware = kubernetesService.getMiddleware(namespace, middlewareName);
-            return ResponseEntity.ok(middleware);
+            List<Map<String, Object>> middlewares = kubernetesService.listAllMiddlewares(namespace, labelSelector);
+            return ResponseEntity.ok(middlewares);
         } catch (ApiException e) {
-            log.error("미들웨어 조회 실패: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "미들웨어 조회 실패: " + e.getMessage()));
+            log.error("Traefik 미들웨어 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of(Map.of("error", e.getMessage())));
         }
     }
 
-    @Operation(summary = "미들웨어 삭제", description = "지정한 네임스페이스에서 Traefik 미들웨어를 삭제합니다.")
-    @DeleteMapping("/middleware")
-    public ResponseEntity<String> deleteMiddleware(
-            @Parameter(description = "삭제할 미들웨어의 이름") @RequestParam String middlewareName,
-            @Parameter(description = "미들웨어가 위치한 네임스페이스") @RequestParam String namespace) {
+    @Operation(summary = "리소스 일괄 삭제", description = "지정한 레이블 선택자로 모든 Kubernetes 리소스를 일괄 삭제합니다.")
+    @DeleteMapping("/resources")
+    public ResponseEntity<String> deleteAllResourcesByLabel(
+            @Parameter(description = "리소스를 삭제할 네임스페이스") @RequestParam String namespace,
+            @Parameter(description = "리소스를 선택할 레이블 선택자") @RequestParam String labelSelector) {
         try {
-            kubernetesService.deleteMiddleware(namespace, middlewareName);
-            return ResponseEntity.ok("Middleware 삭제 완료: " + middlewareName);
-        } catch (Exception e) {
-            log.error("미들웨어 삭제 실패: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("미들웨어 삭제 실패: " + e.getMessage());
+            kubernetesService.deleteAllResourcesByLabel(namespace, labelSelector);
+            return ResponseEntity.ok("모든 리소스 삭제 완료 - labelSelector: " + labelSelector);
+        } catch (ApiException e) {
+            log.error("리소스 삭제 실패 - labelSelector: {}", labelSelector, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("리소스 삭제 실패 - labelSelector: " + labelSelector + " - " + e.getMessage());
         }
     }
 

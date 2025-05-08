@@ -3,7 +3,6 @@ package com.ns.solve.service.core;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.*;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,10 +10,9 @@ import java.util.Map;
 
 public class PodBuilder {
 
-    public static V1PodSpec buildPodSpec(String name, String image, Map<String, Integer> resourceLimits) {
-
+    public static V1PodSpec buildPodSpec(String podName, String image, Map<String, Integer> resourceLimits) {
         return new V1PodSpec()
-                .containers(List.of(buildContainer(name, image, resourceLimits), buildSidecarContainer()))
+                .containers(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer()))
                 .restartPolicy("OnFailure") // 비정상적인 종료시 재시작
                 // .runtimeClassName("gvisor")
                 .securityContext(new V1PodSecurityContext()
@@ -26,9 +24,9 @@ public class PodBuilder {
 
     }
 
-    private static V1Container buildContainer(String podName, String image, Map<String, Integer> resourceLimits) {
+    private static V1Container buildContainer(String containerName, String image, Map<String, Integer> resourceLimits) {
         return new V1Container()
-                .name(podName + "-container")
+                .name(containerName + "-container")
                 .image(image)
                 .securityContext(new V1SecurityContext()
                         .allowPrivilegeEscalation(false)) // readOnlyRootFilesystem(true), runAsNonRoot(true)
@@ -122,6 +120,61 @@ public class PodBuilder {
         return middleware;
     }
 
+    public static Map<String, Object> buildStripPrefixMiddleware(Long userId, Long problemId, String uuid) {
+        String podName = getPodName(userId, problemId);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", podName);
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name",podName);
+        metadata.put("labels", labels);
+
+        Map<String, Object> middleware = new HashMap<>();
+        middleware.put("apiVersion", "traefik.io/v1alpha1");
+        middleware.put("kind", "Middleware");
+        middleware.put("metadata", metadata);
+
+        String pathPrefix = String.format("/problems/%d/%s", problemId, uuid);
+        middleware.put("spec", Map.of(
+                "stripPrefix", Map.of(
+                        "prefixes", List.of(pathPrefix),
+                        "forceSlash", true
+                )
+        ));
+
+        return middleware;
+    }
+
+    public static Map<String, Object> buildRewritePathRegexMiddleware(Long userId, Long problemId, String uuid) {
+        String podName = getPodName(userId, problemId);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", podName);
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name", podName);
+        metadata.put("labels", labels);
+
+        // /problems/{problemId}/{uuid}/(.*) → /$1
+        String regex = String.format("^/problems/%d/%s/(.*)", problemId, uuid);
+        String replacement = "/$1";
+
+        Map<String, Object> spec = Map.of("replacePathRegex", Map.of("regex", regex, "replacement", replacement));
+
+        Map<String, Object> middleware = new HashMap<>();
+        middleware.put("apiVersion", "traefik.io/v1alpha1");
+        middleware.put("kind", "Middleware");
+        middleware.put("metadata", metadata);
+        middleware.put("spec", spec);
+
+        return middleware;
+    }
+
 
     public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace, String uuid) {
         String podName = getPodName(userId, problemId);
@@ -140,8 +193,9 @@ public class PodBuilder {
         String pathPrefix = String.format("/problems/%d/%s", problemId, uuid);
         route.put("match",  String.format("PathPrefix(`%s`)", pathPrefix));
         route.put("kind", "Rule");
-        route.put("middlewares", List.of(Map.of("name", KubernetesService.TRAEFIK_REPLACEPATHREGEX_MIDDLEWARE_NAME, "namespace", namespace)));
 
+        route.put("middlewares", List.of(Map.of("name", podName, "namespace", namespace)));
+        // stripPrefix, RewritePathRegex, route.put("middlewares", List.of(Map.of("name", "replace-path-regex-middleware", "namespace", namespace)));
         route.put("services", List.of(Map.of("name", podName, "port", port)));
 
         Map<String, Object> spec = new HashMap<>();
@@ -159,10 +213,20 @@ public class PodBuilder {
 
     // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
     private static V1Container buildSidecarContainer() {
+    //  V1EnvVar problemPortEnv = new V1EnvVar().name("PROBLEM_APP_PORT").value(String.valueOf(problemPort));
+    //  V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
+    //  V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
+    //  V1EnvVar uuidEnv = new V1EnvVar().name("UUID").value(uuid);
+        V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
+        V1EnvVar port = new V1EnvVar().name("PORT").value(":1880");
+
+        List<V1EnvVar> envVars = List.of(filePath, port);
+
         return new V1Container()
                 .name("attache-sidecar")
                 .image("downfa11/attache:latest")
                 .ports(List.of(new V1ContainerPort().containerPort(8888)))
+                .env(envVars)
                 .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()
                         .allowPrivilegeEscalation(true)

@@ -234,6 +234,7 @@ public class PodService {
             String url = getExternalUrl(problemId, uuid, containerResourceType);
 
             if (kind.equals(WargameKind.WEBHACKING)) {
+                kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
                 Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
             }
