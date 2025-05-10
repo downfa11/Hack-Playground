@@ -8,6 +8,7 @@ import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.exception.ErrorCode.BaseErrorCode;
+import com.ns.solve.utils.exception.ErrorCode.PodErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
@@ -244,6 +245,31 @@ public class PodService {
             log.error("exposePod Failed  {}: {}", userId, e.getMessage(), e);
             return null;
         }
+    }
+
+    public String deleteProblemPod(Long userId, Long problemId) {
+        Problem problem = problemService.getProblemById(problemId);
+        userService.getUserById(userId).orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+
+        String namespace = problem.getType().getTypeName();
+        String labelSelector = String.format("userId=%s,problemId=%s",userId, problemId);
+
+        try {
+            List<V1Service> services = kubernetesService.getServicesByLabelSelector(namespace, labelSelector);
+            if (services.isEmpty()) {
+                throw new SolvedException(PodErrorCode.SERVICE_NOT_FOUND);
+            }
+        } catch (ApiException e) {
+            throw new SolvedException(PodErrorCode.K8S_API_ERROR, e.getMessage());
+        }
+
+        try {
+            kubernetesService.deleteAllResourcesByLabel(namespace, labelSelector);
+        } catch (ApiException e) {
+            throw new SolvedException(PodErrorCode.K8S_API_ERROR, e.getMessage());
+        }
+
+        return "Success";
     }
 }
 
