@@ -71,7 +71,7 @@ public class UserService {
         Page<User> userPage;
 
         if (type == null || type.isEmpty()) {
-            userPage = userRepository.findAllByOrderByScoreDesc(PageRequest.of(page, size));
+            userPage = userRepository.findAllByScoreGreaterThanOrderByScoreDesc(0L, PageRequest.of(page, size));
         } else {
             userPage = userRepository.findUsersByFieldScore(type, PageRequest.of(page, size));
         }

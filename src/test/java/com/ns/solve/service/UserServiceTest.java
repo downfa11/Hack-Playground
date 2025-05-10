@@ -105,13 +105,13 @@ class UserServiceTest {
     @Test
     void testGetUsersSortedByScore() {
         Page<User> userPage = new PageImpl<>(List.of(testUser));
-        when(userRepository.findAllByOrderByScoreDesc(any(PageRequest.class))).thenReturn(userPage);
+        when(userRepository.findAllByScoreGreaterThanOrderByScoreDesc(0L, any(PageRequest.class))).thenReturn(userPage);
 
         Page<UserRankDto> users = userService.getUsersSortedByScore(null,0, 10);
 
         assertFalse(users.isEmpty());
         assertEquals(1, users.getTotalElements());
-        verify(userRepository, times(1)).findAllByOrderByScoreDesc(any(PageRequest.class));
+        verify(userRepository, times(1)).findAllByScoreGreaterThanOrderByScoreDesc(0L, any(PageRequest.class));
     }
 
     @Test

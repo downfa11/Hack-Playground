@@ -20,8 +20,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByNickname(String nickname);
     Boolean existsByAccount(String account);
 
-    Page<User> findAllByOrderByScoreDesc(Pageable pageable);
+    Page<User> findAllByScoreGreaterThanOrderByScoreDesc(long score, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE key(u.fieldScores) = :type ORDER BY value(u.fieldScores) DESC")
+
+    @Query("SELECT u FROM User u WHERE key(u.fieldScores) = :type AND value(u.fieldScores) > 0 ORDER BY value(u.fieldScores) DESC")
     Page<User> findUsersByFieldScore(@Param("type") String type, Pageable pageable);
 }
