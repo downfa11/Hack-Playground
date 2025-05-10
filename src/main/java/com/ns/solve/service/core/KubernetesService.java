@@ -423,4 +423,15 @@ public class KubernetesService {
         );
     }
 
+    public List<V1Service> getServicesByLabelSelector(String namespace, String labelSelector) throws ApiException {
+        return coreApi.listNamespacedService(namespace, null, null, null,null, labelSelector,null, null, null, null, null)
+                .getItems();
+    }
+
+
+    public List<V1Service> getServicesByLabelSelectorInAllNamespaces(String labelSelector) throws ApiException {
+        return coreApi.listServiceForAllNamespaces(null, null, null, labelSelector,null, null, null, null, null, null)
+                .getItems();
+    }
+
 }
