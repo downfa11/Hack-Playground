@@ -25,7 +25,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 func lastConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := os.ReadFile(config.FilePath)
 	if err != nil {
-		http.Error(w, "No connections recorded", http.StatusNotFound)
+		http.Error(w, "No connections ", http.StatusNotFound)
 		return
 	}
 	w.Write(data)

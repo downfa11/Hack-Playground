@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"sidecar/config"
 	"time"
+
+	"sidecar/config"
+	"sidecar/utils"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -24,7 +25,7 @@ type IPTimestamp struct {
 	Protocol  string    `json:"protocol"`
 }
 
-var ipTimestamps []IPTimestamp
+var ipTimestamps = make(map[string]IPTimestamp)
 
 func StartPacketCapture() {
 	go func() {
@@ -47,39 +48,59 @@ func StartPacketCapture() {
 
 		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 		for packet := range packetSource.Packets() {
+			log.Println("--- Attache: Packet Captured ---")
+			log.Println("Timestamp      :", packet.Metadata().Timestamp)
+
+			if ethLayer := packet.Layer(layers.LayerTypeEthernet); ethLayer != nil {
+				eth := ethLayer.(*layers.Ethernet)
+				log.Printf("Ethernet       : Src=%s, Dst=%s, Type=%s\n", eth.SrcMAC, eth.DstMAC, eth.EthernetType)
+			}
+
+			ipLayer := packet.Layer(layers.LayerTypeIPv4)
+			if ipLayer == nil {
+				continue
+			}
+			ip := ipLayer.(*layers.IPv4)
+			log.Printf("IPv4           : Src=%s, Dst=%s, Protocol=%s\n", ip.SrcIP, ip.DstIP, ip.Protocol)
+
 			tcpLayer := packet.Layer(layers.LayerTypeTCP)
 			if tcpLayer == nil {
 				continue
 			}
-
-			tcp, ok := tcpLayer.(*layers.TCP)
-			if !ok {
-				log.Println("Error: failed to parse TCP layer")
-				continue
-			}
+			tcp := tcpLayer.(*layers.TCP)
+			log.Printf("TCP            : SrcPort=%d, DstPort=%d, Seq=%d, SYN=%v, ACK=%v\n",
+				tcp.SrcPort, tcp.DstPort, tcp.Seq, tcp.SYN, tcp.ACK)
 
 			if tcp.SYN && !tcp.ACK {
-				ipLayer := packet.Layer(layers.LayerTypeIPv4)
-				if ipLayer == nil {
-					continue
-				}
-
-				ip, _ := ipLayer.(*layers.IPv4)
 				srcIP := ip.SrcIP.String()
 				now := time.Now()
-
-				ipTimestamps = append(ipTimestamps, IPTimestamp{
+				ipTimestamps[srcIP] = IPTimestamp{
 					IP:        srcIP,
 					Timestamp: now,
 					Protocol:  "TCP",
-				})
+				}
 
-				if err := writeToFile(); err != nil {
-					log.Println("Failed to write to file:", err)
+				data, err := json.MarshalIndent(getLatestTimestamps(), "", "  ")
+				if err != nil {
+					log.Printf("Failed to marshal timestamps: %v", err)
+					continue
+				}
+
+				if err := utils.WriteToFile(config.FilePath, data); err != nil {
+					log.Printf("Failed to write timestamp log to file: %v", err)
 				}
 			}
+			log.Println("------------------------")
 		}
 	}()
+}
+
+func getLatestTimestamps() []IPTimestamp {
+	results := make([]IPTimestamp, 0, len(ipTimestamps))
+	for _, ts := range ipTimestamps {
+		results = append(results, ts)
+	}
+	return results
 }
 
 func findCaptureInterface() (string, error) {
@@ -87,7 +108,6 @@ func findCaptureInterface() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	for _, iface := range interfaces {
 		if (iface.Flags&net.FlagLoopback) == 0 && (iface.Flags&net.FlagUp) != 0 {
 			addrs, err := iface.Addrs()
@@ -99,15 +119,4 @@ func findCaptureInterface() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no suitable interface found")
-}
-
-func writeToFile() error {
-	data, err := json.Marshal(ipTimestamps)
-	if err != nil {
-		return fmt.Errorf("failed to marshal IP timestamps: %v", err)
-	}
-	if err := os.WriteFile(config.FilePath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write file: %v", err)
-	}
-	return nil
 }
