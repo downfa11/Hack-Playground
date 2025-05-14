@@ -332,10 +332,10 @@ public class KubernetesService {
     }
 
     public void deleteAllResourcesByLabel(String namespace, String labelSelector) throws ApiException {
-        deletePodsByLabel(namespace, labelSelector);
         deleteServicesByLabel(namespace, labelSelector);
         deleteIngressRoutesByLabel(namespace, labelSelector);
         deleteMiddlewaresBySelector(namespace, labelSelector);
+        deletePodsByLabel(namespace, labelSelector);
     }
 
     private void deletePodsByLabel(String namespace, String labelSelector) throws ApiException {
