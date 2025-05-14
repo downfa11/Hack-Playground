@@ -5,6 +5,7 @@ import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.service.UserService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,7 +54,7 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
     })
     @GetMapping("/sorted-by-score")
-    public ResponseEntity<MessageEntity> getUsersSortedByScore(@RequestParam(required = false) String type, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<MessageEntity> getUsersSortedByScore(@RequestParam(required = false) ProblemType type, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Page<UserRankDto> users = userService.getUsersSortedByScore(type, page, size);
         return new ResponseEntity<>(new MessageEntity("Users fetched successfully", users), HttpStatus.OK);
     }

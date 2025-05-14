@@ -6,6 +6,7 @@ import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.domain.entity.Role;
 import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
@@ -67,10 +68,10 @@ public class UserService {
     }
 
 
-    public Page<UserRankDto> getUsersSortedByScore(String type, int page, int size) {
+    public Page<UserRankDto> getUsersSortedByScore(ProblemType type, int page, int size) {
         Page<User> userPage;
 
-        if (type == null || type.isEmpty()) {
+        if (type == null) {
             userPage = userRepository.findAllByScoreGreaterThanOrderByScoreDesc(0L, PageRequest.of(page, size));
         } else {
             userPage = userRepository.findUsersByFieldScore(type, PageRequest.of(page, size));
@@ -80,7 +81,7 @@ public class UserService {
                 .mapToObj(i -> {
                     User user = userPage.getContent().get(i);
                     long rank = page * size + i + 1;
-                    long score = type == null || type.isEmpty() ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L);
+                    long score = type == null ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L);
                     return new UserRankDto(rank, user.getNickname(), score, user.getCreated(), user.getLastActived());
                 }).toList();
 
