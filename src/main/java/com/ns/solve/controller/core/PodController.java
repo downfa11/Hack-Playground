@@ -39,7 +39,7 @@ public class PodController {
             @ApiResponse(responseCode = "200", description = "Pod 삭제"),
             @ApiResponse(responseCode = "500", description = "Pod 삭제 또는 상태 확인 중 오류 발생")
     })
-    @PostMapping("/delete")
+    @DeleteMapping("/delete")
     public ResponseEntity<String> deletePod(@RequestParam Long problemId,  Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();

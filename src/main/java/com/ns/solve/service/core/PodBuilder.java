@@ -185,7 +185,7 @@ public class PodBuilder {
         labels.put("problemId", String.valueOf(problemId));
 
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("name", podName+"-"+uuid);
+        metadata.put("name", podName);
         metadata.put("labels", labels);
 
         Map<String, Object> route = new HashMap<>();

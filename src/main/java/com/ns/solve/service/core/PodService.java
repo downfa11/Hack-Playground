@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,9 +53,11 @@ public class PodService {
         }
 
         if (isOtherProblemPodRunning(podList)) {
-            return "Another problem container is already running";
+            log.info("test - 괘씸하네. 나머지 모든 문제는 삭제하고 ");
+            deleteProblemPod(userId, namespace);
         }
 
+        log.info("test - 새로운 문제만 만들겠도다.");
         return handleProblemType(problem, userId);
     }
 
@@ -118,10 +121,14 @@ public class PodService {
         return Optional.empty();
     }
 
-
+    // podList의 개수가 1개 이상이면 createProblemPod를 금지한다.
     private boolean isOtherProblemPodRunning(V1PodList podList) {
-        return !podList.getItems().isEmpty();
+        long runningCount = podList.getItems().stream()
+                .filter(pod -> "Running".equals(pod.getStatus().getPhase()))
+                .count();
+        return runningCount >= 1;
     }
+
 
     private String handleProblemType(Problem problem, Long userId) {
         String type = problem.getType().getTypeName();
@@ -199,10 +206,10 @@ public class PodService {
 
     public List<SolveInfo> findCurrentSolveMembers(String namespace) {
         try {
-            V1PodList pods = kubernetesService.getPodList(namespace);
-            return pods.getItems().stream()
-                    .map(pod -> {
-                        Map<String, String> labels = pod.getMetadata().getLabels();
+            V1ServiceList services = kubernetesService.getServiceList(namespace);
+            return services.getItems().stream()
+                    .map(service -> {
+                        Map<String, String> labels = service.getMetadata().getLabels();
                         String userId = labels.get("userId");
                         String problemId = labels.get("problemId");
 
@@ -253,6 +260,27 @@ public class PodService {
 
         String namespace = problem.getType().getTypeName();
         String labelSelector = String.format("userId=%s,problemId=%s",userId, problemId);
+
+        try {
+            List<V1Service> services = kubernetesService.getServicesByLabelSelector(namespace, labelSelector);
+            if (services.isEmpty()) {
+                throw new SolvedException(PodErrorCode.SERVICE_NOT_FOUND);
+            }
+        } catch (ApiException e) {
+            throw new SolvedException(PodErrorCode.K8S_API_ERROR, e.getMessage());
+        }
+
+        try {
+            kubernetesService.deleteAllResourcesByLabel(namespace, labelSelector);
+        } catch (ApiException e) {
+            throw new SolvedException(PodErrorCode.K8S_API_ERROR, e.getMessage());
+        }
+
+        return "Success";
+    }
+
+    public String deleteProblemPod(Long userId, String namespace) {
+        String labelSelector = String.format("userId=%s",userId);
 
         try {
             List<V1Service> services = kubernetesService.getServicesByLabelSelector(namespace, labelSelector);
