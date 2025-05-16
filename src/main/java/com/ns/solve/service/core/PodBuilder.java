@@ -74,7 +74,8 @@ public class PodBuilder {
         return sanitizeName("Problem" + problemId);
     }
 
-    public static V1Service buildService(Long userId, Long problemId, Integer port) {
+    // webhacking 문제는 ClusterIP Service + IngressRoute
+    public static V1Service buildHttpService(Long userId, Long problemId, Integer port) {
         V1Service service = new V1Service();
         V1ObjectMeta metadata = new V1ObjectMeta();
         String podName = getPodName(userId, problemId);
@@ -94,6 +95,32 @@ public class PodBuilder {
                 .port(port)
                 .targetPort(new IntOrString(port))));
         spec.setType("ClusterIP");
+
+        service.setSpec(spec);
+        return service;
+    }
+
+    // 포렌식 등의 쉡 접속 문제는 NodePort Service + TCP
+    public static V1Service buildTCPService(Long userId, Long problemId, Integer port) {
+        V1Service service = new V1Service();
+        V1ObjectMeta metadata = new V1ObjectMeta();
+        String podName = getPodName(userId, problemId);
+        metadata.setName(podName);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("app", podName);
+        labels.put("userId", String.valueOf(userId));
+        labels.put("problemId", String.valueOf(problemId));
+
+        metadata.setLabels(labels);
+        service.setMetadata(metadata);
+
+        V1ServiceSpec spec = new V1ServiceSpec();
+        spec.setSelector(Map.of("app", podName)); // 해당 Pod를 찾는다.
+        spec.setPorts(List.of(new V1ServicePort()
+                .port(port)
+                .targetPort(new IntOrString(port))));
+        spec.setType("NodePort");
 
         service.setSpec(spec);
         return service;

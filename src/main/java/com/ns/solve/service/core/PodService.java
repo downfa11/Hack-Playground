@@ -7,7 +7,6 @@ import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
-import com.ns.solve.utils.exception.ErrorCode.BaseErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.PodErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
@@ -53,11 +52,9 @@ public class PodService {
         }
 
         if (isOtherProblemPodRunning(podList)) {
-            log.info("test - 괘씸하네. 나머지 모든 문제는 삭제하고 ");
             deleteProblemPod(userId, namespace);
         }
 
-        log.info("test - 새로운 문제만 만들겠도다.");
         return handleProblemType(problem, userId);
     }
 
@@ -235,16 +232,28 @@ public class PodService {
      */
     public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
         try {
-            V1Service service = PodBuilder.buildService(userId, problemId, port);
-            kubernetesService.createService(namespace, service);
-
             String uuid = UUID.randomUUID().toString();
             String url = getExternalUrl(problemId, uuid, containerResourceType);
 
             if (kind.equals(WargameKind.WEBHACKING)) {
+                V1Service service = PodBuilder.buildHttpService(userId, problemId, port);
+                kubernetesService.createService(namespace, service);
+
                 kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
                 Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
+            }
+
+            else if (kind.equals(WargameKind.SYSTEM)) {
+                V1Service service = PodBuilder.buildTCPService(userId, problemId, port);
+                kubernetesService.createService(namespace, service);
+
+                // 이미 생성한 Service를 조회해서 nodePort를 확인하고 label에 명시해야함
+                String serviceName = service.getMetadata().getName();
+                V1Service createdService = kubernetesService.getService(namespace, serviceName);
+                Integer nodePort = createdService.getSpec().getPorts().get(0).getNodePort();
+
+                url = String.format("nc %s %d", serverUrl, nodePort);
             }
 
             return url;

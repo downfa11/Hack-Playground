@@ -119,6 +119,15 @@ public class KubernetesService {
         }
     }
 
+    public V1Service getService(String namespace, String serviceName) throws ApiException {
+        try {
+            return coreApi.readNamespacedService(serviceName, namespace, null);
+        } catch (ApiException e){
+            log.error("getService 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
+            throw e;
+        }
+    }
+
     public void deleteService(String namespace, String serviceName) throws ApiException {
         try {
             coreApi.deleteNamespacedService(serviceName, namespace, null, null, null, null, null, null);
