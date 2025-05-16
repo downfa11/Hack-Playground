@@ -289,9 +289,13 @@ public class ProblemService {
         if (problem == null) {
             throw new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId);
         }
+        else if (!problem.getIsChecked()){
+            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED, "problemId: " + problemId);
+        }
 
         // 해당 문제를 푼 적 없는 경우, 사용자의 랭킹을 갱신합니다.
         if (!solvedRepository.existsSolvedProblem(userId, problemId)) {
+            // todo. WARGAME 문제가 아니어도 호출된다
             isCorrect = problemRepository.matchFlagToWargameProblem(problemId, attemptedFlag);
             if (isCorrect) {
                 if (user.getFieldScores() == null) {
@@ -299,9 +303,11 @@ public class ProblemService {
                 }
 
                 Map<String, Long> fieldScores = user.getFieldScores();
-                String problemType = String.valueOf(problem.getType());
+                String fieldKey = problem.getDomainKind()
+                        .map(kind -> problem.getType().getTypeName() + "_" + kind.getTypeName())
+                        .orElse(problem.getType().name());
 
-                fieldScores.put(problemType, fieldScores.getOrDefault(problemType, 0L) + 1);
+                fieldScores.put(fieldKey, fieldScores.getOrDefault(fieldKey, 0L) + 1);
                 user.setScore(user.getScore() + 1);
                 user.setLastActived(LocalDateTime.now());
                 userRepository.save(user);

@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.Data;
 
@@ -31,6 +32,10 @@ public class Problem {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ProblemType type;  // wargame, assignment, algorithm
+
+    public Optional<DomainKind> getDomainKind() {
+        return Optional.empty();
+    }
 
     @ManyToOne
     @JoinColumn(name = "user_id")
