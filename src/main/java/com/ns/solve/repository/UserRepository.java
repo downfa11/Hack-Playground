@@ -1,6 +1,7 @@
 package com.ns.solve.repository;
 
 import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.problem.DomainKind;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByScoreGreaterThanOrderByScoreDesc(long score, Pageable pageable);
 
 
-    @Query("SELECT u FROM User u WHERE key(u.fieldScores) = :type AND value(u.fieldScores) > 0 ORDER BY value(u.fieldScores) DESC")
-    Page<User> findUsersByFieldScore(@Param("type") ProblemType type, Pageable pageable);
+    @Query("""
+    SELECT u FROM User u 
+    WHERE key(u.fieldScores) = :fieldKey 
+      AND value(u.fieldScores) > 0 
+    ORDER BY value(u.fieldScores) DESC
+    """)
+    Page<User> findUsersByFieldScore(@Param("fieldKey") String fieldKey, Pageable pageable);
+
 }

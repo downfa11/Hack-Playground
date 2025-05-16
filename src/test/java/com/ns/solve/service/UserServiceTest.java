@@ -107,7 +107,7 @@ class UserServiceTest {
         Page<User> userPage = new PageImpl<>(List.of(testUser));
         when(userRepository.findAllByScoreGreaterThanOrderByScoreDesc(0L, any(PageRequest.class))).thenReturn(userPage);
 
-        Page<UserRankDto> users = userService.getUsersSortedByScore(null,0, 10);
+        Page<UserRankDto> users = userService.getUsersSortedByScore(null,null, 0, 10);
 
         assertFalse(users.isEmpty());
         assertEquals(1, users.getTotalElements());

@@ -6,7 +6,9 @@ import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.domain.entity.Role;
 import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.problem.DomainKind;
 import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
@@ -68,20 +70,22 @@ public class UserService {
     }
 
 
-    public Page<UserRankDto> getUsersSortedByScore(ProblemType type, int page, int size) {
+    public Page<UserRankDto> getUsersSortedByScore(ProblemType type, String kind, int page, int size) {
         Page<User> userPage;
+        String fieldKey = type + ":" + kind; // ex) WARGAME:WEBHACKING
+        DomainKind domainKind = resolveDomainKind(type, kind);
 
-        if (type == null) {
+        if (domainKind == null) {
             userPage = userRepository.findAllByScoreGreaterThanOrderByScoreDesc(0L, PageRequest.of(page, size));
         } else {
-            userPage = userRepository.findUsersByFieldScore(type, PageRequest.of(page, size));
+            userPage = userRepository.findUsersByFieldScore(fieldKey, PageRequest.of(page, size));
         }
 
         List<UserRankDto> rankedUsers = IntStream.range(0, userPage.getContent().size())
                 .mapToObj(i -> {
                     User user = userPage.getContent().get(i);
                     long rank = page * size + i + 1;
-                    long score = type == null ? user.getScore() : user.getFieldScores().getOrDefault(type, 0L);
+                    long score = user.getFieldScores().getOrDefault(fieldKey, 0L);
                     return new UserRankDto(rank, user.getNickname(), score, user.getCreated(), user.getLastActived());
                 }).toList();
 
@@ -143,4 +147,12 @@ public class UserService {
         userRepository.save(user);
     }
 
+    private DomainKind resolveDomainKind(ProblemType type, String kind) {
+        if (kind == null || kind.isBlank()) return null;
+        return switch (type) {
+            case WARGAME -> WargameKind.valueOf(kind.toUpperCase());
+            // etc..
+            default -> throw new IllegalArgumentException("Unsupported ProblemType: " + type);
+        };
+    }
 }
