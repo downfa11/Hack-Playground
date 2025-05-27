@@ -22,6 +22,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByNickname(String nickname);
     Boolean existsByAccount(String account);
 
+    Boolean existsByNicknameAndIdNot(String nickname, Long id);
+    Boolean existsByAccountAndIdNot(String account, Long id);
+
+
+
     Page<User> findAllByScoreGreaterThanOrderByScoreDesc(long score, Pageable pageable);
 
 

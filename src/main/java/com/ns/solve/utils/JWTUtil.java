@@ -43,9 +43,9 @@ public class JWTUtil {
                 .parseSignedClaims(token).getPayload().get(CLAIM_ROLE, String.class);
     }
 
-    public String createJwt(Long userId, String account, String role, Long expiredMs) {
+    public String createJwt(Long userId, String nickname, String role, Long expiredMs) {
         return Jwts.builder()
-                .claim(CLAIM_NICKNAME, account)
+                .claim(CLAIM_NICKNAME, nickname)
                 .claim(CLAIM_ROLE, role)
                 .claim(CLAIM_ID, userId)
                 .issuedAt(new Date(System.currentTimeMillis()))
