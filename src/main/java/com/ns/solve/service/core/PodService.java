@@ -35,6 +35,9 @@ public class PodService {
     @Value("${server.url}")
     private String serverUrl;
 
+    @Value("${server.ip}")
+    private String serverIp;
+
     private final KubernetesService kubernetesService;
     private final ProblemService problemService;
     private final UserService userService;
@@ -233,7 +236,7 @@ public class PodService {
     public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
         try {
             String uuid = UUID.randomUUID().toString();
-            String url = getExternalUrl(problemId, uuid, containerResourceType);
+            String url = "blank url";
 
             if (kind.equals(WargameKind.WEBHACKING)) {
                 V1Service service = PodBuilder.buildHttpService(userId, problemId, port);
@@ -242,9 +245,11 @@ public class PodService {
                 kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
                 Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
+
+                url = getExternalUrl(problemId, uuid, containerResourceType);
             }
 
-            else if (kind.equals(WargameKind.SYSTEM)) {
+            else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
                 V1Service service = PodBuilder.buildTCPService(userId, problemId, port);
                 kubernetesService.createService(namespace, service);
 
@@ -253,7 +258,7 @@ public class PodService {
                 V1Service createdService = kubernetesService.getService(namespace, serviceName);
                 Integer nodePort = createdService.getSpec().getPorts().get(0).getNodePort();
 
-                url = String.format("nc %s %d", serverUrl, nodePort);
+                url = String.format("nc %s %d", serverIp, nodePort);
             }
 
             return url;
