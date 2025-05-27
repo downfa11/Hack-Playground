@@ -3,6 +3,7 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.ns.solve.domain.dto.comment.CommentDto;
 import com.ns.solve.domain.entity.Board;
 import com.ns.solve.domain.entity.Comment;
 import com.ns.solve.domain.entity.CommentType;
@@ -75,10 +76,10 @@ class CommentServiceTest {
         when(problemRepository.findById(1L)).thenReturn(Optional.of(testProblem));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment createdComment = commentService.createComment(1L, dto);
+        CommentDto createdComment = commentService.createComment(1L, dto);
 
         assertNotNull(createdComment);
-        assertEquals("Test Comment", createdComment.getContent());
+        assertEquals("Test Comment", createdComment.getContents());
         verify(commentRepository, times(1)).save(any(Comment.class));
     }
 
@@ -86,11 +87,11 @@ class CommentServiceTest {
     void testGetAllComments() {
         when(commentRepository.findAll()).thenReturn(List.of(testComment));
 
-        List<Comment> comments = commentService.getAllComments();
+        List<CommentDto> comments = commentService.getAllComments();
 
         assertFalse(comments.isEmpty());
         assertEquals(1, comments.size());
-        assertEquals("Test Comment", comments.get(0).getContent());
+        assertEquals("Test Comment", comments.get(0).getContents());
         verify(commentRepository, times(1)).findAll();
     }
 
@@ -98,7 +99,7 @@ class CommentServiceTest {
     void testGetCommentsByProblemId() {
         when(commentRepository.findByProblemId(1L)).thenReturn(List.of(testComment));
 
-        List<Comment> comments = commentService.getCommentsByProblemId(1L);
+        List<CommentDto> comments = commentService.getCommentsByProblemId(1L);
 
         assertFalse(comments.isEmpty());
         assertEquals(1, comments.size());
@@ -109,7 +110,7 @@ class CommentServiceTest {
     void testGetCommentsByBoardId() {
         when(commentRepository.findByBoardId(1L)).thenReturn(List.of(testComment));
 
-        List<Comment> comments = commentService.getCommentsByBoardId(1L);
+        List<CommentDto> comments = commentService.getCommentsByBoardId(1L);
 
         assertFalse(comments.isEmpty());
         assertEquals(1, comments.size());
@@ -120,10 +121,10 @@ class CommentServiceTest {
     void testGetCommentById() {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(testComment));
 
-        Optional<Comment> comment = commentService.getCommentById(1L);
+        Optional<CommentDto> comment = commentService.getCommentById(1L);
 
         assertTrue(comment.isPresent());
-        assertEquals("Test Comment", comment.get().getContent());
+        assertEquals("Test Comment", comment.get().getContents());
         verify(commentRepository, times(1)).findById(1L);
     }
 
@@ -134,10 +135,10 @@ class CommentServiceTest {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(testComment));
         when(commentRepository.save(any(Comment.class))).thenReturn(testComment);
 
-        Comment updatedComment = commentService.updateComment(1L, 1L, dto);
+        CommentDto updatedComment = commentService.updateComment(1L, 1L, dto);
 
         assertNotNull(updatedComment);
-        assertEquals("Updated Comment", updatedComment.getContent());
+        assertEquals("Updated Comment", updatedComment.getContents());
         verify(commentRepository, times(1)).findById(1L);
         verify(commentRepository, times(1)).save(testComment);
     }
