@@ -85,7 +85,7 @@ public class UserService {
                 .mapToObj(i -> {
                     User user = userPage.getContent().get(i);
                     long rank = page * size + i + 1;
-                    long score = user.getFieldScores().getOrDefault(fieldKey, 0L);
+                    long score = (domainKind == null) ? user.getScore() : user.getFieldScores().getOrDefault(fieldKey, 0L);
                     return new UserRankDto(rank, user.getNickname(), score, user.getCreated(), user.getLastActived());
                 }).toList();
 
@@ -108,7 +108,7 @@ public class UserService {
             throw new SolvedException(UserErrorCode.ACCESS_DENIED);
         }
 
-        if (!isValidUser(modifyUserDto.nickname(), modifyUserDto.account())) {
+        if (!isValidUser(currentId, modifyUserDto.nickname(), modifyUserDto.account())) {
             throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
         }
 
@@ -136,6 +136,13 @@ public class UserService {
 
     private Boolean isValidUser(String nickname, String account) {
         return !(userRepository.existsByNickname(nickname) || userRepository.existsByAccount(account));
+    }
+
+    private Boolean isValidUser(Long userId, String nickname, String account) {
+        boolean nicknameExists = userRepository.existsByNicknameAndIdNot(nickname, userId);
+        boolean accountExists = userRepository.existsByAccountAndIdNot(account, userId);
+
+        return !(nicknameExists || accountExists);
     }
 
     public Optional<User> findByUserId(Long userId) {
