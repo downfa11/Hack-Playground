@@ -91,11 +91,9 @@ public class ProblemService {
         problem.setTags(registerProblemDto.getTags());
     }
 
-    private void setCommonProblemFields(Problem problem, Long userId, ModifyProblemDto modifyProblemDto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
+    private void setCommonProblemFields(Problem problem, User user, ModifyProblemDto modifyProblemDto) {
         problem.setCreator(user);
-
-        problem.setType(modifyProblemDto.getType());
+        problem.setType(modifyProblemDto.getProblemType());
         problem.setTitle(modifyProblemDto.getTitle());
         problem.setDetail(modifyProblemDto.getDetail());
         problem.setTags(modifyProblemDto.getTags());
@@ -135,10 +133,27 @@ public class ProblemService {
         User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, existingProblem);
-        setCommonProblemFields(existingProblem, userId, modifyProblemDto);
+        setCommonProblemFields(existingProblem, user, modifyProblemDto);
         Problem saved = problemRepository.save(existingProblem);
         updateLastActived(user);
         return ProblemMapper.mapperToProblemDto(saved);
+    }
+
+    @Transactional
+    public ProblemDto updateProblemLevel(Long userId, Long problemId, String level){
+        Problem existingProblem = problemRepository.findById(problemId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
+
+        checkAuthorizationOrThrow(user, existingProblem);
+
+        if (existingProblem instanceof WargameProblem wargameProblem) {
+            ((WargameProblem) existingProblem).setLevel(level);
+            problemRepository.save(existingProblem);
+            return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
+        }
+
+        updateLastActived(user);
+        return ProblemMapper.mapperToProblemDto(existingProblem);
     }
 
     @Transactional
@@ -170,7 +185,7 @@ public class ProblemService {
                 .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, existingProblem);
-        setCommonProblemFields(existingProblem, userId, modifyProblemDto);
+        setCommonProblemFields(existingProblem, user, modifyProblemDto);
         Problem saved = problemRepository.save(existingProblem);
         handleFileUpload(file, saved);
         updateLastActived(user);
@@ -182,7 +197,7 @@ public class ProblemService {
     }
 
     public Problem getProblemById(Long id) {
-        return problemRepository.findById(id).orElseThrow(()->new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
+        return problemRepository.findById(id).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
     }
 
     public List<Problem> getAllProblems() {
@@ -192,10 +207,10 @@ public class ProblemService {
     @Transactional
     public WargameProblemDto toggleProblemCheckStatus(Long reviewerId, Long id, ProblemCheckDto problemCheckDto) {
         Problem problem = problemRepository.findById(id).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + id));
-        User user = userRepository.findById(reviewerId).orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND, "User not found: "+ reviewerId));
+        User user = userRepository.findById(reviewerId).orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND, "User not found: " + reviewerId));
 
-        if(!user.isMemberAbove()){
-            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED, "Authorization: "+user.getRole());
+        if (!user.isMemberAbove()) {
+            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED, "Authorization: " + user.getRole());
         }
 
         problem.setIsChecked(!problem.getIsChecked());
@@ -284,36 +299,33 @@ public class ProblemService {
     @Transactional
     public Boolean solveProblem(Long userId, Long problemId, String attemptedFlag) {
         User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
-        boolean isCorrect = false;
         Problem problem = problemRepository.findProblemWithLock(problemId);
         if (problem == null) {
             throw new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId);
-        }
-        else if (!problem.getIsChecked()){
+        } else if (!problem.getIsChecked()) {
             throw new SolvedException(ProblemErrorCode.ACCESS_DENIED, "problemId: " + problemId);
         }
 
+        // todo. WARGAME 문제가 아니어도 호출된다
+        Boolean isCorrect = problemRepository.matchFlagToWargameProblem(problemId, attemptedFlag);
+
         // 해당 문제를 푼 적 없는 경우, 사용자의 랭킹을 갱신합니다.
-        if (!solvedRepository.existsSolvedProblem(userId, problemId)) {
-            // todo. WARGAME 문제가 아니어도 호출된다
-            isCorrect = problemRepository.matchFlagToWargameProblem(problemId, attemptedFlag);
-            if (isCorrect) {
-                if (user.getFieldScores() == null) {
-                    user.setFieldScores(new HashMap<>());
-                }
-
-                Map<String, Long> fieldScores = user.getFieldScores();
-                String fieldKey = problem.getDomainKind()
-                        .map(kind -> problem.getType().getTypeName() + "_" + kind.getTypeName())
-                        .orElse(problem.getType().name());
-
-                fieldScores.put(fieldKey, fieldScores.getOrDefault(fieldKey, 0L) + 1);
-                user.setScore(user.getScore() + 1);
-                user.setLastActived(LocalDateTime.now());
-                userRepository.save(user);
-
-                problem.incrementCorrectCount();
+        if (!solvedRepository.existsSolvedProblem(userId, problemId) && isCorrect) {
+            if (user.getFieldScores() == null) {
+                user.setFieldScores(new HashMap<>());
             }
+
+            Map<String, Long> fieldScores = user.getFieldScores();
+            String fieldKey = problem.getDomainKind()
+                    .map(kind -> problem.getType()+ ":" + kind)
+                    .orElse(problem.getType().name());
+
+            fieldScores.put(fieldKey, fieldScores.getOrDefault(fieldKey, 0L) + 1);
+            user.setScore(user.getScore() + 1);
+            user.setLastActived(LocalDateTime.now());
+            userRepository.save(user);
+
+            problem.incrementCorrectCount();
             problem.incrementEntireCount();
             problemRepository.save(problem);
         }
@@ -373,8 +385,8 @@ public class ProblemService {
     public Page<ProblemSummary> searchProblems(ProblemType type, WargameKind kind, String keyword, Pageable pageable) {
         return problemRepository.searchKeywordInTitle(type, kind, keyword, pageable);
     }
-    
-    private void updateLastActived(User user){
+
+    private void updateLastActived(User user) {
         user.setLastActived(LocalDateTime.now());
         userRepository.save(user);
     }

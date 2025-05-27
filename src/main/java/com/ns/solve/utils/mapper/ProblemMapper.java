@@ -51,6 +51,7 @@ public class ProblemMapper {
                 .map(User::getNickname)
                 .orElse("None");
 
+        Boolean hasContainer = problem.getDockerfileLink() != null && !problem.getDockerfileLink().isBlank();
 
         return WargameProblemDto.builder()
                 .id(problem.getId())
@@ -70,6 +71,7 @@ public class ProblemMapper {
                 .level(problem.getLevel())
                 .problemFile(problem.getProblemFile())
                 .problemFileSize(problem.getProblemFileSize())
+                .hasContainer(hasContainer)
                 .build();
     }
 

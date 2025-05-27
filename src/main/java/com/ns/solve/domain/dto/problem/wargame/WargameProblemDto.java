@@ -30,4 +30,5 @@ public class WargameProblemDto extends ProblemDto {
 
     private String problemFile;
     private Long problemFileSize;
+    private boolean hasContainer;
 }
