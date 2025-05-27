@@ -14,12 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,7 +32,7 @@ public class AdminController {
 
     @Operation(summary = "검수 완료", description = "해당 문제의 검수를 완료해서 사용자들에게 보여집니다.")
     @PutMapping("/check/{id}")
-    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id, ProblemCheckDto problemCheckDto, Authentication authentication) {
+    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id, @RequestBody(required = false) ProblemCheckDto problemCheckDto, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long reviewerId = userDetails.getUserId();
 
