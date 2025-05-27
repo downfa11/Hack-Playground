@@ -1,10 +1,7 @@
 package com.ns.solve.config;
 
 import com.ns.solve.repository.UserRepository;
-import com.ns.solve.utils.CustomAuthenticationEntryPoint;
-import com.ns.solve.utils.CustomOAuth2UserService;
-import com.ns.solve.utils.JWTFilter;
-import com.ns.solve.utils.JWTUtil;
+import com.ns.solve.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
@@ -41,15 +39,17 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/reissue", "/token-validate").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/problems/statistics", "/api/problems/completed", "/api/boards", "/api/users/sorted-by-score").permitAll()
-                        .requestMatchers("/api/admin/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs","/v3/api-docs/**", "/api/k8s/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api/k8s/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/**").permitAll() // todo authenticated() 하고싶은데 아직 TLS 설정 해결중
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
+                .formLogin(form -> form.disable())
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(customAuthenticationEntryPoint))
-                .oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService)))
+                .oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(customOAuth2SuccessHandler))
                 .logout(logout -> logout.logoutSuccessUrl("/"))
                 .addFilterBefore(new JWTFilter(userRepository,jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .build();
