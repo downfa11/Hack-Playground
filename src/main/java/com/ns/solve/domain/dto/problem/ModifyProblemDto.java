@@ -22,9 +22,8 @@ import java.util.List;
 })
 public class ModifyProblemDto {
     private String title;
-    private ProblemType type;
+    private ProblemType problemType;
     private String detail;
-
     private String source;
     private List<String> tags;
 }
