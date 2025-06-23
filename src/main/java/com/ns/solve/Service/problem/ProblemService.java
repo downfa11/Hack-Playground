@@ -264,6 +264,10 @@ public class ProblemService {
         return problemRepository.countNewProblems(now);
     }
 
+    public Long getTriedProblemsCount(LocalDateTime now) {
+        return solvedRepository.countTriedProblems(now);
+    }
+
     private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, WargameKind kind, String sortKind, boolean desc, PageRequest pageRequest) {
         if (sortKind == null) {
             sortKind = "problemId";

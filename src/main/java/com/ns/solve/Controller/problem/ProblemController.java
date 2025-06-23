@@ -195,11 +195,12 @@ public class ProblemController {
     })
     @GetMapping("/statistics")
     public ResponseEntity<MessageEntity> getProblemStatistics() {
-        Long checkedCount = problemService.getChekcedProblemsCount();
-        Long newCount = problemService.getNewProblemsCount(LocalDateTime.now());
+        Long checkedCount = problemService.getChekcedProblemsCount(); // 검수 완료된 문제 수
+        Long newCount = problemService.getNewProblemsCount(LocalDateTime.now()); // 최근 한달내 추가된 문제 수
+        Long triedCount = problemService.getTriedProblemsCount(LocalDateTime.now()); // 최근 한달내 사용자들이 문제 풀이한 시도 횟수
 
         return ResponseEntity.ok(new MessageEntity("successful",
-                Map.of("checkedCount", checkedCount, "newCount", newCount)));
+                Map.of("checkedCount", checkedCount, "newCount", newCount, "triedCount", triedCount)));
     }
 
     @Operation(summary = "문제 검색", description = "ProblemType(WARGAME, ASSIGNMENT, ALGORITHM)과 WargameKind(WEBHACKING, SYSTEM, REVERSING, CRYPTO), 키워드로 게시판을 검색합니다. 단, WargameType은 null로 보내면 전체 검색합니다.")

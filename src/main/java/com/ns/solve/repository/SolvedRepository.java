@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -31,4 +32,7 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
     @Query("SELECT DISTINCT s.solvedProblem.title FROM Solved s WHERE s.solvedUser.id = :userId AND s.solve = true")
     List<String> findSolvedProblemTitlesByUserId(@Param("userId") Long userId);
 
+
+    @Query("SELECT COUNT(DISTINCT s.solvedProblem.id) FROM Solved s WHERE s.solvedTime >= :now")
+    Long countTriedProblems(@Param("now") LocalDateTime now);
 }
