@@ -9,6 +9,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "SSH 연결 성공"
+      
       - name: Checkout repository
         uses: actions/checkout@v3
 
