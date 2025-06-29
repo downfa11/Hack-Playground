@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,6 +70,19 @@ public class UserService {
                 });
     }
 
+    public Optional<UserDto> getUserDtoByNickname(String nickName) {
+        return userRepository.findByNickname(nickName)
+                .map(user -> {
+                    List<String> solvedTitles = problemService.getSolvedProblemsTitle(user.getId());
+                    return UserMapper.mapperToUserDto(user, solvedTitles);
+                });
+    }
+
+    public User getUserByNickname(String nickName) {
+        return userRepository.findByNickname(nickName)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+    }
+
 
     public Page<UserRankDto> getUsersSortedByScore(ProblemType type, String kind, int page, int size) {
         Page<User> userPage;
@@ -96,9 +110,6 @@ public class UserService {
         return userRepository.findByAccount(account);
     }
 
-    public User getUserByNickname(String nickName) {
-        return userRepository.findByNickname(nickName);
-    }
 
     public UserDto updateUser(Long currentId, Long updateId, ModifyUserDto modifyUserDto) {
         User currentUser = userRepository.findById(currentId)
@@ -108,13 +119,23 @@ public class UserService {
             throw new SolvedException(UserErrorCode.ACCESS_DENIED);
         }
 
-        if (!isValidUser(currentId, modifyUserDto.nickname(), modifyUserDto.account())) {
-            throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+        if (StringUtils.hasText(modifyUserDto.nickname())) {
+            if (existsByNickname(modifyUserDto.nickname())) {
+                throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+            }
+            currentUser.setNickname(modifyUserDto.nickname());
         }
 
-        currentUser.setNickname(modifyUserDto.nickname());
-        currentUser.setAccount(modifyUserDto.account());
-        currentUser.setPassword(bCryptPasswordEncoder.encode(modifyUserDto.password()));
+        if (StringUtils.hasText(modifyUserDto.account())) {
+            if (existsByAccount(modifyUserDto.account())) {
+                throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+            }
+            currentUser.setAccount(modifyUserDto.account());
+        }
+
+        if (StringUtils.hasText(modifyUserDto.password())) {
+            currentUser.setPassword(bCryptPasswordEncoder.encode(modifyUserDto.password()));
+        }
 
         userRepository.save(currentUser);
 
@@ -161,5 +182,18 @@ public class UserService {
             // etc..
             default -> throw new IllegalArgumentException("Unsupported ProblemType: " + type);
         };
+    }
+
+    private boolean existsByNickname(String nickname){
+        return userRepository.existsByNickname(nickname);
+    }
+
+    private boolean existsByAccount(String account){
+        return userRepository.existsByAccount(account);
+    }
+
+    public String getNicknameByUserId(String userId) {
+        Long id = Long.valueOf(userId);
+        return userRepository.findNicknameByUserId(id);
     }
 }

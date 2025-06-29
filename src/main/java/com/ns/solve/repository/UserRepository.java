@@ -11,14 +11,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     // 전체 문제를 푼 개수에 따라서 위에서부터 정렬하여 Pagenation 끊어서 조회하는 메서드
     // 유형별 문제를 푼 개수에 따라서 위에서부터 정렬하여 Pagenation 끊어서 조회하는 메서드
     User findByAccount(String account);
-    User findByNickname(String nickname);
-
+    Optional<User> findByNickname(String nickname);
     Boolean existsByNickname(String nickname);
     Boolean existsByAccount(String account);
 
@@ -38,4 +38,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     """)
     Page<User> findUsersByFieldScore(@Param("fieldKey") String fieldKey, Pageable pageable);
 
+    @Query("SELECT u.nickname FROM User u WHERE u.id = :userId")
+    String findNicknameByUserId(@Param("userId") Long userId);
 }
