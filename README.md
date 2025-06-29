@@ -1,14 +1,18 @@
 # Hack PlayGound - CTF 문제 풀이 서비스
 
-![haf_main.png](haf_main.png)
-
 Hack-PlayGround는 VM 기반 서비스의 비용 부담을 해결해서 국내 정보보안 교육의 폭을 넓히고자 시작한 문제풀이 서비스입니다.
-
-<br>
 
 컨테이너 기반 기술로 문제를 관리하여 모니터링이나 관리도 용이하며 운영 비용도 VM 기반에 비해 개선했습니다.
 
 <br>
+
+[![haf_main.png](haf_main.png)](https://hpground.xyz)
+
+<p align="center">
+  이미지 클릭 시 현재 운영 중인 서비스 도메인으로 이동합니다.
+</p>
+
+<br> <br>
 
 특히 기존 D사 서비스의 유료화 정책으로 보안 교육이 위축됨을 염려하여, 저희 서비스를 통해서 **정보 보안 동아리들의 자발적인 참여를 장려**하고 문제 제작 및 풀이, CTF 대회 개최 등 커뮤니티를 형성할 수 있도록 기대하고 있습니다.
 
@@ -32,7 +36,17 @@ Hack-PlayGround는 VM 기반 서비스의 비용 부담을 해결해서 국내 �
 ## Service Architecture
 ![hpg.jpg](hpg.jpg)
 
-기술 스택 : Java 21, Spring Boot, Spring Security, Spring Data JPA, MySQL, QueryDSL, Kubernetes Client, Prometheus, Grafana 
+![Java](https://img.shields.io/badge/Java-007396?style=flat-square&logo=openjdk&logoColor=white)
+
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=flat-square&logo=spring-security&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-6DB33F?style=flat-square&logo=spring&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![QueryDSL](https://img.shields.io/badge/QueryDSL-232F3E?style=flat-square&logo=amazon-aws&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)
+
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)
 
 <br>
 
