@@ -39,11 +39,11 @@ public class JWTFilter extends OncePerRequestFilter {
             return;
         }
 
-        String account = jwtUtil.getAccount(token);
+        String nickname = jwtUtil.getNickname(token);
 
-        User user = userRepository.findByAccount(account);
+        User user = userRepository.findByNickname(nickname);
         if (user == null) {
-            log.info("해당하는 사용자가 없습니다. : " + account);
+            log.info("해당하는 사용자가 없습니다. : " + nickname);
             filterChain.doFilter(request, response);
             return;
         }

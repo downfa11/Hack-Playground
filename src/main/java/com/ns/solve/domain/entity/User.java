@@ -18,12 +18,17 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
+    @Column(nullable = false)
     private String nickname;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(nullable = false)
     private String account;
+
+    @Column(nullable = false)
     private String password;
 
     private Long score; // 맞춘 문제 개수 (전체 랭킹, 분야별 랭킹)

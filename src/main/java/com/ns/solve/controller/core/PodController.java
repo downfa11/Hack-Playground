@@ -1,5 +1,6 @@
 package com.ns.solve.controller.core;
 
+import com.ns.solve.domain.dto.problem.SolveInfo;
 import com.ns.solve.service.core.PodService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -32,12 +34,25 @@ public class PodController {
         return ResponseEntity.ok(podService.createProblemPod(userId, problemId));
     }
 
+    @Operation(summary = "문제 풀이용 Pod 삭제", description = "사용자와 문제 ID를 기반으로 문제 풀이용 Pod를 삭제한다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pod 삭제"),
+            @ApiResponse(responseCode = "500", description = "Pod 삭제 또는 상태 확인 중 오류 발생")
+    })
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deletePod(@RequestParam Long problemId,  Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(podService.deleteProblemPod(userId, problemId));
+    }
+
     @Operation(summary = "현재 Dedicated 문제 풀이중인 사용자 목록 조회", description = "namespace는 wargame으로 고정. 현재 문제 풀이중인 사용자-문제 매핑을 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 ID -> 문제 ID 매핑 반환")
     })
     @GetMapping("/active")
-    public ResponseEntity<Map<String, String>> getCurrentSolveMembers(@RequestParam String namespace) {
-        return ResponseEntity.ok(podService.findCurrentSolveMember(namespace));
+    public ResponseEntity<List<SolveInfo>> getCurrentSolveMembers(@RequestParam String namespace) {
+        return ResponseEntity.ok(podService.findCurrentSolveMembers(namespace));
     }
 }

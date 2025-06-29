@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.Data;
 
@@ -29,12 +30,18 @@ public class Problem {
     private Boolean isChecked = false;  // 검수전, 완료
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private ProblemType type;  // wargame, assignment, algorithm
+
+    public Optional<DomainKind> getDomainKind() {
+        return Optional.empty();
+    }
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User creator;
 
+    @Column(nullable = false, length = 2000)
     private String detail;
 
     private Double entireCount;
@@ -54,6 +61,7 @@ public class Problem {
     @JoinColumn(name = "reviewer_id")
     private User reviewer;
 
+    @Enumerated(EnumType.STRING)
     private ContainerResourceType containerResourceType; // dedicated, shared
 
     @Column(nullable = true)

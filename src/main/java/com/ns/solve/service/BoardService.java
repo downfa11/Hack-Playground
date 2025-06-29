@@ -28,14 +28,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BoardService {
     private final BoardRepository boardRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     // Board 반환시 Creator나 CommentList도 같이 뱉으니 N+1 등의 불필요한 쿼리 생성을 경계하자.
     // getAllBoards()는 테스트용이라 신경쓰지말자.
 
     @Transactional
     public BoardDto createBoard(Long userId, RegisterBoardDto registerBoardDto) {
-        User creator = userRepository.findById(userId)
+        User creator = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         if (BoardType.ANNOUNCE.equals(registerBoardDto.type()) && !Role.ROLE_ADMIN.equals(creator.getRole())) {
@@ -48,6 +48,7 @@ public class BoardService {
         board.setContents(registerBoardDto.contents());
         board.setCreator(creator);
 
+        userService.updateLastActived(creator);
         return BoardMapper.mapperToBoardDto(boardRepository.save(board));
     }
 
@@ -55,7 +56,7 @@ public class BoardService {
     public BoardDto updateBoard(Long userId, Long boardId, ModifyBoardDto modifyBoardDto) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "boardId: " + boardId));
-        User user = userRepository.findById(userId)
+        User user = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         if (BoardType.ANNOUNCE.equals(modifyBoardDto.type()) && !Role.ROLE_ADMIN.equals(user.getRole())) {
@@ -68,11 +69,7 @@ public class BoardService {
         board.setType(modifyBoardDto.type());
         board.setContents(modifyBoardDto.contents());
 
-        User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
-
-        board.setCreator(creator);
-
+        userService.updateLastActived(user);
         return BoardMapper.mapperToBoardDto(boardRepository.save(board));
     }
 
@@ -90,10 +87,11 @@ public class BoardService {
     public void deleteBoard(Long userId, Long boardId) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "boardId: " + boardId));
-        User user = userRepository.findById(userId)
+        User user = userService.findByUserId(userId)
                 .orElseThrow(() -> new SolvedException(BoardErrorCode.BOARD_NOT_FOUND, "userId: " + userId));
 
         checkAuthorizationOrThrow(user, board);
+        userService.updateLastActived(user);
         boardRepository.deleteById(boardId);
     }
 

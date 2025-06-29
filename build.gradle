@@ -62,6 +62,10 @@ dependencies {
     //Kubernetes Java Client
     implementation 'io.kubernetes:client-java:18.0.0'
 
+    //Scheduling ShedLock
+    implementation("net.javacrumbs.shedlock:shedlock-spring:5.10.0")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0")
+
     //Docker Java Client
     implementation 'com.github.docker-java:docker-java:3.3.0'
     implementation 'com.github.docker-java:docker-java-transport-okhttp:3.3.0'

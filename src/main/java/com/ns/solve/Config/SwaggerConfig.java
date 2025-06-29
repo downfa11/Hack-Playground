@@ -19,7 +19,7 @@ public class SwaggerConfig {
                 .version("1.0.0");
 
         Server server = new Server();
-        server.setUrl("https://ec2-3-34-134-27.ap-northeast-2.compute.amazonaws.com");
+        server.setUrl("https://api.hpground.xyz");
 
         return new OpenAPI()
                 .info(info)

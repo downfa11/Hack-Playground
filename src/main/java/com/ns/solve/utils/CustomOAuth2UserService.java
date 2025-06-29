@@ -27,12 +27,24 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
+        log.warn("🔥🔥🔥 loadUser triggered!");
+
         OAuth2User oAuth2User = delegate.loadUser(userRequest);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
         String provider = userRequest.getClientRegistration().getRegistrationId();
         User user = handleUser(provider, attributes);
-        return new DefaultOAuth2User(Collections.singleton(new SimpleGrantedAuthority(user.getRole().name())), attributes, "email");
+
+        String nameAttributeKey = userRequest.getClientRegistration()
+                .getProviderDetails()
+                .getUserInfoEndpoint()
+                .getUserNameAttributeName();
+
+        return new DefaultOAuth2User(
+                Collections.singleton(new SimpleGrantedAuthority(user.getRole().name())),
+                attributes,
+                nameAttributeKey
+        );
     }
 
 
@@ -41,10 +53,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String nickname = null;
 
         if ("google".equals(provider)) {
-            oauthId = userAttributes.get("email") + "-" + userAttributes.get("sub");
+            oauthId = (String) userAttributes.get("sub");
             nickname = (String) userAttributes.get("name");
         } else if ("github".equals(provider)) {
-            oauthId = userAttributes.get("id") + "-" +userAttributes.get("node_id");
+            oauthId = String.valueOf(userAttributes.get("id"));
             nickname = (String) userAttributes.get("login");
         }
 
@@ -73,10 +85,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private User updateNicknameIfChanged(User user, String newNickname) {
         if (!user.getNickname().equals(newNickname)) {
+            log.info("OAuth 사용자 닉네임 갱신됨: {} -> {}", user.getNickname(), newNickname);
             user.setNickname(newNickname);
             user.setLastActived(LocalDateTime.now());
             userRepository.save(user);
-            log.info("OAuth 사용자 닉네임 갱신됨: {} -> {}", user.getNickname(), newNickname);
         }
         return user;
     }

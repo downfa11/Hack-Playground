@@ -25,7 +25,8 @@ public class Board {
     @Column(nullable = false)
     private BoardType type;
 
-    @Column(nullable = false)
+    @Lob // text 타입으로 명시
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String contents;
 
     @ManyToOne

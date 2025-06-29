@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.Optional;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -28,4 +30,9 @@ public class WargameProblem extends Problem {
 
     @Column(nullable = true)
     private Long problemFileSize;
+
+    @Override
+    public Optional<DomainKind> getDomainKind() {
+        return Optional.ofNullable(kind);
+    }
 }

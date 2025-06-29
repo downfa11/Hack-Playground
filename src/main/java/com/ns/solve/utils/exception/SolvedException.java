@@ -16,7 +16,7 @@ public class SolvedException extends RuntimeException {
 
     public SolvedException(BaseErrorCode errorCode, String detail) {
         this.errorCode = errorCode;
-        this.message = errorCode.getMessage() + "- " + detail;
+        this.message = errorCode.getMessage() + " - " + detail;
     }
 
     @Override

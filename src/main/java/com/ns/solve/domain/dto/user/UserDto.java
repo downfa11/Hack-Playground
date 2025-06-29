@@ -14,6 +14,7 @@ public class UserDto {
     private Long id;
     private String nickname;
     private Role role;
+    private String provider;
     private String account;
     private Long entireScore;
     private Map<String, Long> fieldScores;

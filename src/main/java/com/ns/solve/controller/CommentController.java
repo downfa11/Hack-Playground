@@ -1,5 +1,6 @@
 package com.ns.solve.controller;
 
+import com.ns.solve.domain.dto.comment.CommentDto;
 import com.ns.solve.domain.entity.Comment;
 import com.ns.solve.domain.dto.MessageEntity;
 import com.ns.solve.domain.dto.comment.ModifyCommentDto;
@@ -33,7 +34,7 @@ public class CommentController {
     public ResponseEntity<MessageEntity> createComment(@RequestBody RegisterCommentDto registerCommentDto, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Comment createdComment = commentService.createComment(userDetails.getUserId(), registerCommentDto);
+        CommentDto createdComment = commentService.createComment(userDetails.getUserId(), registerCommentDto);
         return ResponseEntity.ok(new MessageEntity("Comment created successfully", createdComment));
     }
 
@@ -44,7 +45,7 @@ public class CommentController {
     })
     @GetMapping("/problem/{problemId}")
     public ResponseEntity<MessageEntity> getCommentsByProblemId(@PathVariable Long problemId) {
-        List<Comment> comments = commentService.getCommentsByProblemId(problemId);
+        List<CommentDto> comments = commentService.getCommentsByProblemId(problemId);
         return ResponseEntity.ok(new MessageEntity("Comments fetched successfully", comments));
     }
 
@@ -55,7 +56,7 @@ public class CommentController {
     })
     @GetMapping("/board/{boardId}")
     public ResponseEntity<MessageEntity> getCommentsByBoardId(@PathVariable Long boardId) {
-        List<Comment> comments = commentService.getCommentsByBoardId(boardId);
+        List<CommentDto> comments = commentService.getCommentsByBoardId(boardId);
         return ResponseEntity.ok(new MessageEntity("Comments fetched successfully", comments));
     }
 
@@ -69,7 +70,7 @@ public class CommentController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
 
-        Comment updated = commentService.updateComment(userId, id, modifyCommentDto);
+        CommentDto updated = commentService.updateComment(userId, id, modifyCommentDto);
         return ResponseEntity.ok(new MessageEntity("Comment updated successfully", updated));
     }
 

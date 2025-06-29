@@ -1,6 +1,8 @@
 package com.ns.solve.repository;
 
 import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.problem.DomainKind;
+import com.ns.solve.domain.entity.problem.ProblemType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,8 +22,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByNickname(String nickname);
     Boolean existsByAccount(String account);
 
-    Page<User> findAllByOrderByScoreDesc(Pageable pageable);
+    Boolean existsByNicknameAndIdNot(String nickname, Long id);
+    Boolean existsByAccountAndIdNot(String account, Long id);
 
-    @Query("SELECT u FROM User u WHERE key(u.fieldScores) = :type ORDER BY value(u.fieldScores) DESC")
-    Page<User> findUsersByFieldScore(@Param("type") String type, Pageable pageable);
+
+
+    Page<User> findAllByScoreGreaterThanOrderByScoreDesc(long score, Pageable pageable);
+
+
+    @Query("""
+    SELECT u FROM User u 
+    WHERE key(u.fieldScores) = :fieldKey 
+      AND value(u.fieldScores) > 0 
+    ORDER BY value(u.fieldScores) DESC
+    """)
+    Page<User> findUsersByFieldScore(@Param("fieldKey") String fieldKey, Pageable pageable);
+
 }
