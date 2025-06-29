@@ -49,6 +49,17 @@ public class UserController {
                 userService.getUserById(id).orElseThrow(() -> new RuntimeException("User not found"))));
     }
 
+    @Operation(summary = "Nickname로 사용자 조회", description = "nickname을 통해 사용자를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자가 성공적으로 조회되었습니다."),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다.")
+    })
+    @GetMapping("/nickname/{nickname}")
+    public ResponseEntity<MessageEntity> getUserByNickname(@PathVariable String nickname) {
+        return ResponseEntity.ok(new MessageEntity("User fetched successfully",
+                userService.getUserDtoByNickname(nickname).orElseThrow(() -> new RuntimeException("User not found"))));
+    }
+
     @Operation(summary = "점수별로 정렬된 사용자 목록 조회", description = "점수에 따라 정렬된 사용자 목록을 조회합니다. sort 기준은 문제 유형별(type)으로 구분됩니다. 공백이거나 null이면 전체 스코어를 비교합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 목록이 성공적으로 조회되었습니다."),
