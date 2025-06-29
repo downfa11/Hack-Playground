@@ -33,6 +33,11 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
     List<String> findSolvedProblemTitlesByUserId(@Param("userId") Long userId);
 
 
-    @Query("SELECT COUNT(DISTINCT s.solvedProblem.id) FROM Solved s WHERE s.solvedTime >= :now")
-    Long countTriedProblems(@Param("now") LocalDateTime now);
+    @Query("""
+        SELECT COUNT(DISTINCT p.id) FROM Problem p WHERE p.createdAt >= :since AND EXISTS (
+        SELECT 1 FROM Solved s
+        WHERE s.solvedProblem.id = p.id)
+        """)
+    Long countRecentlyTriedProblems(@Param("since") LocalDateTime since);
+
 }

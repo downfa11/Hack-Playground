@@ -207,21 +207,36 @@ public class PodService {
     public List<SolveInfo> findCurrentSolveMembers(String namespace) {
         try {
             V1ServiceList services = kubernetesService.getServiceList(namespace);
-            return services.getItems().stream()
-                    .map(service -> {
-                        Map<String, String> labels = service.getMetadata().getLabels();
-                        String userId = labels.get("userId");
-                        String problemId = labels.get("problemId");
 
-                        if (userId == null || problemId == null) {
-                            return null;
-                        }
+            Map<String, List<String>> problemToNicknames = new HashMap<>();
 
-                        return new SolveInfo(userId, problemId);
+            for (var service : services.getItems()) {
+                Map<String, String> labels = service.getMetadata().getLabels();
+                String userId = labels.get("userId");
+                String problemId = labels.get("problemId");
+
+                if (userId == null || problemId == null) {
+                    continue;
+                }
+
+                String nickname = userService.getNicknameByUserId(userId);
+                if (nickname == null) {
+                    continue;
+                }
+
+                problemToNicknames
+                        .computeIfAbsent(problemId, k -> new ArrayList<>())
+                        .add(nickname);
+            }
+
+            return problemToNicknames.entrySet().stream()
+                    .map(entry -> {
+                        String problemId = entry.getKey();
+                        List<String> nicknames = entry.getValue();
+                        String title = problemService.getProblemTitleById(problemId);
+                        return new SolveInfo(title, nicknames);
                     })
-                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
             log.error("fetch pod list failed : {}", e.getMessage(), e);
             return List.of();

@@ -265,7 +265,7 @@ public class ProblemService {
     }
 
     public Long getTriedProblemsCount(LocalDateTime now) {
-        return solvedRepository.countTriedProblems(now);
+        return solvedRepository.countRecentlyTriedProblems(now);
     }
 
     private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, WargameKind kind, String sortKind, boolean desc, PageRequest pageRequest) {
@@ -393,5 +393,10 @@ public class ProblemService {
     private void updateLastActived(User user) {
         user.setLastActived(LocalDateTime.now());
         userRepository.save(user);
+    }
+
+    public String getProblemTitleById(String problemId){
+        Long id = Long.valueOf(problemId);
+        return problemRepository.findTitleByProblemId(id);
     }
 }
