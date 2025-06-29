@@ -15,7 +15,7 @@ jobs:
       - name: Check for changes excluding README.md
         id: changes
         run: |
-          git fetch origin main
+          git fetch origin master
           FILES_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -v '^README\.md$' || true)
           if [ -z "$FILES_CHANGED" ]; then
             echo "no_changes=true" >> $GITHUB_OUTPUT
