@@ -8,16 +8,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Test SSH Connection
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "SSH 연결 성공"
-      
+    steps:      
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -52,7 +43,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/solve:latest
+          tags: downfa11/solve:latest
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -61,6 +52,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull your-dockerhub-id/your-app:latest
+            docker pull downfa11/solve:latest
             docker compose down
             docker compose up -d --remove-orphans
