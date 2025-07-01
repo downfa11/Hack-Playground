@@ -1,4 +1,4 @@
-# Hack PlayGound - CTF 문제 풀이 서비스
+# Hack PlayGround - CTF 문제 풀이 서비스
 
 VM 기반 서비스의 비용 부담을 해결해서 국내 정보보안 교육의 폭을 넓히고자 시작한 문제풀이 서비스입니다.
 
