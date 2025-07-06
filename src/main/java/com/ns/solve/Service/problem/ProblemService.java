@@ -265,7 +265,9 @@ public class ProblemService {
     }
 
     public Long getTriedProblemsCount(LocalDateTime now) {
-        return solvedRepository.countRecentlyTriedProblems(now);
+        LocalDateTime to = now;
+        LocalDateTime from = to.minusMonths(1);
+        return solvedRepository.countRecentlyTriedProblems(from, to);
     }
 
     private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, WargameKind kind, String sortKind, boolean desc, PageRequest pageRequest) {

@@ -34,10 +34,10 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
 
 
     @Query("""
-        SELECT COUNT(DISTINCT p.id) FROM Problem p WHERE p.createdAt >= :since AND EXISTS (
-        SELECT 1 FROM Solved s
-        WHERE s.solvedProblem.id = p.id)
-        """)
-    Long countRecentlyTriedProblems(@Param("since") LocalDateTime since);
+    SELECT COUNT(DISTINCT s.solvedProblem.id)
+    FROM Solved s
+    WHERE s.solvedTime BETWEEN :from AND :to
+    """)
+    Long countRecentlyTriedProblems(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
 }
