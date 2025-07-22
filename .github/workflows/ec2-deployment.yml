@@ -5,6 +5,7 @@ on:
     branches: [ master ]
     paths-ignore:
           - 'README.md'
+          - .github/workflows/*
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
