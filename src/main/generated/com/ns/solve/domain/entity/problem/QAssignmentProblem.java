@@ -39,7 +39,7 @@ public class QAssignmentProblem extends EntityPathBase<AssignmentProblem> {
     public final DateTimePath<java.time.LocalDateTime> createdAt;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     public final DateTimePath<java.sql.Timestamp> deadline = createDateTime("deadline", java.sql.Timestamp.class);
 
@@ -66,7 +66,7 @@ public class QAssignmentProblem extends EntityPathBase<AssignmentProblem> {
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser reviewer;
+    public final com.ns.solve.domain.entity.user.QUser reviewer;
 
     //inherited
     public final StringPath source;

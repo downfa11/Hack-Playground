@@ -28,13 +28,13 @@ public class QBoard extends EntityPathBase<Board> {
 
     public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
-    public final QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath title = createString("title");
 
-    public final EnumPath<BoardType> type = createEnum("type", BoardType.class);
+    public final EnumPath<com.ns.solve.domain.vo.BoardType> type = createEnum("type", com.ns.solve.domain.vo.BoardType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
@@ -56,7 +56,7 @@ public class QBoard extends EntityPathBase<Board> {
 
     public QBoard(Class<? extends Board> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.creator = inits.isInitialized("creator") ? new QUser(forProperty("creator")) : null;
+        this.creator = inits.isInitialized("creator") ? new com.ns.solve.domain.entity.user.QUser(forProperty("creator")) : null;
     }
 
 }

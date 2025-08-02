@@ -37,7 +37,7 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     public final DateTimePath<java.time.LocalDateTime> createdAt;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     //inherited
     public final StringPath detail;
@@ -57,7 +57,7 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
 
     public final EnumPath<WargameKind> kind = createEnum("kind", WargameKind.class);
 
-    public final StringPath level = createString("level");
+    public final NumberPath<Integer> level = createNumber("level", Integer.class);
 
     //inherited
     public final NumberPath<Integer> portNumber;
@@ -70,7 +70,7 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser reviewer;
+    public final com.ns.solve.domain.entity.user.QUser reviewer;
 
     //inherited
     public final StringPath source;

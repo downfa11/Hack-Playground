@@ -30,7 +30,7 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
-    public final com.ns.solve.domain.entity.QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     public final StringPath detail = createString("detail");
 
@@ -44,7 +44,7 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit = this.<String, Integer, NumberPath<Integer>>createMap("resourceLimit", String.class, Integer.class, NumberPath.class);
 
-    public final com.ns.solve.domain.entity.QUser reviewer;
+    public final com.ns.solve.domain.entity.user.QUser reviewer;
 
     public final StringPath source = createString("source");
 
@@ -74,8 +74,8 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public QProblem(Class<? extends Problem> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.creator = inits.isInitialized("creator") ? new com.ns.solve.domain.entity.QUser(forProperty("creator")) : null;
-        this.reviewer = inits.isInitialized("reviewer") ? new com.ns.solve.domain.entity.QUser(forProperty("reviewer")) : null;
+        this.creator = inits.isInitialized("creator") ? new com.ns.solve.domain.entity.user.QUser(forProperty("creator")) : null;
+        this.reviewer = inits.isInitialized("reviewer") ? new com.ns.solve.domain.entity.user.QUser(forProperty("reviewer")) : null;
     }
 
 }
