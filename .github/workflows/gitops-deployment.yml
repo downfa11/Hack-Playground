@@ -1,10 +1,7 @@
-name: KOREN GitOps Pipeline(ArgoCD, Canary)
+name: KOREN GitOps Pipeline (ArgoCD)
 
 on:
   push:
-    branches:
-      - koren
-  pull_request:
     branches:
       - koren
 
@@ -12,7 +9,7 @@ jobs:
   membership:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Application Code
         uses: actions/checkout@v4
 
       - name: Grant execute permission for gradlew
@@ -29,13 +26,16 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push docker image to Amazon ECR
+      - name: Build JAR with Gradle
+        run: ./gradlew bootJar
+
+      - name: Build, tag, and push Docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: hpg
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          envsubst < Dockerfile | docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f - .
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f Dockerfile.koren .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
       - name: Checkout Helm Repository
@@ -49,14 +49,13 @@ jobs:
       - name: Change Image tag of the Helm value
         uses: mikefarah/yq@v4.34.1
         with:
-          cmd: yq -i '.image.tag = "${{ env.BUILD_ID }}"' k8s-Devops/hpg-chart/backend-chart/values-koren.yaml
+          cmd: yq -i '.image.tag = "${{ env.IMAGE_TAG }}"' k8s-Devops/hpg-chart/backend-chart/values-koren.yaml
 
       - name: Commit and Push HELM changes
         run: |
-          cd helm-chart
+          cd k8s-Devops
           git config --local user.email "downfa11@naver.com"
           git config --local user.name "downfa11"
           git add .
-          git commit -m "Commit HELM changes: hplayground:${{ env.BUILD_ID }}"
-          git checkout -b koren && git merge main
+          git commit -m "Automated update: hpg image to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
           git push origin koren
