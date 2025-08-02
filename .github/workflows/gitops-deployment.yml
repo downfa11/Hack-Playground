@@ -30,6 +30,7 @@ jobs:
         run: ./gradlew bootJar
 
       - name: Build, tag, and push Docker image to Amazon ECR
+        id: docker_build
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: hpg
@@ -37,6 +38,7 @@ jobs:
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f Dockerfile.koren .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "build_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout Helm Repository
         uses: actions/checkout@v3
@@ -49,7 +51,7 @@ jobs:
       - name: Change Image tag of the Helm value
         uses: mikefarah/yq@v4.34.1
         with:
-          cmd: yq -i '.image.tag = "${{ env.IMAGE_TAG }}"' k8s-Devops/hpg-chart/backend-chart/values-koren.yaml
+          cmd: yq -i '.image.tag = "${{ steps.docker_build.outputs.build_tag }}"' k8s-Devops/hpg-chart/backend-chart/values-koren.yaml
 
       - name: Commit and Push HELM changes
         run: |
@@ -57,5 +59,6 @@ jobs:
           git config --local user.email "downfa11@naver.com"
           git config --local user.name "downfa11"
           git add .
-          git commit -m "Automated update: hpg image to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
+          # 이전 스텝의 출력(outputs)에서 build_tag 값을 참조합니다.
+          git commit -m "Automated update: hpg image to ${{ steps.docker_build.outputs.build_tag }}" || echo "No changes to commit"
           git push origin koren
