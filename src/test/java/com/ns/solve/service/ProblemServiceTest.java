@@ -4,10 +4,9 @@ import com.ns.solve.domain.dto.problem.ProblemCheckDto;
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.Solved;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
-import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
@@ -23,10 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -101,7 +97,7 @@ class ProblemServiceTest {
     void testUpdateProblem() {
         ModifyProblemDto dto = ModifyProblemDto.builder()
                 .title("Problem")
-                .type(ProblemType.WARGAME)
+                .problemType(ProblemType.WARGAME)
                 .detail("detail")
                 .tags(List.of("tag1", "tag2"))
                 .build();
@@ -121,7 +117,7 @@ class ProblemServiceTest {
 
         assertNotNull(result);
         assertEquals(dto.getTitle(), result.getTitle());
-        assertEquals(dto.getType(), result.getType());
+        assertEquals(dto.getProblemType(), result.getType());
         assertEquals(dto.getDetail(), result.getDetail());
         assertEquals(dto.getTags(), result.getTags());
 
@@ -160,7 +156,7 @@ class ProblemServiceTest {
         when(problemRepository.findById(1L)).thenReturn(Optional.of(wargameProblem));
         when(problemRepository.save(any(Problem.class))).thenReturn(wargameProblem);
 
-        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L,1L, problemCheckDto);
+        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L,1L, problemCheckDto,"ew",true);
 
         assertNotNull(result);
         assertEquals(wargameProblem.getTitle(), result.getTitle());

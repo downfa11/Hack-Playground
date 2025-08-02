@@ -5,8 +5,8 @@ import static org.mockito.Mockito.*;
 
 import com.ns.solve.domain.dto.board.BoardDto;
 import com.ns.solve.domain.entity.Board;
-import com.ns.solve.domain.entity.BoardType;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.board.BoardSummary;
 import com.ns.solve.domain.dto.board.RegisterBoardDto;
 import com.ns.solve.domain.dto.board.ModifyBoardDto;

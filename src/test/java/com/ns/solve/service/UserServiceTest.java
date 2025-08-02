@@ -3,8 +3,8 @@ package com.ns.solve.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
 import com.ns.solve.domain.dto.user.UserDto;
