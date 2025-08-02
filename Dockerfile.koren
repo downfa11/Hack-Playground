@@ -1,0 +1,27 @@
+FROM gradle:jdk21-jammy AS builder
+
+WORKDIR /app
+
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle settings.gradle .
+
+RUN ./gradlew dependencies
+
+COPY . .
+
+RUN ./gradlew bootJar
+
+FROM openjdk:21-slim
+
+RUN mkdir /logs
+
+EXPOSE 8080
+
+RUN mkdir /app
+COPY --from=builder /app/build/libs/*.jar /app/app.jar
+
+LABEL authors="jks83"
+
+
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/urandom", "-XX:+UseZGC", "-Xlog:gc*:file=/logs/zgc.log:tags,uptime,time,level", "-XX:+HeapDumpOnOutOfMemoryError", "-jar", "/app/app.jar"]
