@@ -18,6 +18,8 @@ public interface ProblemCustomRepository {
 
     Page<Problem> findProblemsByStatusPending(PageRequest pageRequest);
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
+    Page<ProblemSummary> findProblemsByStatusAndTypeSortedByLevel(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
+
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedByUpdatedAt(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
     Page<ProblemSummary> findProblemsByStatusAndTypeSortedByCorrectRate(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest);
     Boolean matchFlagToWargameProblem(Long problemId, String attemptedFlag);
@@ -25,7 +27,7 @@ public interface ProblemCustomRepository {
     List<WargameProblem> findByTypeWargame(ProblemType wargameType);
     Problem findProblemWithLock(Long problemId);
 
-    long countCheckedProblems();
-    long countNewProblems(LocalDateTime now);
+    Long countCheckedProblems();
+    Long countNewProblems(LocalDateTime now);
 
 }

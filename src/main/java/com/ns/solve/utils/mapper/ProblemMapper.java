@@ -2,11 +2,18 @@ package com.ns.solve.utils.mapper;
 
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
+import com.ns.solve.domain.dto.problem.WrittenProblemSummaryDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.dto.problem.wargame.WrittenWargameProblemDto;
+import com.ns.solve.domain.entity.admin.ProblemReview;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +34,7 @@ public class ProblemMapper {
                     .build();
         }
     }
+
 
     public static ProblemSummary mapperToWargameProblemSummary(WargameProblem problem) {
         return ProblemSummary.builder()
@@ -86,4 +94,49 @@ public class ProblemMapper {
                 .build();
     }
 
+    public static WrittenWargameProblemDto mapperToWrittenWargameProblemDto(WargameProblem wargameProblem) {
+        return WrittenWargameProblemDto.builder()
+                .id(wargameProblem.getId())
+                .title(wargameProblem.getTitle())
+                .detail(wargameProblem.getDetail())
+                .kind(wargameProblem.getKind())
+                .level(wargameProblem.getLevel())
+                .flag(wargameProblem.getFlag())
+                .dockerfileLink(wargameProblem.getDockerfileLink())
+                .problemFile(wargameProblem.getProblemFile())
+                .source(wargameProblem.getSource())
+                .tags(wargameProblem.getTags())
+                .build();
+    }
+
+    public static WrittenProblemSummaryDto mapperToWrittenProblemSummaryDto(Problem problem, List<ProblemReview> problemReviews) { // problemReviews 파라미터 추가
+        String reviewStatus = "PENDING";
+        String lastReviewComment = null;
+
+        if (problem.getIsChecked()) {
+            reviewStatus = "APPROVED";
+        } else {
+
+            Optional<ProblemReview> lastReview = problemReviews.stream()
+                    .sorted(Comparator.comparing(ProblemReview::getCreatedAt).reversed())
+                    .findFirst();
+
+            if (lastReview.isPresent() && !lastReview.get().getIsApproved()) {
+                reviewStatus = "REJECTED";
+                lastReviewComment = lastReview.get().getComment();
+            }
+        }
+
+        return WrittenProblemSummaryDto.builder()
+                .id(problem.getId())
+                .title(problem.getTitle())
+                .type(problem.getType())
+                .kind(problem instanceof WargameProblem ? ((WargameProblem) problem).getKind() : null)
+                .level(problem instanceof WargameProblem ? ((WargameProblem) problem).getLevel() : null)
+                .tags(problem.getTags())
+                .createdAt(problem.getCreatedAt())
+                .reviewStatus(reviewStatus)
+                .lastReviewComment(lastReviewComment)
+                .build();
+    }
 }
