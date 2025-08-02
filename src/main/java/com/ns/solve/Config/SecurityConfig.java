@@ -15,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -55,13 +56,17 @@ public class SecurityConfig {
                         .successHandler(customOAuth2SuccessHandler))
                 .logout(logout -> logout.logoutSuccessUrl("/"))
                 .addFilterBefore(new JWTFilter(userRepository,jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers
+                                .cacheControl(cache -> cache.disable()) // Cache-Control: no-cache, no-store, max-age=0, must-revalidate, Pragma: no-cache, Expires: 0와 유사하게 동작
+                                .frameOptions(frameOptions -> frameOptions.deny()) // X-Frame-Options: DENY 클릭재킹 방지 - 모든 프레임 포함 금지, sameOrigin()은 같은 도메인 내에서만 허용
+                                .contentTypeOptions(Customizer.withDefaults()) // X-Content-Type-Options: nosniff MIME-Type 스니핑 방지
+                                .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)) // X-XSS-Protection: 1; mode=block (구형 XSS 필터 사용)
+                        )
                 .build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception { return configuration.getAuthenticationManager() ;}
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
