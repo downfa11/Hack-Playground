@@ -6,7 +6,7 @@ on:
       - koren
 
 jobs:
-  membership:
+  hplayground-deployment:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Application Code
