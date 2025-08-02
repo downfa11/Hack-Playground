@@ -1,7 +1,7 @@
 package com.ns.solve.utils;
 
 
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

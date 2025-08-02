@@ -1,7 +1,7 @@
 package com.ns.solve.service;
 
 
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.user.JWtToken;
 import com.ns.solve.domain.dto.user.LoginUserRequest;
 import com.ns.solve.utils.JWTUtil;

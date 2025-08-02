@@ -2,13 +2,12 @@ package com.ns.solve.service;
 
 import com.ns.solve.domain.dto.board.BoardDto;
 import com.ns.solve.domain.entity.Board;
-import com.ns.solve.domain.entity.BoardType;
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.board.BoardSummary;
 import com.ns.solve.domain.dto.board.ModifyBoardDto;
 import com.ns.solve.domain.dto.board.RegisterBoardDto;
-import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +18,6 @@ import com.ns.solve.utils.mapper.BoardMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,7 +1,7 @@
 package com.ns.solve.utils;
 
 
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
