@@ -14,7 +14,7 @@ public class ProblemSummary {
     private Long id;
     private Boolean solved; // 내가 문제를 풀었는지 여부
     private String title;
-    private String level;
+    private Integer level;
     private Double correctRate;
     private String creator;
     private String type;
@@ -24,7 +24,7 @@ public class ProblemSummary {
 
 
     @QueryProjection
-    public ProblemSummary(Long id, String title, String level, Double correctRate, String creator, String type, String kind, LocalDateTime updatedAt) {
+    public ProblemSummary(Long id, String title, Integer level, Double correctRate, String creator, String type, String kind, LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.level = level;

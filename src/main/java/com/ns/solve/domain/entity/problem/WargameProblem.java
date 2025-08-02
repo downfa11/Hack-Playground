@@ -19,7 +19,7 @@ import java.util.Optional;
 public class WargameProblem extends Problem {
     @Enumerated(EnumType.STRING)
     private WargameKind kind;  // 웹해킹, 시스템해킹, 리버싱, 암호학
-    private String level;
+    private Integer level;
     private String flag;
 
     @Column(nullable = true)

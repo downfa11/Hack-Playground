@@ -1,4 +1,4 @@
-package com.ns.solve.domain.entity;
+package com.ns.solve.domain.entity.user;
 
 import lombok.RequiredArgsConstructor;
 

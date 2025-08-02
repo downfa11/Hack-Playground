@@ -2,7 +2,7 @@ package com.ns.solve.domain.entity.problem;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.entity.Comment;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

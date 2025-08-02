@@ -1,5 +1,6 @@
 package com.ns.solve.domain.dto.problem;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.ns.solve.domain.dto.problem.wargame.ModifyWargameProblemDto;
@@ -22,7 +23,10 @@ import java.util.List;
 })
 public class ModifyProblemDto {
     private String title;
+
+    @JsonProperty("type")
     private ProblemType problemType;
+
     private String detail;
     private String source;
     private List<String> tags;
