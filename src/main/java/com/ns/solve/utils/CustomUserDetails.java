@@ -1,7 +1,7 @@
 package com.ns.solve.utils;
 
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

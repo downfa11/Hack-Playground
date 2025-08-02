@@ -151,7 +151,7 @@ public class PodService {
         try {
             Optional<String> phaseOpt = kubernetesService.getPodPhase(namespace, podName);
             if (phaseOpt.isPresent()) {
-                return handleExistingPod(namespace, podName, phaseOpt.get());
+                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, wargameProblem.getId(), wargameProblem.getKind(), wargameProblem.getPortNumber(), wargameProblem.getContainerResourceType());
             }
 
             return createAndExposePod(wargameProblem, userId);
@@ -161,13 +161,29 @@ public class PodService {
         }
     }
 
-    private String handleExistingPod(String namespace, String podName, String phase) {
-        if ("Running".equals(phase) && !kubernetesService.isPodReady(namespace, podName)) {
-            return "Pod is not ready yet.";
+    private String handleExistingPod(String namespace, String podName, String phase, Long userId, Long problemId, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
+        if ("Running".equals(phase) && kubernetesService.isPodReady(namespace, podName)){
+            // 멀쩡한 경우
+            Problem problem = problemService.getProblemById(problemId);
+            Optional<String> existingUrl = resolveIngressRouteUrl(problem, userId, problemId);
+            if (existingUrl.isPresent()) {
+                log.info("Resolved existing URL. pod {}'s url {}", podName, existingUrl.get());
+                return existingUrl.get();
+            }
+        }
+        else if (!"Succeeded".equals(phase) && !"Failed".equals(phase)) {
+            // Running이지만 아직 Ready 상태가 아닌 경우, IngressRoute URL이 없는 경우
+            if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
+                log.info("Pod {} is ready.", podName);
+                return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
+            } else {
+                log.error("Pod {} timeout.", podName);
+                return "[error] Pod timeout.";
+            }
         }
 
-        log.warn("Pod {} is in phase: {}", podName, phase);
-        return "Pod is not running.";
+        log.warn("Pod {} is in phase: {}. Cannot expose.", podName, phase);
+        return String.format("Pod phase: %s. Please try again later or contact support.", phase);
     }
 
     private String createAndExposePod(WargameProblem wargameProblem, Long userId) throws ApiException {
@@ -182,7 +198,7 @@ public class PodService {
         kubernetesService.createPod(userId, problemId, namespace, image, resourceLimits);
         String podName = getPodName(userId, problemId);
 
-        if (kubernetesService.waitPodToReady(namespace, podName, 60)) {
+        if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
             return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
         } else {
             return "createAndExposePod error - timed out.";
@@ -207,21 +223,36 @@ public class PodService {
     public List<SolveInfo> findCurrentSolveMembers(String namespace) {
         try {
             V1ServiceList services = kubernetesService.getServiceList(namespace);
-            return services.getItems().stream()
-                    .map(service -> {
-                        Map<String, String> labels = service.getMetadata().getLabels();
-                        String userId = labels.get("userId");
-                        String problemId = labels.get("problemId");
 
-                        if (userId == null || problemId == null) {
-                            return null;
-                        }
+            Map<String, List<String>> problemToNicknames = new HashMap<>();
 
-                        return new SolveInfo(userId, problemId);
+            for (var service : services.getItems()) {
+                Map<String, String> labels = service.getMetadata().getLabels();
+                String userId = labels.get("userId");
+                String problemId = labels.get("problemId");
+
+                if (userId == null || problemId == null) {
+                    continue;
+                }
+
+                String nickname = userService.getNicknameByUserId(userId);
+                if (nickname == null) {
+                    continue;
+                }
+
+                problemToNicknames
+                        .computeIfAbsent(problemId, k -> new ArrayList<>())
+                        .add(nickname);
+            }
+
+            return problemToNicknames.entrySet().stream()
+                    .map(entry -> {
+                        String problemId = entry.getKey();
+                        List<String> nicknames = entry.getValue();
+                        String title = problemService.getProblemTitleById(problemId);
+                        return new SolveInfo(title, nicknames);
                     })
-                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
             log.error("fetch pod list failed : {}", e.getMessage(), e);
             return List.of();

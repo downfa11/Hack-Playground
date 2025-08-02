@@ -1,9 +1,9 @@
 package com.ns.solve.repository.board;
 
-import com.ns.solve.domain.entity.BoardType;
+import com.ns.solve.domain.entity.user.QUser;
+import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.entity.QBoard;
 import com.ns.solve.domain.entity.QComment;
-import com.ns.solve.domain.entity.QUser;
 import com.ns.solve.domain.dto.board.BoardSummary;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;

@@ -1,6 +1,7 @@
 package com.ns.solve.utils;
 
-import com.ns.solve.domain.entity.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -27,8 +29,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     @Value("${jwt.refresh.expiration}")
     public Long REFRESH_TOKEN_EXPIRATION;
 
+    @Value("${app.frontend.base-url:https://hpground.xyz}")
+    private String frontendBaseUrl;
+
     private final JWTUtil jwtUtil;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -37,33 +43,53 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         if (oauthId == null) {
             log.error("OAuth account null");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth account null");
+            sendOAuthMessageToOpener(response, "oauthError", "OAuth account ID missing.");
             return;
         }
 
         User user = userRepository.findByAccount(oauthId);
         if (user == null) {
             log.error("user is null");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "등록되지 않은 사용자입니다.");
+            sendOAuthMessageToOpener(response, "oauthError", "User not registered. Please sign up first.");
             return;
         }
 
         String accessToken = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), ACCESS_TOKEN_EXPIRATION);
         String refreshToken = jwtUtil.createJwt(user.getId(), user.getNickname(), user.getRole().name(), REFRESH_TOKEN_EXPIRATION);
 
+        log.info("사용자가 로그인을 시도합니다. " + user.getNickname() + "의 토큰은 " + accessToken);
+
         Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge((int) (REFRESH_TOKEN_EXPIRATION / 1000));
+        refreshCookie.setAttribute("SameSite", "Lax");
         response.addCookie(refreshCookie);
 
-        String redirectUrl = UriComponentsBuilder.fromUriString("https://hpground.xyz")
-                .queryParam("token", accessToken)
-                .build()
-                .toUriString();
+        response.setContentType("text/html;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
-        response.sendRedirect(redirectUrl);
+        Map<String, Object> data = new HashMap<>();
+        data.put("type", "oauthSuccess");
+        data.put("accessToken", accessToken);
+        data.put("nickname", user.getNickname());
+        data.put("membershipId", String.valueOf(user.getId()));
+        data.put("account", user.getAccount());
+
+        String jsonData = objectMapper.writeValueAsString(data);
+
+        response.getWriter().write("<!DOCTYPE html><html><head><title>Login Success</title></head><body>");
+        response.getWriter().write("<script>");
+        response.getWriter().write("if (window.opener) {");
+        response.getWriter().write("  window.opener.postMessage(" + jsonData + ", '" + frontendBaseUrl + "');");
+        response.getWriter().write("  window.close();");
+        response.getWriter().write("} else {");
+        response.getWriter().write("  window.location.href = '" + frontendBaseUrl + "?token=" + accessToken + "';");
+        response.getWriter().write("}");
+        response.getWriter().write("</script>");
+        response.getWriter().write("</body></html>");
+        response.getWriter().flush();
     }
 
     private String extractOauthId(Map<String, Object> attributes) {
@@ -78,5 +104,28 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         }
 
         return null;
+    }
+
+    private void sendOAuthMessageToOpener(HttpServletResponse response, String type, String errorMessage) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, String> errorData = new HashMap<>();
+        errorData.put("type", type);
+        errorData.put("error", errorMessage);
+
+        String jsonData = objectMapper.writeValueAsString(errorData);
+
+        response.getWriter().write("<!DOCTYPE html><html><head><title>Login Failed</title></head><body>");
+        response.getWriter().write("<script>");
+        response.getWriter().write("if (window.opener) {");
+        response.getWriter().write("  window.opener.postMessage(" + jsonData + ", '" + frontendBaseUrl + "');");
+        response.getWriter().write("  window.close();");
+        response.getWriter().write("} else {");
+        response.getWriter().write("  window.location.href = '" + frontendBaseUrl + "/login?error=" + errorMessage + "';"); // fallback
+        response.getWriter().write("}");
+        response.getWriter().write("</script>");
+        response.getWriter().write("</body></html>");
+        response.getWriter().flush();
     }
 }

@@ -142,7 +142,7 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     }
 
     @Override
-    public long countCheckedProblems() {
+    public Long countCheckedProblems() {
         Long count = jpaQueryFactory
                 .select(Wildcard.count)
                 .from(qProblem)
@@ -153,7 +153,7 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     }
 
     @Override
-    public long countNewProblems(LocalDateTime now) {
+    public Long countNewProblems(LocalDateTime now) {
         Long count = jpaQueryFactory
                 .select(Wildcard.count)
                 .from(qProblem)
@@ -169,6 +169,11 @@ public class ProblemCustomRepositoryImpl implements ProblemCustomRepository {
     @Override
     public Page<ProblemSummary> findProblemsByStatusAndTypeSortedById(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
         return findProblemsSorted(type, kind, pageRequest, qProblem.id, desc);
+    }
+
+    @Override
+    public Page<ProblemSummary> findProblemsByStatusAndTypeSortedByLevel(ProblemType type, WargameKind kind, boolean desc, PageRequest pageRequest) {
+        return findProblemsSorted(type, kind, pageRequest, qWargameProblem.level, desc);
     }
 
     @Override

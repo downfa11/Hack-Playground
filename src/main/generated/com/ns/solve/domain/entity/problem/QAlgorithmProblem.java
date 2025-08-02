@@ -39,7 +39,7 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final DateTimePath<java.time.LocalDateTime> createdAt;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     //inherited
     public final StringPath detail;
@@ -64,7 +64,7 @@ public class QAlgorithmProblem extends EntityPathBase<AlgorithmProblem> {
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
 
     // inherited
-    public final com.ns.solve.domain.entity.QUser reviewer;
+    public final com.ns.solve.domain.entity.user.QUser reviewer;
 
     //inherited
     public final StringPath source;

@@ -1,6 +1,7 @@
 package com.ns.solve.domain.entity;
 
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

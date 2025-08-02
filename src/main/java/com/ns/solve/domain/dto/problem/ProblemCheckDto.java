@@ -11,4 +11,7 @@ public class ProblemCheckDto {
     private Integer portNumber;
     private Integer cpuLimit;
     private Integer memoryLimit;
+
+    private String reviewComment;
+    private Boolean approved;
 }

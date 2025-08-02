@@ -1,11 +1,8 @@
 package com.ns.solve.service;
 
-import com.ns.solve.domain.dto.user.ModifyUserDto;
-import com.ns.solve.domain.dto.user.RegisterUserDto;
-import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.dto.user.UserRankDto;
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.dto.user.*;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.DomainKind;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameKind;
@@ -20,9 +17,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -69,6 +68,19 @@ public class UserService {
                 });
     }
 
+    public Optional<UserDto> getUserDtoByNickname(String nickName) {
+        return userRepository.findByNickname(nickName)
+                .map(user -> {
+                    List<String> solvedTitles = problemService.getSolvedProblemsTitle(user.getId());
+                    return UserMapper.mapperToUserDto(user, solvedTitles);
+                });
+    }
+
+    public User getUserByNickname(String nickName) {
+        return userRepository.findByNickname(nickName)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+    }
+
 
     public Page<UserRankDto> getUsersSortedByScore(ProblemType type, String kind, int page, int size) {
         Page<User> userPage;
@@ -96,9 +108,6 @@ public class UserService {
         return userRepository.findByAccount(account);
     }
 
-    public User getUserByNickname(String nickName) {
-        return userRepository.findByNickname(nickName);
-    }
 
     public UserDto updateUser(Long currentId, Long updateId, ModifyUserDto modifyUserDto) {
         User currentUser = userRepository.findById(currentId)
@@ -108,13 +117,23 @@ public class UserService {
             throw new SolvedException(UserErrorCode.ACCESS_DENIED);
         }
 
-        if (!isValidUser(currentId, modifyUserDto.nickname(), modifyUserDto.account())) {
-            throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+        if (StringUtils.hasText(modifyUserDto.nickname())) {
+            if (existsByNickname(modifyUserDto.nickname())) {
+                throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+            }
+            currentUser.setNickname(modifyUserDto.nickname());
         }
 
-        currentUser.setNickname(modifyUserDto.nickname());
-        currentUser.setAccount(modifyUserDto.account());
-        currentUser.setPassword(bCryptPasswordEncoder.encode(modifyUserDto.password()));
+        if (StringUtils.hasText(modifyUserDto.account())) {
+            if (existsByAccount(modifyUserDto.account())) {
+                throw new SolvedException(UserErrorCode.INVALID_NICKNAME_OR_ACCOUNT);
+            }
+            currentUser.setAccount(modifyUserDto.account());
+        }
+
+        if (StringUtils.hasText(modifyUserDto.password())) {
+            currentUser.setPassword(bCryptPasswordEncoder.encode(modifyUserDto.password()));
+        }
 
         userRepository.save(currentUser);
 
@@ -161,5 +180,51 @@ public class UserService {
             // etc..
             default -> throw new IllegalArgumentException("Unsupported ProblemType: " + type);
         };
+    }
+
+    private boolean existsByNickname(String nickname){
+        return userRepository.existsByNickname(nickname);
+    }
+
+    private boolean existsByAccount(String account){
+        return userRepository.existsByAccount(account);
+    }
+
+    public String getNicknameByUserId(String userId) {
+        Long id = Long.valueOf(userId);
+        return userRepository.findNicknameByUserId(id);
+    }
+
+    public UserStatsDto getUserStats(String userId) {
+        Long id;
+        try {
+            id = Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 userId 형식입니다.");
+        }
+
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없습니다.");
+        }
+
+        User user = userOpt.get();
+
+        UserStatsDto stats = new UserStatsDto();
+        stats.setRank(getUserRank(user));
+        stats.setSolvedCount(user.getScore() != null ? user.getScore().intValue() : 0);
+        stats.setFieldSolvedCounts(convertFieldScores(user.getFieldScores()));
+
+        return stats;
+    }
+
+
+    private int getUserRank(User user) {
+        return 0; // todo
+    }
+
+    private Map<String, Integer> convertFieldScores(Map<String, Long> fieldScores) {
+        return fieldScores.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue() != null ? e.getValue().intValue() : 0));
     }
 }

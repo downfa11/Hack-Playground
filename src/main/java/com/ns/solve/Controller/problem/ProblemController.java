@@ -74,20 +74,6 @@ public class ProblemController {
         return ResponseEntity.ok(new MessageEntity("Problem updated successfully", updatedProblem));
     }
 
-    @Operation(summary = "문제 난이도 수정", description = "주어진 문제 ID로 문제를 수정합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문제가 성공적으로 수정되었습니다."),
-            @ApiResponse(responseCode = "404", description = "문제를 찾을 수 없습니다.")
-    })
-    @PutMapping(value = "/{id}/level")
-    public ResponseEntity<MessageEntity> updateProblem(@PathVariable Long id, @RequestParam String level, Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long userId = userDetails.getUserId();
-
-        ProblemDto updatedProblem = problemService.updateProblemLevel(userId, id, level);
-        return ResponseEntity.ok(new MessageEntity("Problem updated successfully", updatedProblem));
-    }
-
     @Operation(summary = "모든 문제 조회", description = "모든 문제를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "문제들이 성공적으로 조회되었습니다."),
@@ -129,7 +115,7 @@ public class ProblemController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형(type='WARGAME')에 따라 조회합니다. 종류(kind='WEBHACKING'...)도 구분합니다. 단, 정렬 조건(sortKind)은 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
+    @Operation(summary = "검수 완료된 문제 조회", description = "검수 완료된 문제들을 주어진 유형(type='WARGAME')에 따라 조회합니다. 종류(kind='WEBHACKING'...)도 구분합니다. 단, 정렬 조건(sortKind)은 index, level, 마지막 수정일(updatedAt), 정답율(correctRate)로 구분하며 그 외에는 모두 문제 번호로 정렬합니다. ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "완료된 문제들이 성공적으로 조회되었습니다."),
             @ApiResponse(responseCode = "404", description = "완료된 문제들을 찾을 수 없습니다.")

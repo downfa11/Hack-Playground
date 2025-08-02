@@ -89,6 +89,10 @@ dependencies {
 
     implementation "com.querydsl:querydsl-core"
     implementation "com.querydsl:querydsl-collections"
+
+
+    // Java Mail Sender
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 // QueryDSL

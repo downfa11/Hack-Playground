@@ -414,3 +414,6 @@ prometheus/volume/data/01JSM508R94Q9AM9J7B1WD40EA/meta.json
 prometheus/volume/data/01JSM508R94Q9AM9J7B1WD40EA/index
 prometheus/volume/data/01JSM508R94Q9AM9J7B1WD40EA/chunks/000001
 db/data/solve/shedlock.ibd
+db/data/solve/problem_log.ibd
+db/data/solve/email_receiver_seq.ibd
+db/data/solve/email_receiver.ibd

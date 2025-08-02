@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import java.time.LocalDateTime;
 

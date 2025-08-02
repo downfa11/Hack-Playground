@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문제 변경 보고서</title>
+    <link rel="stylesheet" th:href="@{/css/problem-report-style.css}">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>문제 변경 보고서</h1>
+        <p>Problem Management System Report</p>
+    </div>
+
+    <div class="content">
+        <div class="summary-card">
+            <h3>📊 보고서 요약</h3>
+            <p>보고 대상 기간 동안의 문제 등록, 수정, 파일 업로드 내역을 정리하였습니다. 모든 변경사항은 시간순으로 정렬되어 있습니다.</p>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>일시</th>
+                    <th>작성자</th>
+                    <th>문제명</th>
+                    <th>행위</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${logs}">
+                    <td class="timestamp" th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${log.creatorUsername}"></td>
+                    <td th:text="${log.problemTitle}"></td>
+                    <td>
+                        <span class="action-badge"
+                              th:classappend="${
+                                  #maps.of(
+                                      'CREATE', 'action-create',
+                                      'UPDATE', 'action-update',
+                                      'UPLOAD', 'action-upload'
+                                  ).get(log.operationType)
+                              }"
+                              th:text="${log.operationType == 'CREATE' ? '등록' :
+                                       (log.operationType == 'UPDATE' ? '수정' : '파일업로드')}">
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-icon"></div>
+            <p><strong>자동 생성된 보고서</strong></p>
+        </div>
+        <p>본 보고서는 시스템에서 자동으로 생성된 메일입니다.</p>
+        <p>문의사항이 있으시면 <a href="mailto:admin@company.com">관리자</a>에게 연락해주세요.</p>
+    </div>
+</div>
+</body>
+</html>

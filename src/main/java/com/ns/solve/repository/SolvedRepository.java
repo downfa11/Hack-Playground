@@ -2,8 +2,6 @@ package com.ns.solve.repository;
 
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.Solved;
-import com.ns.solve.domain.entity.User;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +31,14 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
     List<String> findSolvedProblemTitlesByUserId(@Param("userId") Long userId);
 
 
-    @Query("SELECT COUNT(DISTINCT s.solvedProblem.id) FROM Solved s WHERE s.solvedTime >= :now")
-    Long countTriedProblems(@Param("now") LocalDateTime now);
+    // DISTINCT: 같은 문제를 여러번 풀어도 하나 푼 것으로 처리한다.
+    @Query("""
+    SELECT COUNT(DISTINCT s.solvedProblem.id)
+    FROM Solved s
+    WHERE s.solvedTime BETWEEN :from AND :to
+    """)
+    Long countRecentlyTriedProblems(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+
+    Long countBySolvedTimeBetween(LocalDateTime start, LocalDateTime end);
 }

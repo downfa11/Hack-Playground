@@ -1,11 +1,8 @@
 package com.ns.solve.domain.dto.board;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.entity.BoardType;
+import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.entity.Comment;
-import com.ns.solve.domain.entity.User;
-import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 

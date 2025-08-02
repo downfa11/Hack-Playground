@@ -1,9 +1,17 @@
 package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.admin.AdminStatsResponse;
+import com.ns.solve.domain.dto.admin.AdminUserResponse;
+import com.ns.solve.domain.dto.admin.AdminUserUpdateRequest;
+import com.ns.solve.domain.dto.admin.AnalyticsResponse;
 import com.ns.solve.domain.dto.problem.ProblemCheckDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
+import com.ns.solve.domain.entity.admin.CategoryDistributionResponse;
+import com.ns.solve.domain.entity.admin.ProblemReview;
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.service.admin.AdminService;
+import com.ns.solve.service.problem.ProblemReviewService;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.CustomUserDetails;
 import com.ns.solve.utils.DummyGenerator;
@@ -16,12 +24,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController {
     private final ProblemService problemService;
+    private final ProblemReviewService problemReviewService;
+
+    private final AdminService adminService;
     private final DummyGenerator dummyGenerator;
+
 
     @Operation(summary="검수를 위해 대기중인 문제 목록 조회", description = "제출된 문제를 검수하기 위해 대기중인 리스트를 조회합니다.")
     @GetMapping("/pending")
@@ -32,7 +46,7 @@ public class AdminController {
 
     @Operation(summary = "검수 완료", description = "해당 문제의 검수를 완료해서 사용자들에게 보여집니다.")
     @PutMapping("/check/{id}")
-    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id, @RequestBody(required = false) ProblemCheckDto problemCheckDto, Authentication authentication) {
+    public ResponseEntity<MessageEntity> checkProblem(@PathVariable Long id, @RequestBody ProblemCheckDto problemCheckDto, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long reviewerId = userDetails.getUserId();
 
@@ -54,4 +68,41 @@ public class AdminController {
         return ResponseEntity.ok(new MessageEntity("Dummy data generated successfully", "succes"));
     }
 
+    @GetMapping("/stats")
+    public AdminStatsResponse getAdminStats() {
+        return adminService.getStatistics();
+    }
+
+    @GetMapping("/users")
+    public List<AdminUserResponse> getAllUsers() {
+        return adminService.getAllUsers();
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<Void> updateUser(@PathVariable Long id, @RequestBody AdminUserUpdateRequest request) {
+        adminService.updateUser(id, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        adminService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // period = daily, monthly, yearly
+    @GetMapping("/analytics")
+    public List<AnalyticsResponse> getAnalytics(@RequestParam("period") String period) {
+        return adminService.getAnalyticsData(period);
+    }
+
+    @GetMapping("/distribution")
+    public List<CategoryDistributionResponse> getCategoryDistribution() {
+        return adminService.getCategoryDistribution();
+    }
+
+    @GetMapping("/find/review/{reviewerId}")
+    public List<ProblemReview> getProblemReviewsByReviewer(@PathVariable Long reviewerId) {
+        return problemReviewService.getProblemReviewsByReviewer(reviewerId);
+    }
 }

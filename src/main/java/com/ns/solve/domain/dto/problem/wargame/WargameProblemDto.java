@@ -26,7 +26,7 @@ public class WargameProblemDto extends ProblemDto {
     private LocalDateTime updatedAt;
 
     private WargameKind kind; // 웹해킹, 시스템해킹, 리버싱, 암호학
-    private String level;
+    private Integer level;
 
     private String problemFile;
     private Long problemFileSize;

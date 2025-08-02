@@ -1,7 +1,7 @@
 package com.ns.solve.utils;
 
 import com.ns.solve.domain.dto.problem.ProblemSummary;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;

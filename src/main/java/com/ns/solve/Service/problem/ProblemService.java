@@ -2,18 +2,23 @@ package com.ns.solve.service.problem;
 
 import com.ns.solve.domain.dto.problem.*;
 import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
+import com.ns.solve.domain.dto.problem.wargame.ModifyWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
+import com.ns.solve.domain.dto.problem.wargame.WrittenWargameProblemDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.Solved;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.admin.ProblemReview;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.*;
 import com.ns.solve.domain.vo.FileInfo;
+import com.ns.solve.domain.vo.OperationType;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
+import com.ns.solve.repository.admin.ProblemReviewRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import com.ns.solve.service.FileService;
-import com.ns.solve.service.UserService;
+import com.ns.solve.service.admin.ProblemLogService;
 import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
@@ -37,12 +42,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProblemService {
     private final FileService fileService;
+    private final ProblemLogService problemLogService;
 
     private final UserRepository userRepository;
     private final ProblemRepository problemRepository;
-
+    private final ProblemReviewRepository problemReviewRepository;
     private final SolvedRepository solvedRepository;
-
 
     /*
      * 1. Assignment에 Github 주소를 제출한다.
@@ -55,7 +60,9 @@ public class ProblemService {
     public ProblemDto createProblem(Long userId, RegisterProblemDto registerProblemDto) {
         Problem problem = createProblemByType(registerProblemDto);
         setCommonProblemFields(problem, userId, registerProblemDto);
+
         Problem saved = problemRepository.save(problem);
+        problemLogService.saveProblemLog(saved.getId(), saved.getTitle(), saved.getCreator().getNickname(), OperationType.CREATE);
         return ProblemMapper.mapperToProblemDto(saved);
     }
 
@@ -76,6 +83,7 @@ public class ProblemService {
         wargameProblem.setKind(wargameDto.getKind());
         wargameProblem.setLevel(wargameDto.getLevel());
         wargameProblem.setFlag(wargameDto.getFlag());
+        wargameProblem.setPortNumber(wargameDto.getPortNumber());
         wargameProblem.setDockerfileLink(wargameDto.getDockerfileLink());
 
         return wargameProblem;
@@ -93,7 +101,10 @@ public class ProblemService {
 
     private void setCommonProblemFields(Problem problem, User user, ModifyProblemDto modifyProblemDto) {
         problem.setCreator(user);
-        problem.setType(modifyProblemDto.getProblemType());
+        if (modifyProblemDto.getProblemType() != null) {
+            problem.setType(modifyProblemDto.getProblemType());
+        }
+
         problem.setTitle(modifyProblemDto.getTitle());
         problem.setDetail(modifyProblemDto.getDetail());
         problem.setTags(modifyProblemDto.getTags());
@@ -119,7 +130,9 @@ public class ProblemService {
                 FileInfo fileInfo = fileService.uploadFile(wargameProblem.getId(), file);
                 wargameProblem.setProblemFile(fileInfo.fileName());
                 wargameProblem.setProblemFileSize(fileInfo.fileSize());
+
                 problemRepository.save(wargameProblem);
+                problemLogService.saveProblemLog(wargameProblem.getId(), wargameProblem.getTitle(), wargameProblem.getCreator().getNickname(), OperationType.FILE_UPLOAD);
             } else {
                 throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
             }
@@ -134,13 +147,23 @@ public class ProblemService {
 
         checkAuthorizationOrThrow(user, existingProblem);
         setCommonProblemFields(existingProblem, user, modifyProblemDto);
+
+        if (existingProblem instanceof WargameProblem wargameProblem && modifyProblemDto instanceof ModifyWargameProblemDto wargameProblemDto) {
+            wargameProblem.setKind(wargameProblemDto.getKind());
+            wargameProblem.setLevel(wargameProblemDto.getLevel());
+            wargameProblem.setFlag(wargameProblemDto.getFlag());
+            wargameProblem.setPortNumber(wargameProblemDto.getPortNumber());
+            wargameProblem.setDockerfileLink(wargameProblemDto.getDockerfileLink());
+        }
+
         Problem saved = problemRepository.save(existingProblem);
+        problemLogService.saveProblemLog(saved.getId(), saved.getTitle(), saved.getCreator().getNickname(), OperationType.MODIFY);
         updateLastActived(user);
         return ProblemMapper.mapperToProblemDto(saved);
     }
 
     @Transactional
-    public ProblemDto updateProblemLevel(Long userId, Long problemId, String level){
+    public ProblemDto updateProblemLevel(Long userId, Long problemId, Integer level){
         Problem existingProblem = problemRepository.findById(problemId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
         User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
 
@@ -149,6 +172,7 @@ public class ProblemService {
         if (existingProblem instanceof WargameProblem wargameProblem) {
             ((WargameProblem) existingProblem).setLevel(level);
             problemRepository.save(existingProblem);
+            problemLogService.saveProblemLog(existingProblem.getId(), existingProblem.getTitle(), existingProblem.getCreator().getNickname(), OperationType.MODIFY);
             return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
 
@@ -171,8 +195,10 @@ public class ProblemService {
         Problem problem = createProblemByType(registerProblemDto);
 
         setCommonProblemFields(problem, userId, registerProblemDto);
+        
         Problem saved = problemRepository.save(problem);
         handleFileUpload(file, saved);
+        problemLogService.saveProblemLog(saved.getId(), saved.getTitle(), saved.getCreator().getNickname(), OperationType.CREATE);
         return ProblemMapper.mapperToProblemDto(saved);
     }
 
@@ -186,8 +212,18 @@ public class ProblemService {
 
         checkAuthorizationOrThrow(user, existingProblem);
         setCommonProblemFields(existingProblem, user, modifyProblemDto);
+
+        if (existingProblem instanceof WargameProblem wargameProblem && modifyProblemDto instanceof ModifyWargameProblemDto wargameProblemDto) {
+            wargameProblem.setKind(wargameProblemDto.getKind());
+            wargameProblem.setLevel(wargameProblemDto.getLevel());
+            wargameProblem.setFlag(wargameProblemDto.getFlag());
+            wargameProblem.setPortNumber(wargameProblemDto.getPortNumber());
+            wargameProblem.setDockerfileLink(wargameProblemDto.getDockerfileLink());
+        }
+
         Problem saved = problemRepository.save(existingProblem);
         handleFileUpload(file, saved);
+        problemLogService.saveProblemLog(saved.getId(), saved.getTitle(), saved.getCreator().getNickname(), OperationType.MODIFY);
         updateLastActived(user);
         return ProblemMapper.mapperToProblemDto(saved);
     }
@@ -213,29 +249,43 @@ public class ProblemService {
             throw new SolvedException(ProblemErrorCode.ACCESS_DENIED, "Authorization: " + user.getRole());
         }
 
-        problem.setIsChecked(!problem.getIsChecked());
-        problem.setReviewer(user);
+        Boolean approved = problemCheckDto.getApproved();
+        ProblemReview review = ProblemReview.builder()
+                .problem(problem)
+                .reviewer(user)
+                .comment(problemCheckDto.getReviewComment())
+                .isApproved(approved)
+                .build();
+        problemReviewRepository.save(review);
 
-        if (problemCheckDto.getContainerResourceType() != null) {
-            problem.setContainerResourceType(problemCheckDto.getContainerResourceType());
-        }
-        if (problemCheckDto.getPortNumber() != null) {
-            problem.setPortNumber(problemCheckDto.getPortNumber());
+        if(approved) {
+            problem.setIsChecked(approved);
+            problem.setReviewer(user);
+
+            if (problemCheckDto.getContainerResourceType() != null) {
+                problem.setContainerResourceType(problemCheckDto.getContainerResourceType());
+            }
+            if (problemCheckDto.getPortNumber() != null) {
+                problem.setPortNumber(problemCheckDto.getPortNumber());
+            }
+
+            Map<String, Integer> resourceLimit = new HashMap<>();
+            if (problemCheckDto.getCpuLimit() != null) {
+                resourceLimit.put("cpu", problemCheckDto.getCpuLimit());
+            }
+            if (problemCheckDto.getMemoryLimit() != null) {
+                resourceLimit.put("memory", problemCheckDto.getMemoryLimit());
+            }
+            problem.setResourceLimit(resourceLimit);
+            problemRepository.save(problem);
+
         }
 
-        Map<String, Integer> resourceLimit = new HashMap<>();
-        if (problemCheckDto.getCpuLimit() != null) {
-            resourceLimit.put("cpu", problemCheckDto.getCpuLimit());
-        }
-        if (problemCheckDto.getMemoryLimit() != null) {
-            resourceLimit.put("memory", problemCheckDto.getMemoryLimit());
-        }
-        problem.setResourceLimit(resourceLimit);
-        Problem savedProblem = problemRepository.save(problem);
-
-        if (savedProblem instanceof WargameProblem wargameProblem) {
+        if (problem instanceof WargameProblem wargameProblem) {
             return ProblemMapper.mapperToWargameProblemDto(wargameProblem);
         }
+
+
         throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
     }
 
@@ -265,7 +315,7 @@ public class ProblemService {
     }
 
     public Long getTriedProblemsCount(LocalDateTime now) {
-        return solvedRepository.countTriedProblems(now);
+        return solvedRepository.countBySolvedTimeBetween(now.minusMonths(1), now);
     }
 
     private Page<ProblemSummary> getCompletedProblemsByType(ProblemType type, WargameKind kind, String sortKind, boolean desc, PageRequest pageRequest) {
@@ -274,6 +324,8 @@ public class ProblemService {
         }
 
         switch (sortKind) {
+            case "level":
+                return problemRepository.findProblemsByStatusAndTypeSortedByLevel(type, kind, desc, pageRequest);
             case "updatedAt":
                 return problemRepository.findProblemsByStatusAndTypeSortedByUpdatedAt(type, kind, desc, pageRequest);
             case "correctRate":
@@ -393,5 +445,41 @@ public class ProblemService {
     private void updateLastActived(User user) {
         user.setLastActived(LocalDateTime.now());
         userRepository.save(user);
+    }
+
+    public String getProblemTitleById(String problemId){
+        Long id = Long.valueOf(problemId);
+        return problemRepository.findTitleByProblemId(id);
+    }
+
+
+
+
+    public WrittenWargameProblemDto getWrittenWargameProblemById(Long userId, Long problemId) {
+        Problem problem = problemRepository.findById(problemId)
+                .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
+
+        if (!(problem instanceof WargameProblem wargameProblem)) {
+            throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_TYPE, "only supported for wargame");
+        }
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "userId: " + userId));
+
+
+        checkAuthorizationOrThrow(user, problem);
+        return ProblemMapper.mapperToWrittenWargameProblemDto(wargameProblem);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<WrittenProblemSummaryDto> getMyWrittenProblems(Long userId, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND, "userId: " + userId));
+
+        Page<Problem> problemsPage = problemRepository.findByUserId(userId, pageable);
+
+        return problemsPage.map(problem -> {
+            List<ProblemReview> reviews = problemReviewRepository.findProblemReviewsByProblemId(problem.getId());
+            return ProblemMapper.mapperToWrittenProblemSummaryDto(problem, reviews);
+        });
     }
 }

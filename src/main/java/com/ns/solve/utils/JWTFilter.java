@@ -1,8 +1,10 @@
 package com.ns.solve.utils;
 
 
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.repository.UserRepository;
+import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
+import com.ns.solve.utils.exception.SolvedException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +43,9 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String nickname = jwtUtil.getNickname(token);
 
-        User user = userRepository.findByNickname(nickname);
+        User user = userRepository.findByNickname(nickname)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+
         if (user == null) {
             log.info("해당하는 사용자가 없습니다. : " + nickname);
             filterChain.doFilter(request, response);

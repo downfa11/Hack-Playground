@@ -2,6 +2,8 @@ package com.ns.solve.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.CommentType;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

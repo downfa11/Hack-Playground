@@ -1,6 +1,6 @@
 package com.ns.solve.domain.dto.user;
 
-import com.ns.solve.domain.entity.Role;
+import com.ns.solve.domain.entity.user.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

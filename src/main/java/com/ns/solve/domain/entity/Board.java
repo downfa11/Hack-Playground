@@ -2,6 +2,8 @@ package com.ns.solve.domain.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.BoardType;
 import jakarta.persistence.*;
 import lombok.Data;
 

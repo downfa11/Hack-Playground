@@ -3,8 +3,8 @@ package com.ns.solve.service;
 import com.ns.solve.domain.dto.comment.CommentDto;
 import com.ns.solve.domain.entity.Board;
 import com.ns.solve.domain.entity.Comment;
-import com.ns.solve.domain.entity.CommentType;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.vo.CommentType;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.comment.ModifyCommentDto;
 import com.ns.solve.domain.dto.comment.RegisterCommentDto;
 import com.ns.solve.domain.entity.problem.Problem;
@@ -12,7 +12,6 @@ import com.ns.solve.repository.CommentRepository;
 import java.util.List;
 import java.util.Optional;
 
-import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.board.BoardRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
 import com.ns.solve.utils.exception.ErrorCode.BoardErrorCode;

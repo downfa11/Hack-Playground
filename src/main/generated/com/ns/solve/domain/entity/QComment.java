@@ -28,13 +28,13 @@ public class QComment extends EntityPathBase<Comment> {
 
     public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
-    public final QUser creator;
+    public final com.ns.solve.domain.entity.user.QUser creator;
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final com.ns.solve.domain.entity.problem.QProblem problem;
 
-    public final EnumPath<CommentType> type = createEnum("type", CommentType.class);
+    public final EnumPath<com.ns.solve.domain.vo.CommentType> type = createEnum("type", com.ns.solve.domain.vo.CommentType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
@@ -57,7 +57,7 @@ public class QComment extends EntityPathBase<Comment> {
     public QComment(Class<? extends Comment> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.board = inits.isInitialized("board") ? new QBoard(forProperty("board"), inits.get("board")) : null;
-        this.creator = inits.isInitialized("creator") ? new QUser(forProperty("creator")) : null;
+        this.creator = inits.isInitialized("creator") ? new com.ns.solve.domain.entity.user.QUser(forProperty("creator")) : null;
         this.problem = inits.isInitialized("problem") ? new com.ns.solve.domain.entity.problem.QProblem(forProperty("problem"), inits.get("problem")) : null;
     }
 
