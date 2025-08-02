@@ -1,13 +1,9 @@
 package com.ns.solve.domain.dto.user;
 
-import com.ns.solve.domain.entity.Role;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.ns.solve.domain.entity.user.Role;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 @Getter
 public class UserFirstBloodDto {

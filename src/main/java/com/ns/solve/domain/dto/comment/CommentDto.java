@@ -3,7 +3,7 @@ package com.ns.solve.domain.dto.comment;
 import com.ns.solve.domain.dto.board.BoardDto;
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.entity.CommentType;
+import com.ns.solve.domain.vo.CommentType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
