@@ -1,8 +1,8 @@
 package com.ns.solve.utils.mapper;
 
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.user.UserDto;
 
 import java.time.LocalDateTime;
