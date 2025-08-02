@@ -1,11 +1,8 @@
 package com.ns.solve.service;
 
-import com.ns.solve.domain.dto.user.ModifyUserDto;
-import com.ns.solve.domain.dto.user.RegisterUserDto;
-import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.dto.user.UserRankDto;
-import com.ns.solve.domain.entity.Role;
-import com.ns.solve.domain.entity.User;
+import com.ns.solve.domain.dto.user.*;
+import com.ns.solve.domain.entity.user.Role;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.DomainKind;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameKind;
@@ -24,6 +21,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -195,5 +193,38 @@ public class UserService {
     public String getNicknameByUserId(String userId) {
         Long id = Long.valueOf(userId);
         return userRepository.findNicknameByUserId(id);
+    }
+
+    public UserStatsDto getUserStats(String userId) {
+        Long id;
+        try {
+            id = Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 userId 형식입니다.");
+        }
+
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없습니다.");
+        }
+
+        User user = userOpt.get();
+
+        UserStatsDto stats = new UserStatsDto();
+        stats.setRank(getUserRank(user));
+        stats.setSolvedCount(user.getScore() != null ? user.getScore().intValue() : 0);
+        stats.setFieldSolvedCounts(convertFieldScores(user.getFieldScores()));
+
+        return stats;
+    }
+
+
+    private int getUserRank(User user) {
+        return 0; // todo
+    }
+
+    private Map<String, Integer> convertFieldScores(Map<String, Long> fieldScores) {
+        return fieldScores.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue() != null ? e.getValue().intValue() : 0));
     }
 }

@@ -1,8 +1,6 @@
 package com.ns.solve.repository;
 
-import com.ns.solve.domain.entity.User;
-import com.ns.solve.domain.entity.problem.DomainKind;
-import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.entity.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -19,13 +17,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 유형별 문제를 푼 개수에 따라서 위에서부터 정렬하여 Pagenation 끊어서 조회하는 메서드
     User findByAccount(String account);
     Optional<User> findByNickname(String nickname);
+    Optional<User> findByAccountAndProvider(String account, String provider);
     Boolean existsByNickname(String nickname);
     Boolean existsByAccount(String account);
 
     Boolean existsByNicknameAndIdNot(String nickname, Long id);
     Boolean existsByAccountAndIdNot(String account, Long id);
-
-
 
     Page<User> findAllByScoreGreaterThanOrderByScoreDesc(long score, Pageable pageable);
 
@@ -40,4 +37,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u.nickname FROM User u WHERE u.id = :userId")
     String findNicknameByUserId(@Param("userId") Long userId);
+
+    long countByLastActivedAfter(LocalDateTime since);
+
+    Long countByCreatedBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT COUNT(DISTINCT u.id) FROM User u WHERE u.lastActived BETWEEN :start AND :end")
+    Long countActiveUsersBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
 }

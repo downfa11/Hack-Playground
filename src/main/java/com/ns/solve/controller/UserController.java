@@ -1,19 +1,23 @@
 package com.ns.solve.controller;
 
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.problem.WrittenProblemSummaryDto;
 import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
-import com.ns.solve.domain.entity.User;
-import com.ns.solve.domain.entity.problem.DomainKind;
+import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.service.UserService;
+import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,6 +31,7 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final ProblemService problemService;
 
     @Operation(summary = "새로운 사용자 생성", description = "제공된 등록 정보를 바탕으로 새로운 사용자를 생성합니다.")
     @ApiResponses(value = {
@@ -106,5 +111,17 @@ public class UserController {
 
         userService.deleteUser(userId, id);
         return ResponseEntity.ok(new MessageEntity("User deleted successfully", null));
+    }
+
+    @GetMapping("/{userId}/stats")
+    public ResponseEntity<MessageEntity> getUserStats(@PathVariable String userId) {
+        return ResponseEntity.ok(new MessageEntity("UserStats fetched successfully", userService.getUserStats(userId)));
+    }
+
+    @GetMapping("/myProblems/{userId}")
+    public ResponseEntity<Page<WrittenProblemSummaryDto>> getMyWrittenProblems(@PathVariable Long userId, @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(offset / size, size, Sort.by("createdAt").descending());
+        Page<WrittenProblemSummaryDto> problems = problemService.getMyWrittenProblems(userId, pageable);
+        return ResponseEntity.ok(problems);
     }
 }
