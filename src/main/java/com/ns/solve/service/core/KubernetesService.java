@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
+import static com.ns.solve.service.core.PodBuilder.getPodName;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,6 +27,7 @@ public class KubernetesService {
     private final CustomObjectsApi customObjectsApi;
 
     private final ObjectMapper mapper = new ObjectMapper();
+    private final Random random = new Random(); // koren test api
 
 
     // 특정 Pod 생성
@@ -441,6 +444,14 @@ public class KubernetesService {
     public List<V1Service> getServicesByLabelSelectorInAllNamespaces(String labelSelector) throws ApiException {
         return coreApi.listServiceForAllNamespaces(null, null, null, labelSelector,null, null, null, null, null, null)
                 .getItems();
+    }
+
+    public V1Pod createProblemInKOREN(String containerImage) throws ApiException {
+        Long userId = random.nextLong(100000);
+        Long problemId = random.nextLong(1000);
+
+        Map<String, Integer> resourceLimits = Map.of("cpu", 500, "memory", 512);
+        return createPod(userId, problemId, "hpg", containerImage, resourceLimits);
     }
 
 }

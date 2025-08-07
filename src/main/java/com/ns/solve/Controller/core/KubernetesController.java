@@ -230,4 +230,16 @@ public class KubernetesController {
         }
     }
 
+    // --- KOREN망 테스트 목적의 API ---
+    @Operation(summary = "KOREN 환경에서 문제 컨테이너를 생성", description = "사용자 확인이나 인가 과정을 생략한 리소스 소비량을 분석하기 위한 용도")
+
+    @GetMapping("/koren")
+    public ResponseEntity<V1Pod> createProblemInKOREN(@RequestParam String url){
+        try {
+            return ResponseEntity.ok(kubernetesService.createProblemInKOREN(url));
+        } catch (ApiException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
 }
