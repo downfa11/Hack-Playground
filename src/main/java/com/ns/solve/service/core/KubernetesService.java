@@ -260,6 +260,43 @@ public class KubernetesService {
         return false;
     }
 
+    // 특정 IngressRoute가 Ready 상태인지 확인
+    public boolean isIngressRouteReady(String namespace, String ingressRouteName) {
+        try {
+            Object obj = customObjectsApi.getNamespacedCustomObject("traefik.io", "v1alpha1", namespace, "ingressroutes", ingressRouteName);
+
+            Map<String, Object> ingressRoute = (Map<String, Object>) obj;
+            if (ingressRoute == null) {
+                log.warn("IngressRoute {} not found in namespace {}", ingressRouteName, namespace);
+                return false;
+            }
+
+            Map<String, Object> status = (Map<String, Object>) ingressRoute.get("status");
+            if (status == null) {
+                return false;
+            }
+
+            List<Map<String, Object>> conditions = (List<Map<String, Object>>) status.get("conditions");
+            if (conditions == null) {
+                return false;
+            }
+
+            return conditions.stream()
+                    .anyMatch(condition -> "Ready".equals(condition.get("type")) && "True".equals(condition.get("status")));
+
+        } catch (ApiException e) {
+            if (e.getCode() == 404) {
+                log.warn("IngressRoute {} not found in namespace {}. Error code: 404", ingressRouteName, namespace);
+                return false;
+            }
+            log.error("Failed to check readiness of IngressRoute {}: code={}, body={}", ingressRouteName, e.getCode(), e.getResponseBody());
+            return false;
+        } catch (Exception e) {
+            log.error("An unexpected error occurred while checking IngressRoute status for {}: {}", ingressRouteName, e.getMessage());
+            return false;
+        }
+    }
+
     // 해당 Pod에게 input 입력값 실행, command는 추가 명령어 - 기본적인 쉘 명령어 실행과 결과 반환 정도
     public String executeCommand(String podName, String... command) {
         List<String> commandList = new ArrayList<>();

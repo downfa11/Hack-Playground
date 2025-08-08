@@ -43,7 +43,6 @@ public class PodService {
     private final UserService userService;
 
 
-
     public String createProblemPod(Long userId, Long problemId) {
         Problem problem = validateUserAndProblemChecked(userId, problemId);
         String namespace = problem.getType().getTypeName();
@@ -139,7 +138,6 @@ public class PodService {
     }
 
 
-
     /**
      * Pod이 존재하면 상태에 따라 처리하고, 없으면 새로 생성한다.
      * 실패 시 null 반환.
@@ -162,16 +160,24 @@ public class PodService {
     }
 
     private String handleExistingPod(String namespace, String podName, String phase, Long userId, Long problemId, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
-        if ("Running".equals(phase) && kubernetesService.isPodReady(namespace, podName)){
+        if ("Running".equals(phase) && kubernetesService.isPodReady(namespace, podName)) {
             // 멀쩡한 경우
             Problem problem = problemService.getProblemById(problemId);
-            Optional<String> existingUrl = resolveIngressRouteUrl(problem, userId, problemId);
-            if (existingUrl.isPresent()) {
-                log.info("Resolved existing URL. pod {}'s url {}", podName, existingUrl.get());
-                return existingUrl.get();
+            if (kubernetesService.isIngressRouteReady(namespace, podName)) {
+                Optional<String> existingUrl = resolveIngressRouteUrl(problem, userId, problemId);
+                if (existingUrl.isPresent()) {
+                    log.info("Resolved existing URL. pod {}'s url {}", podName, existingUrl.get());
+                    return existingUrl.get();
+                } else {
+                    log.error("IngressRoute is ready, but URL could not be resolved.");
+                    return "[error] IngressRoute is ready, but URL could not be resolved.";
+                }
+            } else {
+                log.info("IngressRoute for pod {} is not yet ready. Please try again shortly.", podName);
+                // IngressRoute가 Ready가 아닐 경우 친절한 메시지 반환
+                return "[info] Server is being prepared. Please try again in a few moments.";
             }
-        }
-        else if (!"Succeeded".equals(phase) && !"Failed".equals(phase)) {
+        } else if (!"Succeeded".equals(phase) && !"Failed".equals(phase)) {
             // Running이지만 아직 Ready 상태가 아닌 경우, IngressRoute URL이 없는 경우
             if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
                 log.info("Pod {} is ready.", podName);
@@ -210,8 +216,8 @@ public class PodService {
         String dedicatedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
         String sharedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
 
-        log.info("getExternalUrl: "+ dedicatedUrl +", " + sharedUrl);
-        return containerResourceType==ContainerResourceType.SHARED ? sharedUrl : dedicatedUrl;
+        log.info("getExternalUrl: " + dedicatedUrl + ", " + sharedUrl);
+        return containerResourceType == ContainerResourceType.SHARED ? sharedUrl : dedicatedUrl;
     }
 
 
@@ -260,7 +266,6 @@ public class PodService {
     }
 
 
-
     /**
      * Pod를 외부 노출 (Service + Ingress 생성)
      */
@@ -278,9 +283,7 @@ public class PodService {
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
 
                 url = getExternalUrl(problemId, uuid, containerResourceType);
-            }
-
-            else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
+            } else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
                 V1Service service = PodBuilder.buildTCPService(userId, problemId, port);
                 kubernetesService.createService(namespace, service);
 
@@ -304,7 +307,7 @@ public class PodService {
         userService.getUserById(userId).orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
         String namespace = problem.getType().getTypeName();
-        String labelSelector = String.format("userId=%s,problemId=%s",userId, problemId);
+        String labelSelector = String.format("userId=%s,problemId=%s", userId, problemId);
 
         try {
             List<V1Service> services = kubernetesService.getServicesByLabelSelector(namespace, labelSelector);
@@ -325,7 +328,7 @@ public class PodService {
     }
 
     public String deleteProblemPod(Long userId, String namespace) {
-        String labelSelector = String.format("userId=%s",userId);
+        String labelSelector = String.format("userId=%s", userId);
 
         try {
             List<V1Service> services = kubernetesService.getServicesByLabelSelector(namespace, labelSelector);
