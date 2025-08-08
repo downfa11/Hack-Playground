@@ -44,13 +44,13 @@ public class ProblemReportService {
                 helper.setSubject(subject);
                 helper.setText(content, true);
                 mailSender.send(message);
+                logService.markAsReported(logs);
+
                 log.info("[INFO] "+ toEmail +"에게 메일 발송이 완료했습니다.");
             } catch (Exception e) {
                 log.warn("메일 전송 실패: {}", e.getMessage());
             }
         });
-
-        logService.markAsReported(logs);
     }
 
     private String buildHtmlReport(List<ProblemLog> logs) {
