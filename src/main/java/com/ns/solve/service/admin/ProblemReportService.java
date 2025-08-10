@@ -26,12 +26,21 @@ public class ProblemReportService {
     private final TemplateEngine templateEngine;
 
     @Transactional
-    public void sendReportAndMark(LocalDateTime from, LocalDateTime to) {
-        List<ProblemLog> logs = logService.getUnreportedLogs(from, to);
-        if (logs.isEmpty()) return;
+    public void sendReportAndMark() {
+        List<ProblemLog> logs = logService.getUnreportedLogs();
+        if (logs.isEmpty()) {
+            log.info("보고서에 작성할 검수 문제가 없습니다.");
+            return;
+        }
 
         List<String> receivers = emailReceiverRepository.findAllEmails();
-        if (receivers.isEmpty()) return;
+        if (receivers.isEmpty()) {
+            log.info("보고서를 전송할 관리자 이메일 목록이 비어있습니다.");
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime from = now.minusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         String subject = "[Hplayground Report] " + from.toLocalDate();
         String content = buildHtmlReport(logs);

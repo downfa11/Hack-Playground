@@ -7,5 +7,5 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ProblemLogRepository extends JpaRepository<ProblemLog, Long> {
-    List<ProblemLog> findByCreatedAtBetweenAndReportedFalse(LocalDateTime from, LocalDateTime to);
+    List<ProblemLog> findByReportedFalse();
 }

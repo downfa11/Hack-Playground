@@ -27,8 +27,8 @@ public class ProblemLogService {
         logRepository.save(log);
     }
 
-    public List<ProblemLog> getUnreportedLogs(LocalDateTime from, LocalDateTime to) {
-        return logRepository.findByCreatedAtBetweenAndReportedFalse(from, to);
+    public List<ProblemLog> getUnreportedLogs() {
+        return logRepository.findByReportedFalse();
     }
 
     public void markAsReported(List<ProblemLog> logs) {

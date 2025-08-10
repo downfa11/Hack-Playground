@@ -18,12 +18,9 @@ public class ProblemReportScheduler {
     public void sendDailyProblemReport() {
         LocalDateTime now = LocalDateTime.now();
 
-        LocalDateTime yesterday = now.minusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime today = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
-
         try {
             log.info("ProblemReportScheduler Start - Current time: {}", now);
-            reportService.sendReportAndMark(yesterday, today);
+            reportService.sendReportAndMark();
         } catch (Exception e) {
             log.error("ProblemReportScheduler Error", e);
         }
