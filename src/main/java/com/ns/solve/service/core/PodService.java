@@ -74,7 +74,30 @@ public class PodService {
 
     private Optional<String> getExistingPodUrlIfExists(V1PodList podList, Long userId, Long problemId, Problem problem) {
         return findMatchingPod(podList, userId, problemId)
-                .flatMap(pod -> resolveIngressRouteUrl(problem, userId, problemId));
+                .flatMap(pod -> {
+                    // 어떤 문제 종류인지에 따라서 ingressRouteUrl을 반환할지, NodePort를 반환할지
+                    if (problem instanceof WargameProblem wargameProblem) {
+                        WargameKind kind = wargameProblem.getKind();
+                        String namespace = problem.getType().getTypeName();
+                        String podName = PodBuilder.getPodName(userId, problemId);
+
+                        if (kind.equals(WargameKind.WEBHACKING)) {
+                            return resolveIngressRouteUrl(problem, userId, problemId);
+                        } else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
+                            try {
+                                V1Service service = kubernetesService.getService(namespace, podName);
+                                Integer nodePort = service.getSpec().getPorts().get(0).getNodePort();
+                                String url = String.format("nc %s %d", serverIp, nodePort);
+                                return Optional.of(url);
+                            } catch (ApiException e) {
+                                log.error("Failed to get Service for NodePort URL: {}", e.getMessage(), e);
+                                return Optional.empty();
+                            }
+                        }
+                    }
+                    return Optional.empty();
+
+                });
     }
 
     private Optional<V1Pod> findMatchingPod(V1PodList podList, Long userId, Long problemId) {
