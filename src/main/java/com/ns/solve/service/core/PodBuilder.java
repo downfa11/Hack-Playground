@@ -18,7 +18,9 @@ public class PodBuilder {
                 .securityContext(new V1PodSecurityContext()
                         // .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))
                         .seccompProfile(new V1SeccompProfile().type("Unconfined"))
-                        .runAsNonRoot(false))
+                        .runAsUser(1001L)
+                        .runAsGroup(1001L)
+                        .fsGroup(1001L))
                 .automountServiceAccountToken(false)
                 .hostNetwork(false);
 
@@ -28,9 +30,12 @@ public class PodBuilder {
         return new V1Container()
                 .name(containerName + "-container")
                 .image(image)
+                .resources(createResourceRequirements(resourceLimits))
                 .securityContext(new V1SecurityContext()
-                        .allowPrivilegeEscalation(false)) // readOnlyRootFilesystem(true), runAsNonRoot(true)
-                .resources(createResourceRequirements(resourceLimits));
+                        .allowPrivilegeEscalation(false)
+                        .runAsUser(1001L)
+                        .runAsNonRoot(true)
+                        .capabilities(new V1Capabilities().addDropItem("ALL").addAddItem("NET_RAW")));
     }
 
     public static V1ResourceRequirements createResourceRequirements(Map<String, Integer> resourceLimits) {
@@ -256,10 +261,12 @@ public class PodBuilder {
                 .env(envVars)
                 .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()
-                        .allowPrivilegeEscalation(true)
-                        .runAsUser(0L)
-                        .capabilities(new V1Capabilities().addAddItem("NET_ADMIN")
-                                .addAddItem("NET_RAW"))
+                        .allowPrivilegeEscalation(false)
+                        .runAsNonRoot(true)
+                        .capabilities(new V1Capabilities()
+                                .addDropItem("ALL")
+                                .addAddItem("NET_RAW")
+                                .addAddItem("NET_ADMIN"))
                 );
     }
 
