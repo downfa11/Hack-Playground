@@ -451,7 +451,7 @@ public class KubernetesService {
         Long problemId = random.nextLong(1000);
 
         Map<String, Integer> resourceLimits = Map.of("cpu", 500, "memory", 512);
-        return createPod(userId, problemId, "hpg", containerImage, resourceLimits);
+        return createPod(userId, problemId, "wargame", containerImage, resourceLimits);
     }
 
 }
