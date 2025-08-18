@@ -1,51 +1,48 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>문제 변경 보고서</title>
-    <link rel="stylesheet" th:href="@{/css/problem-report-style.css}" />
+    <title>문제 검수 보고서</title>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>문제 변경 보고서</h1>
-        <p>Problem Management System Report</p>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; color: #334155; line-height: 1.6;">
+<div style="max-width: 800px; margin: 0 auto; background-color: #ffffff;">
+
+    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 32px 40px; text-align: center;">
+        <h1 style="margin: 0 0 8px 0; padding: 0; font-size: 28px; font-weight: 700;">문제 검수 보고서</h1>
+        <p style="margin: 0; padding: 0; font-size: 16px; opacity: 0.9;">Problem Management System Report</p>
     </div>
 
-    <div class="content">
-        <div class="summary-card">
-            <h3>📊 보고서 요약</h3>
-            <p>보고 대상 기간 동안의 문제 등록, 수정, 파일 업로드 내역을 정리하였습니다. 모든 변경사항은 시간순으로 정렬되어 있습니다.</p>
+    <div style="padding: 40px;">
+        <div style="background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 32px; border-radius: 0 8px 8px 0;">
+            <h3 style="margin: 0 0 8px 0; padding: 0; color: #1e293b; font-size: 18px; font-weight: 600;">📊 보고서 요약</h3>
+            <p style="margin: 0; padding: 0; color: #64748b; font-size: 14px;">보고 대상 기간 동안의 문제 등록, 수정, 파일 업로드 내역을 정리하였습니다. 모든 변경사항은 시간순으로 정렬되어 있습니다.</p>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
+        <div style="background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background-color: #f8fafc;">
                 <tr>
-                    <th>일시</th>
-                    <th>작성자</th>
-                    <th>문제명</th>
-                    <th>행위</th>
+                    <th style="padding: 16px 20px; text-align: left; font-weight: 600; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;">최종 일시</th>
+                    <th style="padding: 16px 20px; text-align: left; font-weight: 600; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;">작성자</th>
+                    <th style="padding: 16px 20px; text-align: left; font-weight: 600; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;">문제명</th>
+                    <th style="padding: 16px 20px; text-align: left; font-weight: 600; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;">행위</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="log : ${logs}">
-                    <td class="timestamp" th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
-                    <td th:text="${log.creatorUsername}"></td>
-                    <td th:text="${log.problemTitle}"></td>
-                    <td>
-                        <span class="action-badge"
-                              th:classappend="${
-                                  #maps.of(
-                                      'CREATE', 'action-create',
-                                      'UPDATE', 'action-update',
-                                      'UPLOAD', 'action-upload'
-                                  ).get(log.operationType)
-                              }"
-                              th:text="${log.operationType == 'CREATE' ? '등록' :
-                                       (log.operationType == 'UPDATE' ? '수정' : '파일업로드')}">
-                        </span>
+                    <td style="padding: 16px 20px; font-size: 14px; color: #64748b; border-bottom: 1px solid #f1f5f9; font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;" th:text="${#temporals.format(log.latestCreatedAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td style="padding: 16px 20px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9;" th:text="${log.creatorUsername}"></td>
+                    <td style="padding: 16px 20px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9;" th:text="${log.problemTitle}"></td>
+                    <td style="padding: 16px 20px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9;">
+                        <th:block th:each="opType : ${log.operationTypes}">
+                            <th:block th:switch="${opType}">
+                                <span th:case="'CREATE'" style="display: inline-block; padding: 4px 12px; margin-bottom: 4px; margin-right: 4px; border-radius: 20px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; background-color: #dcfce7; color: #166534;">등록</span>
+                                <span th:case="'UPDATE'" style="display: inline-block; padding: 4px 12px; margin-bottom: 4px; margin-right: 4px; border-radius: 20px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; background-color: #fef3c7; color: #92400e;">수정</span>
+                                <span th:case="'UPLOAD'" style="display: inline-block; padding: 4px 12px; margin-bottom: 4px; margin-right: 4px; border-radius: 20px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; background-color: #dbeafe; color: #1e40af;">파일업로드</span>
+                                <span th:case="*" style="display: inline-block; padding: 4px 12px; margin-bottom: 4px; margin-right: 4px; border-radius: 20px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; background-color: #e2e8f0; color: #475569;">알수없음</span>
+                            </th:block>
+                        </th:block>
                     </td>
                 </tr>
                 </tbody>
@@ -53,13 +50,19 @@
         </div>
     </div>
 
-    <div class="footer">
-        <div class="footer-content">
-            <div class="footer-icon"></div>
-            <p><strong>자동 생성된 보고서</strong></p>
-        </div>
-        <p>본 보고서는 시스템에서 자동으로 생성된 메일입니다.</p>
-        <p>문의사항이 있으시면 <a href="mailto:admin@company.com">관리자</a>에게 연락해주세요.</p>
+    <div style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom: 16px;">
+            <tr>
+                <td style="padding-right: 12px;">
+                    <div style="width: 20px; height: 20px; background-color: #3b82f6; border-radius: 50%; text-align: center; line-height: 20px; color: white; font-weight: bold; font-size: 12px;">!</div>
+                </td>
+                <td>
+                    <p style="margin: 0; padding: 0; font-size: 13px; color: #64748b;"><strong>자동 생성된 보고서</strong></p>
+                </td>
+            </tr>
+        </table>
+        <p style="margin: 0 0 8px 0; padding: 0; font-size: 13px; color: #64748b;">본 보고서는 시스템에서 자동으로 생성된 메일입니다.</p>
+        <p style="margin: 0; padding: 0; font-size: 13px; color: #64748b;">문의사항이 있으시면 <a href="mailto:downfa11@naver.com" style="color: #3b82f6; text-decoration: none; font-weight: 500;">관리자</a>에게 연락해주세요.</p>
     </div>
 </div>
 </body>

@@ -1,10 +1,12 @@
 package com.ns.solve.service.admin;
 
+import com.ns.solve.domain.dto.admin.GroupedProblemLog;
 import com.ns.solve.domain.entity.admin.ProblemLog;
 import com.ns.solve.repository.admin.EmailReceiverRepository;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -12,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -63,8 +67,20 @@ public class ProblemReportService {
     }
 
     private String buildHtmlReport(List<ProblemLog> logs) {
+        logs.sort(Comparator.comparing(ProblemLog::getCreatedAt));
+        Map<String, GroupedProblemLog> groupedLogsMap = new LinkedHashMap<>();
+
+        for (ProblemLog log : logs) {
+            String key = log.getProblemId() + "::" + log.getProblemTitle() + "::" + log.getCreatorUsername();
+
+            GroupedProblemLog groupedLog = groupedLogsMap.computeIfAbsent(key, k -> new GroupedProblemLog(log.getProblemTitle(), log.getCreatorUsername()));
+            groupedLog.getOperationTypes().add(log.getOperationType());
+            groupedLog.setLatestCreatedAt(log.getCreatedAt());
+        }
+        List<GroupedProblemLog> finalGroupedLogs = new ArrayList<>(groupedLogsMap.values());
+
         Context context = new Context();
-        context.setVariable("logs", logs);
+        context.setVariable("logs", finalGroupedLogs);
         return templateEngine.process("problem-report", context);
     }
 }
