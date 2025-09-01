@@ -17,7 +17,7 @@ import (
 
 const snapshotLen = 1024
 const promiscuous = true
-const filter = "tcp[tcpflags] & (tcp-syn) != 0 and tcp[tcpflags] & (tcp-ack) == 0"
+const filter = "tcp[tcpflags] & (tcp-syn|tcp-fin|tcp-rst|tcp-ack) != 0"
 
 type IPTimestamp struct {
 	IP        string    `json:"ip"`
@@ -27,7 +27,7 @@ type IPTimestamp struct {
 
 var ipTimestamps = make(map[string]IPTimestamp)
 
-func StartPacketCapture() {
+func StartPacketCapture(cfg config.Config) {
 	go func() {
 		device, err := findCaptureInterface()
 		if err != nil {
@@ -44,32 +44,17 @@ func StartPacketCapture() {
 		if err := handle.SetBPFFilter(filter); err != nil {
 			log.Fatal("Error setting BPF filter:", err)
 		}
-		log.Println("Listening for TCP SYN packets on", device)
 
 		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 		for packet := range packetSource.Packets() {
-			log.Println("--- Attache: Packet Captured ---")
-			log.Println("Timestamp      :", packet.Metadata().Timestamp)
-
-			if ethLayer := packet.Layer(layers.LayerTypeEthernet); ethLayer != nil {
-				eth := ethLayer.(*layers.Ethernet)
-				log.Printf("Ethernet       : Src=%s, Dst=%s, Type=%s\n", eth.SrcMAC, eth.DstMAC, eth.EthernetType)
-			}
-
 			ipLayer := packet.Layer(layers.LayerTypeIPv4)
-			if ipLayer == nil {
-				continue
-			}
-			ip := ipLayer.(*layers.IPv4)
-			log.Printf("IPv4           : Src=%s, Dst=%s, Protocol=%s\n", ip.SrcIP, ip.DstIP, ip.Protocol)
-
 			tcpLayer := packet.Layer(layers.LayerTypeTCP)
-			if tcpLayer == nil {
+			if ipLayer == nil || tcpLayer == nil {
 				continue
 			}
+
+			ip := ipLayer.(*layers.IPv4)
 			tcp := tcpLayer.(*layers.TCP)
-			log.Printf("TCP            : SrcPort=%d, DstPort=%d, Seq=%d, SYN=%v, ACK=%v\n",
-				tcp.SrcPort, tcp.DstPort, tcp.Seq, tcp.SYN, tcp.ACK)
 
 			if tcp.SYN && !tcp.ACK {
 				srcIP := ip.SrcIP.String()
@@ -80,17 +65,20 @@ func StartPacketCapture() {
 					Protocol:  "TCP",
 				}
 
+				if tcp.FIN || tcp.RST {
+					delete(ipTimestamps, srcIP)
+				}
+
 				data, err := json.MarshalIndent(getLatestTimestamps(), "", "  ")
 				if err != nil {
 					log.Printf("Failed to marshal timestamps: %v", err)
 					continue
 				}
 
-				if err := utils.WriteToFile(config.FilePath, data); err != nil {
+				if err := utils.WriteToFile(cfg.FilePath, data); err != nil {
 					log.Printf("Failed to write timestamp log to file: %v", err)
 				}
 			}
-			log.Println("------------------------")
 		}
 	}()
 }
@@ -114,7 +102,6 @@ func findCaptureInterface() (string, error) {
 			if err != nil || len(addrs) == 0 {
 				continue
 			}
-			log.Println("Available interface:", iface.Name)
 			return iface.Name, nil
 		}
 	}

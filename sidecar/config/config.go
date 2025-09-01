@@ -5,39 +5,30 @@ import (
 	"os"
 )
 
-var ProblemID string
-var UserID string
-var UUID string
-var FilePath string
-var HttpPort string
-var ProxyPort string
-var ProxyIP string
+type Config struct {
+	ProblemID string
+	UserID    string
+	UUID      string
+	FilePath  string
+	HttpPort  string
+}
 
-func LoadConfig() {
-	ProblemID = os.Getenv("PROBLEM_ID")
-	UserID = os.Getenv("USER_ID")
-	UUID = os.Getenv("UUID")
-	FilePath = os.Getenv("FILE_PATH")
-
-	if FilePath == "" {
-		FilePath = "/tmp/last_connections.json"
+func LoadConfig() Config {
+	cfg := Config{
+		ProblemID: os.Getenv("PROBLEM_ID"),
+		UserID:    os.Getenv("USER_ID"),
+		FilePath:  os.Getenv("FILE_PATH"),
+		HttpPort:  os.Getenv("PORT"),
 	}
 
-	HttpPort = os.Getenv("PORT")
-	if HttpPort == "" {
-		HttpPort = ":1880"
+	if cfg.FilePath == "" {
+		cfg.FilePath = "/tmp/last_connections.json"
 	}
 
-	ProxyPort = os.Getenv("PROXY_PORT")
-	if ProxyPort == "" {
-		ProxyPort = "8080"
+	if cfg.HttpPort == "" {
+		cfg.HttpPort = "1880"
 	}
 
-	ProxyIP = os.Getenv("PROXY_IP")
-	if ProxyIP == "" {
-		ProxyIP = "180.83.48.182"
-	}
-
-	log.Printf("Loaded config: PROBLEM_ID=%s, USER_ID=%s, UUID=%s, FILE_PATH=%s, HTTP_PORT=%s, PROXY_PORT=%s, PROXY_IP=%s",
-		ProblemID, UserID, UUID, FilePath, HttpPort, ProxyPort, ProxyIP)
+	log.Printf("Loaded config: %+v", cfg)
+	return cfg
 }

@@ -3,14 +3,12 @@ package main
 import (
 	"sidecar/capture"
 	"sidecar/config"
-	"sidecar/server"
 )
 
 func main() {
-	config.LoadConfig()
-
-	go server.StartHTTPServer()
-	go capture.StartPacketCapture()
+	cfg := config.LoadConfig()
+	go capture.StartPacketCapture(cfg)
+	// go server.StartHTTPServer(cfg) k8s 1.11+ Container 단위의 SecurityContext sysctls 미지원
 
 	select {}
 }
