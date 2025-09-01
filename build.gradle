@@ -93,6 +93,9 @@ dependencies {
 
     // Java Mail Sender
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 // QueryDSL
