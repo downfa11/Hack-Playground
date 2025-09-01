@@ -257,12 +257,16 @@ public class PodBuilder {
     }
 
     private static V1Container buildReverseProxyContainer(Long problemId, Long userId, Integer port) {
+        String websocketUrl = "ws://hpg-koren.hpg.svc.cluster.local:8080/ws";
+        String problemContainer = "problem" + problemId + "-" + userId + "-container";
+
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
+        V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value(problemContainer);
         V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(port));
-        V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value("ws://hpg-koren.hpg.svc.cluster.local:8080/ws");
+        V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value(websocketUrl);
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, httpPortEnv, wsUrlEnv);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, httpUrlEnv, httpPortEnv, wsUrlEnv);
 
         return new V1Container()
                 .name("detache-sidecar")
