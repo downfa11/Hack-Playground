@@ -1,5 +1,6 @@
 package com.ns.solve.controller.core;
 
+import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.service.core.KubernetesService;
 import com.ns.solve.service.core.PodBuilder;
 import com.ns.solve.service.core.PodService;
@@ -30,14 +31,16 @@ import java.util.stream.Collectors;
 public class KubernetesController {
     private final KubernetesService kubernetesService;
 
-    @Operation(summary = "Pod 생성", description = "지정한 이름과 이미지로 Pod를 생성합니다.")
+    @Operation(summary = "Pod 생성", description = "지정한 이름과 이미지로 암호학 분야의 Pod를 생성합니다.")
     @PostMapping("/pod")
     public V1Pod createPod(
             @Parameter(description = "생성할 사용자") @RequestParam Long userId,
             @Parameter(description = "생성할 Problem 번호") @RequestParam Long problemId,
+            @Parameter(description = "생성할 Pod의 kind") @RequestParam WargameKind kind,
+            @Parameter(description = "생성할 Pod의 port") @RequestParam Integer port,
             @Parameter(description = "생성할 Pod의 namespace") @RequestParam String namespace,
             @Parameter(description = "사용할 Docker 이미지") @RequestParam String image) throws ApiException {
-        return kubernetesService.createPod(problemId, userId, namespace, image, null);
+        return kubernetesService.createPod(problemId, userId, port, kind, namespace, image, null);
     }
 
     @Operation(summary = "Pod 삭제", description = "지정한 이름의 Pod를 삭제합니다.")
@@ -234,9 +237,10 @@ public class KubernetesController {
     @Operation(summary = "KOREN 환경에서 문제 컨테이너를 생성", description = "사용자 확인이나 인가 과정을 생략한 리소스 소비량을 분석하기 위한 용도")
 
     @GetMapping("/koren")
-    public ResponseEntity<V1Pod> createProblemInKOREN(@RequestParam String url){
+    public ResponseEntity<V1Pod> createProblemInKOREN(@RequestParam String url, @RequestParam(defaultValue = "wargame") String namespace, @RequestParam WargameKind kind, @RequestParam int port) {
+        // curl -X GET "http://localhost:8080/koren?url=http://example.com&kind=WEBHACKING&port=8080"
         try {
-            return ResponseEntity.ok(kubernetesService.createProblemInKOREN(url));
+            return ResponseEntity.ok(kubernetesService.createProblemInKOREN(port, kind, namespace, url));
         } catch (ApiException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);

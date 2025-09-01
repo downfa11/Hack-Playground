@@ -2,6 +2,7 @@ package com.ns.solve.service.core;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ns.solve.domain.entity.problem.WargameKind;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -31,7 +32,7 @@ public class KubernetesService {
 
 
     // 특정 Pod 생성
-    public V1Pod createPod(Long userId, Long problemId, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
+    public V1Pod createPod(Long userId, Long problemId, Integer port, WargameKind kind, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
         String podName = PodBuilder.getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
@@ -45,7 +46,7 @@ public class KubernetesService {
                             .name(podName)
                             .namespace(namespace)
                             .labels(labels))
-                    .spec(PodBuilder.buildPodSpec(podName, image, resourceLimits));
+                    .spec(PodBuilder.buildPodSpec(problemId, userId, port, kind, image, resourceLimits));
             return coreApi.createNamespacedPod(namespace, pod, null, null, null, null);
         } catch (ApiException e) {
             log.error("createPod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);
@@ -446,12 +447,12 @@ public class KubernetesService {
                 .getItems();
     }
 
-    public V1Pod createProblemInKOREN(String containerImage) throws ApiException {
+    public V1Pod createProblemInKOREN(Integer port, WargameKind kind, String namespace, String containerImage) throws ApiException {
         Long userId = random.nextLong(100000);
         Long problemId = random.nextLong(1000);
 
         Map<String, Integer> resourceLimits = Map.of("cpu", 500, "memory", 512);
-        return createPod(userId, problemId, "wargame", containerImage, resourceLimits);
+        return createPod(userId, problemId, port, kind, namespace, containerImage, resourceLimits);
     }
 
 }

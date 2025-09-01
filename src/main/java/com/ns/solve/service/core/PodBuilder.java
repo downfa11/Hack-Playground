@@ -1,24 +1,40 @@
 package com.ns.solve.service.core;
 
+import com.ns.solve.domain.entity.problem.WargameKind;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.*;
+import org.apache.commons.collections4.IterableGet;
+import org.springframework.beans.factory.annotation.Value;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PodBuilder {
 
-    public static V1PodSpec buildPodSpec(String podName, String image, Map<String, Integer> resourceLimits) {
+    public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer port, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
+        String podName = PodBuilder.getPodName(userId, problemId);
+        List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId)));
+
+        if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
+            containers.add(buildReverseProxyContainer(problemId, userId, port));
+        }
+
         return new V1PodSpec()
-                .containers(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer()))
+                .containers(containers)
                 .restartPolicy("OnFailure") // 비정상적인 종료시 재시작
                 // .runtimeClassName("gvisor")
                 .securityContext(new V1PodSecurityContext()
                         // .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))
                         .seccompProfile(new V1SeccompProfile().type("Unconfined"))
-                        .runAsNonRoot(false))
+                        .runAsNonRoot(false)
+                        .runAsUser(1001L)
+                        .runAsGroup(1001L)
+                        .fsGroup(1001L)
+                        .sysctls(Arrays.asList(
+                                new V1Sysctl().name("net.ipv4.tcp_keepalive_time").value("60"),
+                                new V1Sysctl().name("net.ipv4.tcp_keepalive_intvl").value("10"),
+                                new V1Sysctl().name("net.ipv4.tcp_keepalive_probes").value("4")
+                        )))
                 .automountServiceAccountToken(false)
                 .hostNetwork(false);
 
@@ -75,33 +91,8 @@ public class PodBuilder {
     }
 
     // webhacking 문제는 ClusterIP Service + IngressRoute
-    public static V1Service buildHttpService(Long userId, Long problemId, Integer port) {
-        V1Service service = new V1Service();
-        V1ObjectMeta metadata = new V1ObjectMeta();
-        String podName = getPodName(userId, problemId);
-        metadata.setName(podName);
-
-        Map<String, String> labels = new HashMap<>();
-        labels.put("app", podName);
-        labels.put("userId", String.valueOf(userId));
-        labels.put("problemId", String.valueOf(problemId));
-
-        metadata.setLabels(labels);
-        service.setMetadata(metadata);
-
-        V1ServiceSpec spec = new V1ServiceSpec();
-        spec.setSelector(Map.of("app", podName)); // 해당 Pod를 찾는다.
-        spec.setPorts(List.of(new V1ServicePort()
-                .port(port)
-                .targetPort(new IntOrString(port))));
-        spec.setType("ClusterIP");
-
-        service.setSpec(spec);
-        return service;
-    }
-
     // 포렌식 등의 쉡 접속 문제는 NodePort Service + TCP
-    public static V1Service buildTCPService(Long userId, Long problemId, Integer port) {
+    public static V1Service buildService(Long userId, Long problemId, WargameKind kind, Integer port) {
         V1Service service = new V1Service();
         V1ObjectMeta metadata = new V1ObjectMeta();
         String podName = getPodName(userId, problemId);
@@ -111,6 +102,7 @@ public class PodBuilder {
         labels.put("app", podName);
         labels.put("userId", String.valueOf(userId));
         labels.put("problemId", String.valueOf(problemId));
+        labels.put("kind", String.valueOf(kind));
 
         metadata.setLabels(labels);
         service.setMetadata(metadata);
@@ -120,7 +112,9 @@ public class PodBuilder {
         spec.setPorts(List.of(new V1ServicePort()
                 .port(port)
                 .targetPort(new IntOrString(port))));
-        spec.setType("NodePort");
+
+        String type = kind.equals(WargameKind.WEBHACKING) ? "ClusterIP" : "NodePort";
+        spec.setType(type);
 
         service.setSpec(spec);
         return service;
@@ -133,6 +127,7 @@ public class PodBuilder {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", middlewareName);
         metadata.put("labels", labels);
+        labels.put("kind", "WEBHACKING");
 
         Map<String, Object> middleware = new HashMap<>();
         middleware.put("apiVersion", "traefik.io/v1alpha1");
@@ -203,7 +198,7 @@ public class PodBuilder {
     }
 
 
-    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace, String uuid) {
+    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, String namespace, String uuid) {
         String podName = getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
@@ -223,7 +218,7 @@ public class PodBuilder {
 
         route.put("middlewares", List.of(Map.of("name", podName, "namespace", namespace)));
         // stripPrefix, RewritePathRegex, route.put("middlewares", List.of(Map.of("name", "replace-path-regex-middleware", "namespace", namespace)));
-        route.put("services", List.of(Map.of("name", podName, "port", port)));
+        route.put("services", List.of(Map.of("name", podName, "port", 8889)));
 
         Map<String, Object> spec = new HashMap<>();
         spec.put("entryPoints", List.of("web"));
@@ -239,15 +234,13 @@ public class PodBuilder {
     }
 
     // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
-    private static V1Container buildSidecarContainer() {
-    //  V1EnvVar problemPortEnv = new V1EnvVar().name("PROBLEM_APP_PORT").value(String.valueOf(problemPort));
-    //  V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
-    //  V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
-    //  V1EnvVar uuidEnv = new V1EnvVar().name("UUID").value(uuid);
+    private static V1Container buildSidecarContainer(Long problemId, Long userId) {
+        V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
+        V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
-        V1EnvVar port = new V1EnvVar().name("PORT").value(":1880");
+        V1EnvVar port = new V1EnvVar().name("PORT").value("8888");
 
-        List<V1EnvVar> envVars = List.of(filePath, port);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port);
 
         return new V1Container()
                 .name("attache-sidecar")
@@ -260,6 +253,26 @@ public class PodBuilder {
                         .runAsUser(0L)
                         .capabilities(new V1Capabilities().addAddItem("NET_ADMIN")
                                 .addAddItem("NET_RAW"))
+                );
+    }
+
+    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, Integer port) {
+        V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
+        V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
+        V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(port));
+        V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value("ws://hpg-koren.hpg.svc.cluster.local:8080/ws");
+
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, httpPortEnv, wsUrlEnv);
+
+        return new V1Container()
+                .name("detache-sidecar")
+                .image("downfa11/detache:latest")
+                .ports(List.of(new V1ContainerPort().containerPort(8889)))
+                .env(envVars)
+                .resources(createSideCarResourceRequirements())
+                .securityContext(new V1SecurityContext()
+                        .allowPrivilegeEscalation(false)
+                        .runAsNonRoot(true)
                 );
     }
 

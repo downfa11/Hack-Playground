@@ -195,7 +195,7 @@ public class PodService {
         String image = wargameProblem.getDockerfileLink();
         WargameKind kind = wargameProblem.getKind();
 
-        kubernetesService.createPod(userId, problemId, namespace, image, resourceLimits);
+        kubernetesService.createPod(userId, problemId, port, kind, namespace, image, resourceLimits);
         String podName = getPodName(userId, problemId);
 
         if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
@@ -270,18 +270,18 @@ public class PodService {
             String url = "blank url";
 
             if (kind.equals(WargameKind.WEBHACKING)) {
-                V1Service service = PodBuilder.buildHttpService(userId, problemId, port);
+                V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
                 kubernetesService.createService(namespace, service);
 
                 kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
-                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
+                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, namespace, uuid);
                 kubernetesService.createIngressRoute(namespace, ingressRoute);
 
                 url = getExternalUrl(problemId, uuid, containerResourceType);
             }
 
             else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
-                V1Service service = PodBuilder.buildTCPService(userId, problemId, port);
+                V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
                 kubernetesService.createService(namespace, service);
 
                 // 이미 생성한 Service를 조회해서 nodePort를 확인하고 label에 명시해야함

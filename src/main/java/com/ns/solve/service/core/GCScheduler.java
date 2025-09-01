@@ -25,6 +25,7 @@ public class GCScheduler {
     private static final String WARGAME_NAMESPACE = "wargame";
 
     private final KubernetesService kubernetesService;
+    private final WebSocketSessionRegistry sessionRegistry;
 
 
     @Scheduled(fixedDelay = 10 * 60_000)
@@ -76,30 +77,41 @@ public class GCScheduler {
 
     private void cleanExpiredPod(V1Pod pod, String labelSelector) {
         String podName = pod.getMetadata().getName();
+        Map<String, String> labels = pod.getMetadata().getLabels();
+        String problemId = labels.get("problemId");
+        String userId = labels.get("userId");
+        String kind = labels.get("kind");
+
+        if ("WEBHACKING".equals(kind)) {
+            if (!sessionRegistry.isUserConnected(problemId, userId)) {
+                log.info("[GC] Web problem pod {} has no active user session. Deleting...", podName);
+                deletePodByLabel(labelSelector);
+                return;
+            }
+            log.info("[GC] pod {} has active user session.", podName);
+        }
 
         Optional<Long> lastRequestTimestampOpt = getLastRequestTimestamp(pod);
         if (lastRequestTimestampOpt.isEmpty()) {
-            log.warn("[GC] Pod {} has no valid access time in logs. label: {}", podName, labelSelector);
             deletePodByLabel(labelSelector);
             return;
         }
 
         long lastRequestTimestamp = lastRequestTimestampOpt.get();
         if (isExpiredByLastRequest(lastRequestTimestamp)) {
-            log.info("[GC] Pod {} is expired by last request TTL. Deleting...", podName);
             deletePodByLabel(labelSelector);
             return;
         }
 
         Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
         if (isExpiredByCreation(creationTime)) {
-            log.info("[GC] Pod {} is expired by creation TTL. Deleting...", podName);
             deletePodByLabel(labelSelector);
             return;
         }
 
-        log.info("[GC] Pod {} is still within TTL limits, skipping...", podName);
+        log.info("[GC] Pod {} is still active, skipping...", podName);
     }
+
 
 
     private Optional<Long> getLastRequestTimestamp(V1Pod pod) {
