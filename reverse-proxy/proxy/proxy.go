@@ -37,6 +37,7 @@ func (p *Proxy) Handler(w http.ResponseWriter, r *http.Request) {
 func StartHTTPServer(port string, proxy *Proxy) {
 	http.HandleFunc("/", proxy.Handler)
 	log.Printf("Starting HTTP proxy on %s", port)
+	port = ":" + port
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
 	}

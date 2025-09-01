@@ -15,4 +15,4 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /app/detache /usr/local/bin/detache
 USER appuser
 
-CMD ["/detache"]
+CMD ["/usr/local/bin/detache"]
