@@ -238,7 +238,6 @@ public class KubernetesController {
 
     @GetMapping("/koren")
     public ResponseEntity<V1Pod> createProblemInKOREN(@RequestParam String url, @RequestParam(defaultValue = "wargame") String namespace, @RequestParam WargameKind kind, @RequestParam int port) {
-        // curl -X GET "http://localhost:8080/koren?url=http://example.com&kind=WEBHACKING&port=8080"
         try {
             return ResponseEntity.ok(kubernetesService.createProblemInKOREN(port, kind, namespace, url));
         } catch (ApiException e) {
