@@ -28,7 +28,6 @@ public class KubernetesService {
     private final CustomObjectsApi customObjectsApi;
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final Random random = new Random(); // koren test api
 
 
     // 특정 Pod 생성
@@ -156,6 +155,7 @@ public class KubernetesService {
             throw e;
         }
     }
+
 
     public Map<String, Object> getIngressRouteByName(String namespace, String ingressRouteName) throws ApiException {
         try {
@@ -293,17 +293,27 @@ public class KubernetesService {
         try {
             String filePath = "/tmp/last_connections.json";
             String attache = "attache-sidecar";
-            String commandOutput = execPodCommand(podName, namespace, attache, List.of("cat", filePath));
-            log.info("getLatestRequestTimestamp {} result : {}" ,attache, commandOutput);
 
-            if (commandOutput == null || commandOutput.isBlank()) return Optional.empty();
+            String commandOutput = execPodCommand(podName, namespace, attache, List.of("cat", filePath));
+            log.info("getLatestRequestTimestamp {} result : {}", attache, commandOutput);
+
+            if (commandOutput == null || commandOutput.isBlank())
+                return Optional.empty();
+
             List<Map<String, Object>> records = mapper.readValue(commandOutput, new TypeReference<>() {});
 
             Optional<Long> latest = records.stream()
                     .map(entry -> entry.get("timestamp"))
                     .filter(Objects::nonNull)
                     .map(Object::toString)
-                    .map(ts -> Instant.parse(ts).toEpochMilli())
+                    .map(ts -> {
+                        try {
+                            return Instant.parse(ts).toEpochMilli();
+                        } catch (Exception e) {
+                            log.warn("Invalid timestamp format: {}", ts);
+                            return null;
+                        }
+                    })
                     .filter(Objects::nonNull)
                     .max(Long::compareTo);
 
@@ -313,6 +323,7 @@ public class KubernetesService {
             return Optional.empty();
         }
     }
+
 
 
 
@@ -446,13 +457,4 @@ public class KubernetesService {
         return coreApi.listServiceForAllNamespaces(null, null, null, labelSelector,null, null, null, null, null, null)
                 .getItems();
     }
-
-    public V1Pod createProblemInKOREN(Integer port, WargameKind kind, String namespace, String containerImage) throws ApiException {
-        Long userId = random.nextLong(100000);
-        Long problemId = random.nextLong(1000);
-
-        Map<String, Integer> resourceLimits = Map.of("cpu", 500, "memory", 512);
-        return createPod(userId, problemId, port, kind, namespace, containerImage, resourceLimits);
-    }
-
 }

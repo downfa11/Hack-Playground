@@ -1,5 +1,6 @@
 package com.ns.solve.controller.core;
 
+import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.service.core.KubernetesService;
 import com.ns.solve.service.core.PodBuilder;
@@ -18,10 +19,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.ns.solve.service.core.PodBuilder.getPodName;
 
 @Tag(name = "Kubernetes Adapter Test API", description = "KubernetesAdapter 기능 점검용 API입니다.")
 @RestController
@@ -235,14 +236,43 @@ public class KubernetesController {
 
     // --- KOREN망 테스트 목적의 API ---
     @Operation(summary = "KOREN 환경에서 문제 컨테이너를 생성", description = "사용자 확인이나 인가 과정을 생략한 리소스 소비량을 분석하기 위한 용도")
-
     @GetMapping("/koren")
-    public ResponseEntity<V1Pod> createProblemInKOREN(@RequestParam String url, @RequestParam(defaultValue = "wargame") String namespace, @RequestParam WargameKind kind, @RequestParam int port) {
+    public ResponseEntity<String> createProblemInKOREN(@RequestParam String url, @RequestParam int port) {
         try {
-            return ResponseEntity.ok(kubernetesService.createProblemInKOREN(port, kind, namespace, url));
+            WargameKind kind = WargameKind.WEBHACKING;
+            String uuid = UUID.randomUUID().toString();
+            Random random = new Random();
+            Long userId = random.nextLong(100000);
+            Long problemId = random.nextLong(1000);
+            String namespace = "wargame";
+
+            Map<String, Integer> resourceLimits = Map.of("cpu", 500, "memory", 512);
+            kubernetesService.createPod(userId, problemId, port, kind, namespace, url, resourceLimits);
+            String podName = String.format("problem%d-%d-container", problemId, userId);
+
+            if (!kubernetesService.waitPodToReady(namespace, podName, 30)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("createAndExposePod error - timed out.");
+            }
+
+            V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
+            kubernetesService.createService(namespace, service);
+
+            kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
+            Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, namespace, uuid);
+            kubernetesService.createIngressRoute(namespace, ingressRoute);
+
+            String serverUrl = "http://45.248.75.166";
+            return ResponseEntity.ok(String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid));
+
         } catch (ApiException e) {
+            log.error("Kubernetes API error: {}", e.getResponseBody(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+                    .body("Kubernetes API exception: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
 }

@@ -19,16 +19,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GCScheduler {
 
-    private static final long LAST_TTL_SECONDS = 30 * 60; // 30min
-    private static final long CREATED_TTL_SECONDS = 3 * 3600; // 3hour
-    private static final long DELAYED_PENDING_STATUS_SECONDS = 5 * 60; // 5min
+    private static final long LAST_TTL_SECONDS = 60; // 1min
+    private static final long CREATED_TTL_SECONDS = 2 * 3600; // 2hour
+    private static final long DELAYED_PENDING_STATUS_SECONDS = 30; // 30sec
     private static final String WARGAME_NAMESPACE = "wargame";
 
     private final KubernetesService kubernetesService;
     private final WebSocketSessionRegistry sessionRegistry;
 
 
-    @Scheduled(fixedDelay = 10 * 60_000)
+    @Scheduled(fixedDelay = 1 * 60_000)
     @SchedulerLock(name = "gcExpiredK8sPods", lockAtLeastFor = "PT30S", lockAtMostFor = "PT4M")
     public void cleanPods() {
         log.info("[GC] Expired pod check start");
@@ -65,7 +65,7 @@ public class GCScheduler {
                 Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
                 long elapsedPending = Duration.between(creationTime, Instant.now()).getSeconds();
 
-                if (elapsedPending > DELAYED_PENDING_STATUS_SECONDS) { // 5분 이상 Pending인 경우
+                if (elapsedPending > DELAYED_PENDING_STATUS_SECONDS) { // n분 이상 Pending인 경우
                     log.warn("[GC] Pod {} in Pending for {}s, force deleting. {}", podName, elapsedPending, labelSelector);
                     kubernetesService.forceDeletePod(WARGAME_NAMESPACE, podName);
                 }
