@@ -267,7 +267,7 @@ public class PodBuilder {
         V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(port));
         V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value(websocketUrl);
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, httpUrlEnv, httpPortEnv, wsUrlEnv);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv, wsUrlEnv);
 
         return new V1Container()
                 .name("detache-sidecar")
