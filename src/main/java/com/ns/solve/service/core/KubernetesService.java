@@ -31,7 +31,7 @@ public class KubernetesService {
 
 
     // 특정 Pod 생성
-    public V1Pod createPod(Long userId, Long problemId, Integer port, WargameKind kind, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
+    public V1Pod createPod(Long userId, Long problemId, Integer targetPort, Integer nodePort, WargameKind kind, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
         String podName = PodBuilder.getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
@@ -45,7 +45,7 @@ public class KubernetesService {
                             .name(podName)
                             .namespace(namespace)
                             .labels(labels))
-                    .spec(PodBuilder.buildPodSpec(problemId, userId, port, kind, image, resourceLimits));
+                    .spec(PodBuilder.buildPodSpec(problemId, userId, targetPort, nodePort, kind, image, resourceLimits));
             return coreApi.createNamespacedPod(namespace, pod, null, null, null, null);
         } catch (ApiException e) {
             log.error("createPod 실패: code={}, body={}", e.getCode(), e.getResponseBody(), e);

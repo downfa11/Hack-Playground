@@ -11,12 +11,12 @@ import java.util.*;
 
 public class PodBuilder {
 
-    public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer port, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
+    public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
         String podName = PodBuilder.getPodName(userId, problemId);
         List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId)));
 
         if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
-            containers.add(buildReverseProxyContainer(problemId, userId, kind, port));
+            containers.add(buildReverseProxyContainer(problemId, userId, kind, targetPort, nodePort));
         }
 
         return new V1PodSpec()
@@ -237,14 +237,14 @@ public class PodBuilder {
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
-        V1EnvVar port = new V1EnvVar().name("PORT").value("8888");
+        V1EnvVar port = new V1EnvVar().name("PORT").value("18888");
 
         List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port);
 
         return new V1Container()
                 .name("attache-sidecar")
                 .image("downfa11/attache:latest")
-                .ports(List.of(new V1ContainerPort().containerPort(8888)))
+                .ports(List.of(new V1ContainerPort().containerPort(18888)))
                 .env(envVars)
                 .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()
@@ -255,7 +255,7 @@ public class PodBuilder {
                 );
     }
 
-    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, WargameKind kind, Integer port) {
+    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, WargameKind kind, Integer targetPort, Integer nodePort) {
         String websocketUrl = "ws://hpg-koren.hpg.svc.cluster.local:8080/ws";
         String problemContainer = "problem" + problemId + "-" + userId + "-container";
 
@@ -263,15 +263,16 @@ public class PodBuilder {
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar kindEnv = new V1EnvVar().name("PROBLEM_KIND").value(String.valueOf(kind));
         V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value(problemContainer);
-        V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(port));
+        V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
+        V1EnvVar nodePortEnv = new V1EnvVar().name("NODE_PORT").value(String.valueOf(nodePort));
         V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value(websocketUrl);
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv, wsUrlEnv);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv, nodePortEnv, wsUrlEnv);
 
         return new V1Container()
                 .name("detache-sidecar")
                 .image("downfa11/detache:latest")
-                .ports(List.of(new V1ContainerPort().containerPort(8889)))
+                .ports(List.of(new V1ContainerPort().containerPort(18889)))
                 .env(envVars)
                 .resources(createSideCarResourceRequirements())
                 .securityContext(new V1SecurityContext()

@@ -113,8 +113,7 @@ public class PodService {
             Matcher matcher = Pattern.compile("^PathPrefix\\(`/problems/\\d+/([a-f0-9\\-]+)`\\)").matcher(match);
 
             if (matcher.find()) {
-                String uuid = matcher.group(1);
-                return Optional.of(getExternalUrl(problemId, uuid, problem.getContainerResourceType()));
+                return Optional.of(String.format("%s/problems/%d/%s/", serverUrl, problemId, matcher.group(1)));
             }
         }
 
@@ -171,16 +170,6 @@ public class PodService {
                 return existingUrl.get();
             }
         }
-        else if (!"Succeeded".equals(phase) && !"Failed".equals(phase)) {
-            // Running이지만 아직 Ready 상태가 아닌 경우, IngressRoute URL이 없는 경우
-            if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
-                log.info("Pod {} is ready.", podName);
-                return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
-            } else {
-                log.error("Pod {} timeout.", podName);
-                return "[error] Pod timeout.";
-            }
-        }
 
         log.warn("Pod {} is in phase: {}. Cannot expose.", podName, phase);
         return String.format("Pod phase: %s. Please try again later or contact support.", phase);
@@ -190,36 +179,63 @@ public class PodService {
         Long problemId = wargameProblem.getId();
         String namespace = wargameProblem.getType().getTypeName();
         Integer port = wargameProblem.getPortNumber();
-        ContainerResourceType containerResourceType = wargameProblem.getContainerResourceType();
         Map<String, Integer> resourceLimits = wargameProblem.getResourceLimit();
         String image = wargameProblem.getDockerfileLink();
         WargameKind kind = wargameProblem.getKind();
 
-        kubernetesService.createPod(userId, problemId, port, kind, namespace, image, resourceLimits);
+        // 1. 모든 문제에서 Service 먼저 생성
+        V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
+        kubernetesService.createService(namespace, service);
+
+        // 2. 생성된 Service 조회 후 NodePort 확보
+        String serviceName = service.getMetadata().getName();
+        V1Service createdService = kubernetesService.getService(namespace, serviceName);
+        Integer nodePort = createdService.getSpec().getPorts().get(0).getNodePort();
+
+        // 3. Pod 생성 (NodePort 전달)
+        kubernetesService.createPod(userId, problemId, port, nodePort, kind, namespace, image, resourceLimits);
         String podName = getPodName(userId, problemId);
 
-        if (kubernetesService.waitPodToReady(namespace, podName, 30)) {
-            return exposePod(userId, problemId, namespace, kind, port, containerResourceType);
-        } else {
+        if (!kubernetesService.waitPodToReady(namespace, podName, 30)) {
             return "createAndExposePod error - timed out.";
         }
+
+        // 4. Pod Ready 후 URL 반환
+        return exposePod(userId, problemId, namespace, kind, port, nodePort);
     }
 
-    // Traefik Ingress Route 스타일의 External URL 반환
-    public String getExternalUrl(Long problemId, String uuid, ContainerResourceType containerResourceType) {
-        String dedicatedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
-        String sharedUrl = String.format("%s/problems/%d/%s/", serverUrl, problemId, uuid);
+    /**
+     * Pod를 외부 노출 (Service + Ingress 생성)
+     * NodePort는 필요 시 전달
+     */
+    public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, Integer nodePort) {
+        try {
+            String uuid = UUID.randomUUID().toString();
+            String url;
 
-        log.info("getExternalUrl: "+ dedicatedUrl +", " + sharedUrl);
-        return containerResourceType==ContainerResourceType.SHARED ? sharedUrl : dedicatedUrl;
+            if (kind.equals(WargameKind.WEBHACKING)) {
+                // WEBHACKING은 IngressRoute 생성
+                kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
+                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
+                kubernetesService.createIngressRoute(namespace, ingressRoute);
+
+                url = String.format("%s:30000/problems/%d/%s/", serverUrl, problemId, uuid); // todo. KOREN망에서만 30000, 운영시 80으로 생략
+            } else {
+                // SYSTEM / REVERSING은 NodePort 접속
+                url = String.format("nc %s %d", serverIp, nodePort);
+            }
+
+            return url;
+        } catch (Exception e) {
+            log.error("exposePod Failed  {}: {}", userId, e.getMessage(), e);
+            return null;
+        }
     }
 
 
     /**
      * 현재 dedicated 유형 문제를 푸는 사용자 목록 조회
      */
-
-
     public List<SolveInfo> findCurrentSolveMembers(String namespace) {
         try {
             V1ServiceList services = kubernetesService.getServiceList(namespace);
@@ -256,46 +272,6 @@ public class PodService {
         } catch (Exception e) {
             log.error("fetch pod list failed : {}", e.getMessage(), e);
             return List.of();
-        }
-    }
-
-
-
-    /**
-     * Pod를 외부 노출 (Service + Ingress 생성)
-     */
-    public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
-        try {
-            String uuid = UUID.randomUUID().toString();
-            String url = "blank url";
-
-            if (kind.equals(WargameKind.WEBHACKING)) {
-                V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
-                kubernetesService.createService(namespace, service);
-
-                kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
-                Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
-                kubernetesService.createIngressRoute(namespace, ingressRoute);
-
-                url = getExternalUrl(problemId, uuid, containerResourceType);
-            }
-
-            else if (kind.equals(WargameKind.SYSTEM) || kind.equals(WargameKind.REVERSING)) {
-                V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
-                kubernetesService.createService(namespace, service);
-
-                // 이미 생성한 Service를 조회해서 nodePort를 확인하고 label에 명시해야함
-                String serviceName = service.getMetadata().getName();
-                V1Service createdService = kubernetesService.getService(namespace, serviceName);
-                Integer nodePort = createdService.getSpec().getPorts().get(0).getNodePort();
-
-                url = String.format("nc %s %d", serverIp, nodePort);
-            }
-
-            return url;
-        } catch (Exception e) {
-            log.error("exposePod Failed  {}: {}", userId, e.getMessage(), e);
-            return null;
         }
     }
 
