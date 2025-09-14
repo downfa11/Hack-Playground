@@ -16,7 +16,7 @@ public class PodBuilder {
         List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId)));
 
         if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
-            containers.add(buildReverseProxyContainer(problemId, userId, port));
+            containers.add(buildReverseProxyContainer(problemId, userId, kind, port));
         }
 
         return new V1PodSpec()
@@ -256,12 +256,13 @@ public class PodBuilder {
                 );
     }
 
-    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, Integer port) {
+    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, WargameKind kind, Integer port) {
         String websocketUrl = "ws://hpg-koren.hpg.svc.cluster.local:8080/ws";
         String problemContainer = "problem" + problemId + "-" + userId + "-container";
 
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
+        V1EnvVar kindEnv = new V1EnvVar().name("PROBLEM_KIND").value(String.valueOf(kind));
         V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value(problemContainer);
         V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(port));
         V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value(websocketUrl);

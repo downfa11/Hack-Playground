@@ -114,7 +114,11 @@ public class GCScheduler {
             return;
         }
 
-        log.info("[GC] Pod {} is still active, skipping...", podName);
+        log.info("[GC] Pod {} is still active, skipping... lastRequest: {}, creationTime: {}",
+                podName,
+                lastRequestTimestampOpt.map(Instant::ofEpochMilli).orElse(null),
+                pod.getMetadata().getCreationTimestamp());
+
     }
 
 
