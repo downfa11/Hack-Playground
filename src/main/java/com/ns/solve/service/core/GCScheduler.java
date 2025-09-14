@@ -92,21 +92,22 @@ public class GCScheduler {
         }
 
         Optional<Long> lastRequestTimestampOpt = getLastRequestTimestamp(pod);
-        if (lastRequestTimestampOpt.isEmpty()) {
-            log.info("[GC] lastRequestTime is empty.");
-            deletePodByLabel(labelSelector);
-            return;
-        }
-
-        long lastRequestTimestamp = lastRequestTimestampOpt.get();
-        log.info("[GC] lastRequestTimestamp: ", lastRequestTimestamp);
-        if (isExpiredByLastRequest(lastRequestTimestamp)) {
-            log.info("[GC] exprited by lastRequest. (tcpkeep:100sec, ttl:1min)");
-            deletePodByLabel(labelSelector);
-            return;
-        }
-
         Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
+
+        long referenceTime;
+        if (lastRequestTimestampOpt.isPresent()) {
+            referenceTime = lastRequestTimestampOpt.get();
+        } else {
+            log.info("[GC] lastRequestTime is empty, using creationTime as fallback.");
+            referenceTime = creationTime.toEpochMilli();
+        }
+
+        if (isExpiredByLastRequest(referenceTime)) {
+            log.info("[GC] expired by lastRequest/creationTime TTL. (tcpkeep:100sec, ttl:2min)");
+            deletePodByLabel(labelSelector);
+            return;
+        }
+
         if (isExpiredByCreation(creationTime)) {
             log.info("[GC] expired by creation (2hour)");
             deletePodByLabel(labelSelector);
