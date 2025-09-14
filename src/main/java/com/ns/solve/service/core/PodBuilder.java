@@ -113,9 +113,8 @@ public class PodBuilder {
                 .port(port)
                 .targetPort(new IntOrString(port))));
 
-        String type = kind.equals(WargameKind.WEBHACKING) ? "ClusterIP" : "NodePort";
-        spec.setType(type);
-
+        // String type = kind.equals(WargameKind.WEBHACKING) ? "ClusterIP" : "NodePort";
+        spec.setType("NodePort");
         service.setSpec(spec);
         return service;
     }
@@ -198,7 +197,7 @@ public class PodBuilder {
     }
 
 
-    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, String namespace, String uuid) {
+    public static Map<String, Object> buildIngressRoute(Long userId, Long problemId, Integer port, String namespace, String uuid) {
         String podName = getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
@@ -218,7 +217,7 @@ public class PodBuilder {
 
         route.put("middlewares", List.of(Map.of("name", podName, "namespace", namespace)));
         // stripPrefix, RewritePathRegex, route.put("middlewares", List.of(Map.of("name", "replace-path-regex-middleware", "namespace", namespace)));
-        route.put("services", List.of(Map.of("name", podName, "port", 8889)));
+        route.put("services", List.of(Map.of("name", podName, "port", port)));
 
         Map<String, Object> spec = new HashMap<>();
         spec.put("entryPoints", List.of("web"));

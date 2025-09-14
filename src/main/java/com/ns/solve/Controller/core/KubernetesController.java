@@ -259,7 +259,7 @@ public class KubernetesController {
             kubernetesService.createService(namespace, service);
 
             kubernetesService.createStripPrefixMiddleware(namespace, userId, problemId, uuid);
-            Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, namespace, uuid);
+            Map<String, Object> ingressRoute = PodBuilder.buildIngressRoute(userId, problemId, port, namespace, uuid);
             kubernetesService.createIngressRoute(namespace, ingressRoute);
 
             String serverUrl = "http://45.248.75.166";
