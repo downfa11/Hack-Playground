@@ -19,7 +19,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GCScheduler {
 
-    private static final long LAST_TTL_SECONDS = 60; // 1min
+    private static final long LAST_TTL_SECONDS = 120; // 2min
     private static final long CREATED_TTL_SECONDS = 2 * 3600; // 2hour
     private static final long DELAYED_PENDING_STATUS_SECONDS = 30; // 30sec
     private static final String WARGAME_NAMESPACE = "wargame";
@@ -93,18 +93,22 @@ public class GCScheduler {
 
         Optional<Long> lastRequestTimestampOpt = getLastRequestTimestamp(pod);
         if (lastRequestTimestampOpt.isEmpty()) {
+            log.info("[GC] lastRequestTime is empty.");
             deletePodByLabel(labelSelector);
             return;
         }
 
         long lastRequestTimestamp = lastRequestTimestampOpt.get();
+        log.info("[GC] lastRequestTimestamp: ", lastRequestTimestamp);
         if (isExpiredByLastRequest(lastRequestTimestamp)) {
+            log.info("[GC] exprited by lastRequest. (tcpkeep:100sec, ttl:1min)");
             deletePodByLabel(labelSelector);
             return;
         }
 
         Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
         if (isExpiredByCreation(creationTime)) {
+            log.info("[GC] expired by creation (2hour)");
             deletePodByLabel(labelSelector);
             return;
         }

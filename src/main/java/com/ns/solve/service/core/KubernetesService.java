@@ -356,6 +356,7 @@ public class KubernetesService {
     }
 
     public void deleteAllResourcesByLabel(String namespace, String labelSelector) throws ApiException {
+        log.info("모두 삭제함");
         deleteServicesByLabel(namespace, labelSelector);
         deleteIngressRoutesByLabel(namespace, labelSelector);
         deleteMiddlewaresBySelector(namespace, labelSelector);
