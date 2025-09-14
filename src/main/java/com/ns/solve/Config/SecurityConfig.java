@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/reissue", "/token-validate", "/api/k8s/koren").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/problems/statistics", "/api/problems/completed", "/api/boards", "/api/users/sorted-by-score").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/**").permitAll() // todo authenticated() 하고싶은데 아직 TLS 설정 해결중
                         .anyRequest().authenticated()

@@ -38,6 +38,7 @@ public class KubernetesService {
         labels.put("app", podName);
         labels.put("userId", String.valueOf(userId));
         labels.put("problemId", String.valueOf(problemId));
+        labels.put("kind", String.valueOf(kind));
 
         try {
             V1Pod pod = new V1Pod()

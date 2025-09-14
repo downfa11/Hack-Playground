@@ -89,6 +89,7 @@ public class GCScheduler {
                 return;
             }
             log.info("[GC] pod {} has active user session.", podName);
+            return;
         }
 
         Optional<Long> lastRequestTimestampOpt = getLastRequestTimestamp(pod);
