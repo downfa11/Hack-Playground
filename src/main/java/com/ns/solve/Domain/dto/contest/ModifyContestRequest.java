@@ -21,7 +21,7 @@ public class ModifyContestRequest {
     private Integer maxTeamSize;
     private String organizerName;
     private List<Long> organizerIds;
-    private Set<AffiliationType> affiliationTypes;
+    private List<AffiliationType> affiliationTypes;
     private List<Long> affiliationIds;
     private boolean isPrizeEnabled;
     private String prizeMoney;
