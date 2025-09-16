@@ -5,9 +5,9 @@ import com.ns.solve.domain.vo.ContestType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -30,9 +30,9 @@ public class RegisterContestRequest {
     private boolean reviewConsent;
 
     @Getter
-    @Setter
     @Builder
     public static class PrizeDto {
+        private int order;
         private String name;
         private int numberOfWinners;
     }

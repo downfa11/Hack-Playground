@@ -23,11 +23,11 @@ public class Prize {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private int order;
+
     @Column(nullable = false, length = 100)
     private String name;
-
-    @Column(nullable = false)
-    private String description;
 
     @Column(nullable = false)
     private int numberOfWinners;

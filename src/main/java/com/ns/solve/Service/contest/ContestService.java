@@ -48,7 +48,6 @@ public class ContestService {
         Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
         List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
         Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream().collect(Collectors.toSet());
-
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
 
         Contest contest = Contest.builder()
@@ -73,6 +72,7 @@ public class ContestService {
         if (registerContestRequest.getPrizes() != null && registerContestRequest.isPrizeEnabled()) {
             List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
+                            .order(dto.getOrder())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
                             .contest(newContest)
@@ -147,6 +147,7 @@ public class ContestService {
         if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
             List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
+                            .order(dto.getOrder())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
                             .contest(contest)
