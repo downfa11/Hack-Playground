@@ -2,8 +2,6 @@ package com.ns.solve.domain.entity.problem;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
-import com.ns.solve.domain.vo.BoardType;
-import com.ns.solve.domain.vo.ProblemType;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
@@ -54,7 +52,7 @@ public class QProblem extends EntityPathBase<Problem> {
 
     public final StringPath title = createString("title");
 
-    public final EnumPath<ProblemType> type = createEnum("type", ProblemType.class);
+    public final EnumPath<com.ns.solve.domain.vo.ProblemType> type = createEnum("type", com.ns.solve.domain.vo.ProblemType.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 

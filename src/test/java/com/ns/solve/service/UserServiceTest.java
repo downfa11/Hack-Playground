@@ -127,7 +127,7 @@ class UserServiceTest {
 
     @Test
     void testUpdateUser_Success() {
-        ModifyUserDto modifyUserDto = new ModifyUserDto("updatedUser", "updatedAccount", "newPassword");
+        ModifyUserDto modifyUserDto = new ModifyUserDto("updatedUser", "updatedAccount", "newPassword", null);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.existsByNickname(anyString())).thenReturn(false);
@@ -145,7 +145,7 @@ class UserServiceTest {
 
     @Test
     void testUpdateUser_Failure_NotFound() {
-        ModifyUserDto modifyUserDto = new ModifyUserDto("updatedUser", "updatedAccount", "newPassword");
+        ModifyUserDto modifyUserDto = new ModifyUserDto("updatedUser", "updatedAccount", "newPassword", null);
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 

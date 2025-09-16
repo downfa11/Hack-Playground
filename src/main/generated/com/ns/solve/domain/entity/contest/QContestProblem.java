@@ -1,4 +1,4 @@
-package com.ns.solve.domain.entity.problem;
+package com.ns.solve.domain.entity.contest;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -11,24 +11,28 @@ import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
- * QWargameProblem is a Querydsl query type for WargameProblem
+ * QContestProblem is a Querydsl query type for ContestProblem
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QWargameProblem extends EntityPathBase<WargameProblem> {
+public class QContestProblem extends EntityPathBase<ContestProblem> {
 
-    private static final long serialVersionUID = -1716404512L;
+    private static final long serialVersionUID = -1721856943L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
-    public static final QWargameProblem wargameProblem = new QWargameProblem("wargameProblem");
+    public static final QContestProblem contestProblem = new QContestProblem("contestProblem");
 
-    public final QProblem _super;
+    public final com.ns.solve.domain.entity.problem.QProblem _super;
+
+    public final StringPath category = createString("category");
 
     //inherited
     public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList;
 
     //inherited
-    public final EnumPath<ContainerResourceType> containerResourceType;
+    public final EnumPath<com.ns.solve.domain.entity.problem.ContainerResourceType> containerResourceType;
+
+    public final QContest contest;
 
     //inherited
     public final NumberPath<Double> correctCount;
@@ -55,22 +59,22 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     //inherited
     public final BooleanPath isChecked;
 
-    public final EnumPath<com.ns.solve.domain.vo.WargameKind> kind = createEnum("kind", com.ns.solve.domain.vo.WargameKind.class);
+    public final BooleanPath isLocked = createBoolean("isLocked");
 
-    public final NumberPath<Integer> level = createNumber("level", Integer.class);
+    public final EnumPath<com.ns.solve.domain.vo.WargameKind> kind = createEnum("kind", com.ns.solve.domain.vo.WargameKind.class);
 
     //inherited
     public final NumberPath<Integer> portNumber;
 
     public final StringPath problemFile = createString("problemFile");
 
-    public final NumberPath<Long> problemFileSize = createNumber("problemFileSize", Long.class);
-
     //inherited
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
 
     // inherited
     public final com.ns.solve.domain.entity.user.QUser reviewer;
+
+    public final NumberPath<Integer> score = createNumber("score", Integer.class);
 
     //inherited
     public final StringPath source;
@@ -87,27 +91,28 @@ public class QWargameProblem extends EntityPathBase<WargameProblem> {
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt;
 
-    public QWargameProblem(String variable) {
-        this(WargameProblem.class, forVariable(variable), INITS);
+    public QContestProblem(String variable) {
+        this(ContestProblem.class, forVariable(variable), INITS);
     }
 
-    public QWargameProblem(Path<? extends WargameProblem> path) {
+    public QContestProblem(Path<? extends ContestProblem> path) {
         this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
-    public QWargameProblem(PathMetadata metadata) {
+    public QContestProblem(PathMetadata metadata) {
         this(metadata, PathInits.getFor(metadata, INITS));
     }
 
-    public QWargameProblem(PathMetadata metadata, PathInits inits) {
-        this(WargameProblem.class, metadata, inits);
+    public QContestProblem(PathMetadata metadata, PathInits inits) {
+        this(ContestProblem.class, metadata, inits);
     }
 
-    public QWargameProblem(Class<? extends WargameProblem> type, PathMetadata metadata, PathInits inits) {
+    public QContestProblem(Class<? extends ContestProblem> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this._super = new QProblem(type, metadata, inits);
+        this._super = new com.ns.solve.domain.entity.problem.QProblem(type, metadata, inits);
         this.commentList = _super.commentList;
         this.containerResourceType = _super.containerResourceType;
+        this.contest = inits.isInitialized("contest") ? new QContest(forProperty("contest")) : null;
         this.correctCount = _super.correctCount;
         this.createdAt = _super.createdAt;
         this.creator = _super.creator;

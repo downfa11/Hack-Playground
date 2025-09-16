@@ -2,8 +2,6 @@ package com.ns.solve.domain.entity.problem;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
-import com.ns.solve.domain.vo.BoardType;
-import com.ns.solve.domain.vo.ProblemType;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
@@ -82,7 +80,7 @@ public class QAssignmentProblem extends EntityPathBase<AssignmentProblem> {
     public final StringPath title;
 
     //inherited
-    public final EnumPath<ProblemType> type;
+    public final EnumPath<com.ns.solve.domain.vo.ProblemType> type;
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt;
