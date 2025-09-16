@@ -10,8 +10,9 @@ import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.WargameProblemDto;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.problem.ProblemRepository;
@@ -156,7 +157,7 @@ class ProblemServiceTest {
         when(problemRepository.findById(1L)).thenReturn(Optional.of(wargameProblem));
         when(problemRepository.save(any(Problem.class))).thenReturn(wargameProblem);
 
-        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L,1L, problemCheckDto,"ew",true);
+        WargameProblemDto result = problemService.toggleProblemCheckStatus(1L,1L, problemCheckDto);
 
         assertNotNull(result);
         assertEquals(wargameProblem.getTitle(), result.getTitle());

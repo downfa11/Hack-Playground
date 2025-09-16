@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -45,4 +46,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(DISTINCT u.id) FROM User u WHERE u.lastActived BETWEEN :start AND :end")
     Long countActiveUsersBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
+    List<User> findByNicknameStartingWithIgnoreCase(String nickname);
 }

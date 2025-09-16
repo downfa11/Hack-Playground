@@ -9,4 +9,5 @@ public enum BoardType {
     ANNOUNCE("announce"), FREE("free");
 
     private final String typeName;
+
 }

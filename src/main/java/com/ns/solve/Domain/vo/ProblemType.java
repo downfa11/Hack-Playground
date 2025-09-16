@@ -1,4 +1,4 @@
-package com.ns.solve.domain.entity.problem;
+package com.ns.solve.domain.vo;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

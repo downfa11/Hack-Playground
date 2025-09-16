@@ -1,5 +1,6 @@
 package com.ns.solve.utils.mapper;
 
+import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
@@ -7,6 +8,7 @@ import com.ns.solve.domain.dto.user.UserDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserMapper {
 
@@ -21,7 +23,10 @@ public class UserMapper {
                 user.getFieldScores(),
                 solvedTitles,
                 user.getCreated(),
-                user.getLastActived()
+                user.getLastActived(),
+                user.getAffiliations().stream()
+                        .map(AffiliationDto::from)
+                        .collect(Collectors.toList())
         );
     }
 
@@ -36,7 +41,10 @@ public class UserMapper {
                 user.getFieldScores(),
                 null,
                 user.getCreated(),
-                user.getLastActived()
+                user.getLastActived(),
+                user.getAffiliations().stream()
+                        .map(AffiliationDto::from)
+                        .collect(Collectors.toList())
         );
     }
 

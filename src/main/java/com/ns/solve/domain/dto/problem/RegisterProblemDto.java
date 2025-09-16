@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.ns.solve.domain.dto.problem.algorithm.RegisterAlgorithmProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
-import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

@@ -2,12 +2,12 @@ package com.ns.solve.utils;
 
 import com.ns.solve.domain.entity.*;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.vo.CommentType;
+import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.repository.CommentRepository;
 import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.UserRepository;

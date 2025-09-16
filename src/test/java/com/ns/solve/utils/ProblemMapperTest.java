@@ -3,10 +3,11 @@ package com.ns.solve.utils;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.ProblemType;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import java.util.List;
 
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.utils.mapper.ProblemMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +48,7 @@ class ProblemMapperTest {
         when(wargameProblem.getType()).thenReturn(ProblemType.WARGAME);
         when(wargameProblem.getCorrectCount()).thenReturn(75.0);
         when(wargameProblem.getEntireCount()).thenReturn(100.0);
-        when(wargameProblem.getLevel()).thenReturn("hard");
+        when(wargameProblem.getLevel()).thenReturn(3);
 
         // when
         ProblemSummary summary = ProblemMapper.mapperToWargameProblemSummary(wargameProblem);
@@ -59,7 +60,7 @@ class ProblemMapperTest {
         assertEquals("creator", summary.getCreator());
         assertEquals("type", summary.getType());
         assertEquals(0.75, summary.getCorrectRate(), 0.01);
-        assertEquals("hard", summary.getLevel());
+        assertEquals(3, summary.getLevel());
     }
 
     @Test
@@ -80,7 +81,6 @@ class ProblemMapperTest {
         when(problem2.getType()).thenReturn(ProblemType.ALGORITHM);
         when(problem2.getCorrectCount()).thenReturn(85.0);
         when(problem2.getEntireCount()).thenReturn(100.0);
-        when(problem2.getLevel()).thenReturn("hard");
 
         List<Problem> problems = List.of(problem1, problem2);
 

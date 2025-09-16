@@ -5,12 +5,9 @@ import java.util.List;
 
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.entity.Comment;
-import com.ns.solve.domain.entity.problem.ProblemType;
-import com.ns.solve.domain.entity.problem.WargameKind;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.WargameKind;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Getter

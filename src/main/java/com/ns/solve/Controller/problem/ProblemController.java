@@ -1,7 +1,6 @@
 package com.ns.solve.controller.problem;
 
 import com.ns.solve.domain.dto.MessageEntity;
-import com.ns.solve.domain.dto.board.BoardSummary;
 import com.ns.solve.domain.dto.problem.ModifyProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemDto;
 import com.ns.solve.domain.dto.problem.ProblemSummary;
@@ -9,8 +8,9 @@ import com.ns.solve.domain.dto.problem.RegisterProblemDto;
 import com.ns.solve.domain.dto.problem.wargame.RegisterWargameProblemDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.ProblemType;
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +28,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;

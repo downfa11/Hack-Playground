@@ -2,6 +2,9 @@ package com.ns.solve.domain.entity.problem;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;

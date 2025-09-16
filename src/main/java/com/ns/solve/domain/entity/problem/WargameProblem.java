@@ -1,5 +1,6 @@
 package com.ns.solve.domain.entity.problem;
 
+import com.ns.solve.domain.vo.WargameKind;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

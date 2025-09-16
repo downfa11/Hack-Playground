@@ -1,7 +1,8 @@
 package com.ns.solve.domain.dto.problem.wargame;
 
 import com.ns.solve.domain.dto.problem.RegisterProblemDto;
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.WargameKind;
 import lombok.Getter;
 
 @Getter

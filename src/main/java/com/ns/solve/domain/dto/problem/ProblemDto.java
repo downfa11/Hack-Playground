@@ -1,6 +1,7 @@
 package com.ns.solve.domain.dto.problem;
 
-import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;

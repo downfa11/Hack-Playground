@@ -1,7 +1,7 @@
 package com.ns.solve.domain.dto.problem;
 
-import com.ns.solve.domain.entity.problem.ProblemType;
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import lombok.Builder;
 import lombok.Data;
 

@@ -4,9 +4,11 @@ import com.ns.solve.domain.dto.MessageEntity;
 import com.ns.solve.domain.dto.problem.WrittenProblemSummaryDto;
 import com.ns.solve.domain.dto.user.ModifyUserDto;
 import com.ns.solve.domain.dto.user.RegisterUserDto;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.dto.user.UserRankDto;
 import com.ns.solve.domain.entity.user.User;
-import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.CustomUserDetails;
@@ -123,5 +125,11 @@ public class UserController {
         Pageable pageable = PageRequest.of(offset / size, size, Sort.by("createdAt").descending());
         Page<WrittenProblemSummaryDto> problems = problemService.getMyWrittenProblems(userId, pageable);
         return ResponseEntity.ok(problems);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDto>> searchUsers(@RequestParam("q") String q) {
+        List<UserDto> users = userService.searchUsersByNickname(q);
+        return ResponseEntity.ok(users);
     }
 }

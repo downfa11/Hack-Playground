@@ -1,11 +1,10 @@
 package com.ns.solve.service.core;
 
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.WargameKind;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.*;
-import org.apache.commons.collections4.IterableGet;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 

@@ -9,7 +9,8 @@ import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.Problem;
 import java.time.LocalDateTime;
 
-import com.ns.solve.domain.entity.problem.ProblemType;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

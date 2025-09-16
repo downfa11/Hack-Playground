@@ -2,9 +2,10 @@ package com.ns.solve.repository.problem;
 
 import com.ns.solve.domain.dto.problem.ProblemSummary;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.ProblemType;
-import com.ns.solve.domain.entity.problem.WargameKind;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

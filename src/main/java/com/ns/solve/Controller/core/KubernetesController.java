@@ -1,7 +1,7 @@
 package com.ns.solve.controller.core;
 
-import com.ns.solve.domain.entity.problem.ContainerResourceType;
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.core.KubernetesService;
 import com.ns.solve.service.core.PodBuilder;
 import io.kubernetes.client.openapi.ApiException;
@@ -10,7 +10,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,11 +1,13 @@
 package com.ns.solve.service;
 
 import com.ns.solve.domain.dto.user.*;
+import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.entity.problem.DomainKind;
-import com.ns.solve.domain.entity.problem.ProblemType;
-import com.ns.solve.domain.entity.problem.WargameKind;
+import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
@@ -17,18 +19,22 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final ProblemService problemService;
+    private final AffiliationService affiliationService;
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
@@ -98,7 +104,8 @@ public class UserService {
                     User user = userPage.getContent().get(i);
                     long rank = page * size + i + 1;
                     long score = (domainKind == null) ? user.getScore() : user.getFieldScores().getOrDefault(fieldKey, 0L);
-                    return new UserRankDto(rank, user.getNickname(), score, user.getCreated(), user.getLastActived());
+                    List<Affiliation> affiliations = user.getAffiliations().stream().collect(Collectors.toList());
+                    return new UserRankDto(rank, user.getNickname(), score, affiliations, user.getCreated(), user.getLastActived());
                 }).toList();
 
         return new PageImpl<>(rankedUsers, userPage.getPageable(), userPage.getTotalElements());
@@ -135,6 +142,9 @@ public class UserService {
             currentUser.setPassword(bCryptPasswordEncoder.encode(modifyUserDto.password()));
         }
 
+        if (modifyUserDto.affiliationIds() != null) {
+            affiliationService.updateUserAffiliations(currentUser, modifyUserDto.affiliationIds());
+        }
         userRepository.save(currentUser);
 
         List<String> solvedTitles = problemService.getSolvedProblemsTitle(currentUser.getId());
@@ -226,5 +236,17 @@ public class UserService {
     private Map<String, Integer> convertFieldScores(Map<String, Long> fieldScores) {
         return fieldScores.entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue() != null ? e.getValue().intValue() : 0));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersByNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            return List.of();
+        }
+
+        List<User> users = userRepository.findByNicknameStartingWithIgnoreCase(nickname);
+        return users.stream()
+                .map(UserDto::from)
+                .collect(Collectors.toList());
     }
 }

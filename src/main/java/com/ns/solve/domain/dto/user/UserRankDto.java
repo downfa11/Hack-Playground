@@ -1,6 +1,9 @@
 package com.ns.solve.domain.dto.user;
 
-import java.time.LocalDateTime;
+import com.ns.solve.domain.entity.user.Affiliation;
 
-public record UserRankDto(Long rank, String nickname, Long solvedCount, LocalDateTime registered, LocalDateTime lastActived) {
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record UserRankDto(Long rank, String nickname, Long solvedCount, List<Affiliation> affiliations,LocalDateTime registered, LocalDateTime lastActived) {
 }

@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Data
@@ -43,6 +45,10 @@ public class User {
     private LocalDateTime lastActived;
 
     private String provider;
+
+    @ManyToMany
+    @JoinTable(name = "user_affiliation", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "affiliation_id"))
+    private Set<Affiliation> affiliations = new HashSet<>();
 
     public boolean isMemberAbove() {
         return this.role != null && this.role.ordinal() > Role.ROLE_MEMBER.ordinal();

@@ -3,14 +3,14 @@ package com.ns.solve.domain.entity.problem;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.entity.Comment;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.ProblemType;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import lombok.Data;
 
 @Entity
 @Data
