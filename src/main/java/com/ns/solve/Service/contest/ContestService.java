@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +44,8 @@ public class ContestService {
         }
         
         Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
-        Set<Affiliation> affiliations = affiliationRepository.findAllById(registerContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
+        List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
+        Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream().collect(Collectors.toSet());
 
         Contest contest = Contest.builder()
                 .title(registerContestRequest.getTitle())
