@@ -32,7 +32,7 @@ public class RegisterContestRequest {
     @Getter
     @Builder
     public static class PrizeDto {
-        private int order;
+        private int rank;
         private String name;
         private int numberOfWinners;
     }

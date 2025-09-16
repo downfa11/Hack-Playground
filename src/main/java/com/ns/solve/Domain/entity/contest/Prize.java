@@ -24,7 +24,7 @@ public class Prize {
     private Long id;
 
     @Column(nullable = false)
-    private int order;
+    private int rank;
 
     @Column(nullable = false, length = 100)
     private String name;

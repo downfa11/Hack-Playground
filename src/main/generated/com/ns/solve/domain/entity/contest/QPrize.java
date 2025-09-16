@@ -24,13 +24,13 @@ public class QPrize extends EntityPathBase<Prize> {
 
     public final QContest contest;
 
-    public final StringPath description = createString("description");
-
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath name = createString("name");
 
     public final NumberPath<Integer> numberOfWinners = createNumber("numberOfWinners", Integer.class);
+
+    public final NumberPath<Integer> rank = createNumber("rank", Integer.class);
 
     public final SetPath<com.ns.solve.domain.entity.user.User, com.ns.solve.domain.entity.user.QUser> winners = this.<com.ns.solve.domain.entity.user.User, com.ns.solve.domain.entity.user.QUser>createSet("winners", com.ns.solve.domain.entity.user.User.class, com.ns.solve.domain.entity.user.QUser.class, PathInits.DIRECT2);
 

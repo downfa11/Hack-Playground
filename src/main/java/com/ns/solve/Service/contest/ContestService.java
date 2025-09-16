@@ -72,7 +72,7 @@ public class ContestService {
         if (registerContestRequest.getPrizes() != null && registerContestRequest.isPrizeEnabled()) {
             List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
-                            .order(dto.getOrder())
+                            .rank(dto.getRank())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
                             .contest(newContest)
@@ -147,7 +147,7 @@ public class ContestService {
         if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
             List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
-                            .order(dto.getOrder())
+                            .rank(dto.getRank())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
                             .contest(contest)

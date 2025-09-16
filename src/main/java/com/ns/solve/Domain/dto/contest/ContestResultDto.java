@@ -33,14 +33,14 @@ public class ContestResultDto {
     @Builder
     public static class PrizeResultDto {
         private String name;
-        private int order;
+        private int rank;
         private int numberOfWinners;
         private List<UserDto> winners;
 
         public static PrizeResultDto from(Prize prize) {
             return PrizeResultDto.builder()
                     .name(prize.getName())
-                    .order(prize.getOrder())
+                    .rank(prize.getRank())
                     .numberOfWinners(prize.getNumberOfWinners())
                     .winners(prize.getWinners().stream()
                             .map(UserDto::from)
