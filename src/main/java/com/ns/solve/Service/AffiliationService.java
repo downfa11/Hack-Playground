@@ -19,11 +19,11 @@ public class AffiliationService {
     private final AffiliationRepository affiliationRepository;
 
     @Transactional(readOnly = true)
-    public List<AffiliationDto> searchAffiliations(String query, String type) {
+    public List<AffiliationDto> searchAffiliations(String query, List<String> types) {
         List<Affiliation> affiliations;
 
-        if (type != null && !type.isEmpty()) {
-            affiliations = affiliationRepository.findByNameContainingAndType(query, type);
+        if (types != null && !types.isEmpty()) {
+            affiliations = affiliationRepository.findByNameContainingAndTypeIn(query, types);
         } else {
             affiliations = affiliationRepository.findByNameContaining(query);
         }

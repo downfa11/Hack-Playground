@@ -20,8 +20,8 @@ public class AffiliationController {
     private final AffiliationService affiliationService;
 
     @GetMapping("/search")
-    public ResponseEntity<List<AffiliationDto>> searchAffiliations(@RequestParam String query, @RequestParam(required = false) Optional<String> type) {
-        List<AffiliationDto> affiliations = affiliationService.searchAffiliations(query, type.orElse(null));
+    public ResponseEntity<List<AffiliationDto>> searchAffiliations(@RequestParam String query, @RequestParam(required = false) List<String> types) {
+        List<AffiliationDto> affiliations = affiliationService.searchAffiliations(query, types);
         return ResponseEntity.ok(affiliations);
     }
 }

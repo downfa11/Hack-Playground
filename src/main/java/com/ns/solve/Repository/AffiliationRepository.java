@@ -8,5 +8,6 @@ import java.util.List;
 public interface AffiliationRepository extends JpaRepository<Affiliation, Long> {
     List<Affiliation> findByNameContaining(String name);
     List<Affiliation> findByNameContainingAndType(String name, String type);
+    List<Affiliation> findByNameContainingAndTypeIn(String query, List<String> types);
 
 }
