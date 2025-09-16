@@ -35,30 +35,37 @@ public class ContestService {
     private final PrizeRepository prizeRepository;
 
     @Transactional
-    public ContestDto createContest(RegisterContestRequest contestData) {
-        Set<User> organizers = userRepository.findAllById(contestData.getOrganizerIds()).stream().collect(Collectors.toSet());
-        Set<Affiliation> affiliations = affiliationRepository.findAllById(contestData.getAffiliationIds()).stream().collect(Collectors.toSet());
+    public ContestDto createContest(RegisterContestRequest registerContestRequest) {
+        if (registerContestRequest.getAffiliationIds() != null && !registerContestRequest.getAffiliationIds().isEmpty() &&
+                (registerContestRequest.getAffiliationTypes() == null || registerContestRequest.getAffiliationTypes().isEmpty())) {
+
+            throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
+        }
+        
+        Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
+        Set<Affiliation> affiliations = affiliationRepository.findAllById(registerContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
 
         Contest contest = Contest.builder()
-                .title(contestData.getTitle())
-                .description(contestData.getDescription())
-                .startTime(contestData.getStartTime())
-                .endTime(contestData.getEndTime())
-                .type(contestData.getType())
-                .maxTeamSize(contestData.getMaxTeamSize())
-                .organizerName(contestData.getOrganizerName())
+                .title(registerContestRequest.getTitle())
+                .description(registerContestRequest.getDescription())
+                .startTime(registerContestRequest.getStartTime())
+                .endTime(registerContestRequest.getEndTime())
+                .type(registerContestRequest.getType())
+                .maxTeamSize(registerContestRequest.getMaxTeamSize())
+                .organizerName(registerContestRequest.getOrganizerName())
                 .organizers(organizers)
                 .affiliations(affiliations)
-                .prize(contestData.isPrizeEnabled() ? contestData.getPrizeMoney() : null)
-                .rules(contestData.getRules())
-                .reviewConsent(contestData.isReviewConsent())
+                .affiliationTypes(registerContestRequest.getAffiliationTypes())
+                .prize(registerContestRequest.isPrizeEnabled() ? registerContestRequest.getPrizeMoney() : null)
+                .rules(registerContestRequest.getRules())
+                .reviewConsent(registerContestRequest.isReviewConsent())
                 .status(ContestStatus.UPCOMING)
                 .build();
 
         Contest newContest = contestRepository.save(contest);
 
-        if (contestData.getPrizes() != null && contestData.isPrizeEnabled()) {
-            List<Prize> prizes = contestData.getPrizes().stream()
+        if (registerContestRequest.getPrizes() != null && registerContestRequest.isPrizeEnabled()) {
+            List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
@@ -103,6 +110,12 @@ public class ContestService {
 
     @Transactional
     public ContestDto updateContest(Long contestId, ModifyContestRequest modifyContestRequest) {
+        if (modifyContestRequest.getAffiliationIds() != null && !modifyContestRequest.getAffiliationIds().isEmpty() &&
+                (modifyContestRequest.getAffiliationTypes() == null || modifyContestRequest.getAffiliationTypes().isEmpty())) {
+
+            throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
+        }
+        
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
@@ -119,6 +132,7 @@ public class ContestService {
         Set<User> updatedOrganizers = userRepository.findAllById(modifyContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
         contest.setOrganizers(updatedOrganizers);
 
+        contest.setAffiliationTypes(modifyContestRequest.getAffiliationTypes());
         Set<Affiliation> updatedAffiliations = affiliationRepository.findAllById(modifyContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
         contest.setAffiliations(updatedAffiliations);
 

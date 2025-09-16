@@ -1,11 +1,13 @@
 package com.ns.solve.domain.dto.contest;
 
+import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -19,6 +21,7 @@ public class RegisterContestRequest {
     private Integer maxTeamSize;
     private String organizerName;
     private List<Long> organizerIds;
+    private Set<AffiliationType> affiliationTypes;
     private List<Long> affiliationIds;
     private boolean isPrizeEnabled;
     private String prizeMoney;

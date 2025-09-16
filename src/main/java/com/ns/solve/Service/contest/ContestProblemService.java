@@ -1,5 +1,7 @@
 package com.ns.solve.service.contest;
 
+import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
+import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.repository.contest.ContestProblemRepository;
@@ -20,6 +22,87 @@ public class ContestProblemService {
     private final ContestProblemRepository contestProblemRepository;
     private final ContestRepository contestRepository;
 
+    @Transactional
+    public ContestProblem createProblem(Long contestId, RegisterContestProblemRequest request) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
+
+        if (contestProblemRepository.existsByContestAndTitle(contest, request.getTitle())) {
+            throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
+        }
+
+        ContestProblem newProblem = ContestProblem.builder()
+                .title(request.getTitle())
+                .type(request.getType())
+                .detail(request.getDetail())
+                .tags(request.getTags())
+                .score(request.getScore())
+                .category(request.getCategory())
+                .flag(request.getFlag())
+                .dockerfileLink(request.getDockerfileLink())
+                .problemFile(request.getProblemFile())
+                .kind(request.getKind())
+                .build();
+
+        newProblem.setContest(contest);
+        return contestProblemRepository.save(newProblem);
+    }
+
+    @Transactional
+    public ContestProblem updateProblem(Long problemId, ModifyContestProblemRequest request) {
+        ContestProblem problem = contestProblemRepository.findById(problemId)
+                .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
+
+        if (!problem.getTitle().equals(request.getTitle()) && contestProblemRepository.existsByContestAndTitle(problem.getContest(), request.getTitle())) {
+            throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
+        }
+
+        problem.setTitle(request.getTitle());
+        problem.setDetail(request.getDetail());
+        problem.setScore(request.getScore());
+        problem.setCategory(request.getCategory());
+        problem.setTags(request.getTags());
+        problem.setFlag(request.getFlag());
+        problem.setDockerfileLink(request.getDockerfileLink());
+        problem.setProblemFile(request.getProblemFile());
+        problem.setKind(request.getKind());
+
+        return contestProblemRepository.save(problem);
+    }
+
+    @Transactional
+    public void deleteProblem(Long problemId) {
+        if (!contestProblemRepository.existsById(problemId)) {
+            throw new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND);
+        }
+        contestProblemRepository.deleteById(problemId);
+    }
+
+    @Transactional
+    public void lockProblem(Long problemId) {
+        ContestProblem problem = contestProblemRepository.findById(problemId)
+                .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
+
+        if (problem.isLocked()) {
+            throw new SolvedException(ContestProblemErrorCode.PROBLEM_ALREADY_LOCKED);
+        }
+        problem.setLocked(true);
+        contestProblemRepository.save(problem);
+    }
+
+
+    @Transactional
+    public void unlockProblem(Long problemId) {
+        ContestProblem problem = contestProblemRepository.findById(problemId)
+                .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
+
+        if (!problem.isLocked()) {
+            throw new SolvedException(ContestProblemErrorCode.PROBLEM_NOT_LOCKED);
+        }
+        problem.setLocked(false);
+        contestProblemRepository.save(problem);
+    }
+
     @Transactional(readOnly = true)
     public List<ContestProblem> getProblems(Long contestId, String category, String searchTerm) {
         Contest contest = contestRepository.findById(contestId)
@@ -34,43 +117,5 @@ public class ContestProblemService {
         }
 
         return contestProblemRepository.findByContest(contest);
-    }
-
-//    @Transactional
-//    public ContestProblem createProblem(Long contestId, ContestProblem problem) {
-//        Contest contest = contestRepository.findById(contestId)
-//                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
-//
-//        if (contestProblemRepository.existsByContestAndTitle(contest, problem.getTitle())) {
-//            throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
-//        }
-//
-//        problem.setContest(contest);
-//        return contestProblemRepository.save(problem);
-//    }
-//
-//    @Transactional
-//    public ContestProblem updateProblem(Long problemId, ContestProblem updatedProblemData) {
-//        ContestProblem problem = contestProblemRepository.findById(problemId)
-//                .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
-//
-//        if (!problem.getTitle().equals(updatedProblemData.getTitle()) && contestProblemRepository.existsByContestAndTitle(problem.getContest(), updatedProblemData.getTitle())) {
-//            throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
-//        }
-//
-//        problem.setTitle(updatedProblemData.getTitle());
-//        problem.setDescription(updatedProblemData.getDescription());
-//        problem.setScore(updatedProblemData.getScore());
-//        problem.setCategory(updatedProblemData.getCategory());
-//
-//        return contestProblemRepository.save(problem);
-//    }
-
-    @Transactional
-    public void deleteProblem(Long problemId) {
-        if (!contestProblemRepository.existsById(problemId)) {
-            throw new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND);
-        }
-        contestProblemRepository.deleteById(problemId);
     }
 }

@@ -3,6 +3,7 @@ package com.ns.solve.domain.dto.contest;
 import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.user.Affiliation;
+import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.domain.vo.ContestType;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
@@ -26,6 +28,7 @@ public class ContestDto {
     private Integer maxTeamSize;
     private String prize;
     private String rules;
+    private Set<AffiliationType> affiliationTypes;
     private List<AffiliationDto> affiliations;
 
     public static ContestDto from(Contest contest) {
@@ -41,6 +44,7 @@ public class ContestDto {
                 .maxTeamSize(contest.getMaxTeamSize())
                 .prize(contest.getPrize())
                 .rules(contest.getRules())
+                .affiliationTypes(contest.getAffiliationTypes())
                 .affiliations(contest.getAffiliations().stream()
                         .map(AffiliationDto::from)
                         .collect(Collectors.toList()))

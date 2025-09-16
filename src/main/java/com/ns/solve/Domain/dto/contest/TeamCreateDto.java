@@ -5,5 +5,5 @@ import lombok.Getter;
 @Getter
 public class TeamCreateDto {
     private String name;
-    private String description;
+    private String password;
 }

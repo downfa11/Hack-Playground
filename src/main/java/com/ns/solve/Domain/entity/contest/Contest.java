@@ -2,6 +2,7 @@ package com.ns.solve.domain.entity.contest;
 
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.domain.vo.ContestType;
 import jakarta.persistence.*;
@@ -70,6 +71,12 @@ public class Contest {
     @ManyToMany
     @JoinTable(name = "contest_participants", joinColumns = @JoinColumn(name = "contest_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> participants;
+
+    @ElementCollection(targetClass = AffiliationType.class)
+    @JoinTable(name = "contest_affiliation_types", joinColumns = @JoinColumn(name = "contest_id"))
+    @Column(name = "affiliation_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<AffiliationType> affiliationTypes;
 
     @ManyToMany
     @JoinTable(name = "contest_affiliations", joinColumns = @JoinColumn(name = "contest_id"), inverseJoinColumns = @JoinColumn(name = "affiliation_id"))

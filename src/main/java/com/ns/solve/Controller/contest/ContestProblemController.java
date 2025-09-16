@@ -1,5 +1,7 @@
 package com.ns.solve.controller.contest;
 
+import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
+import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.service.contest.ContestProblemService;
 import lombok.RequiredArgsConstructor;
@@ -16,18 +18,17 @@ public class ContestProblemController {
 
     private final ContestProblemService contestProblemService;
 
-    // todo. RequestBody를 위한 DTO 따로 생성, 반환용 Dto도 따로 필요
-//    @PostMapping
-//    public ResponseEntity<ContestProblem> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest) {
-//        ContestProblem newProblem = contestProblemService.createProblem(contestId, registerContestProblemRequest);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(newProblem);
-//    }
-//
-//    @PutMapping("/{problemId}")
-//    public ResponseEntity<ContestProblem> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest) {
-//        ContestProblem updatedProblem = contestProblemService.updateProblem(problemId, modifyContestProblemRequest);
-//        return ResponseEntity.ok(updatedProblem);
-//    }
+    @PostMapping
+    public ResponseEntity<ContestProblem> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest) {
+        ContestProblem newProblem = contestProblemService.createProblem(contestId, registerContestProblemRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newProblem);
+    }
+
+    @PutMapping("/{problemId}")
+    public ResponseEntity<ContestProblem> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest) {
+        ContestProblem updatedProblem = contestProblemService.updateProblem(problemId, modifyContestProblemRequest);
+        return ResponseEntity.ok(updatedProblem);
+    }
 
     @DeleteMapping("/{problemId}")
     public ResponseEntity<Void> deleteProblem(@PathVariable Long problemId) {
@@ -35,7 +36,17 @@ public class ContestProblemController {
         return ResponseEntity.noContent().build();
     }
 
-    // todo. 문제 잠금 처리 및 해제 기능
+    @PostMapping("/{problemId}/lock")
+    public ResponseEntity<Void> lockProblem(@PathVariable Long problemId) {
+        contestProblemService.lockProblem(problemId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{problemId}/unlock")
+    public ResponseEntity<Void> unlockProblem(@PathVariable Long problemId) {
+        contestProblemService.unlockProblem(problemId);
+        return ResponseEntity.ok().build();
+    }
 
     // -------------일반 사용자 -------------------------------------
 

@@ -1,10 +1,18 @@
 package com.ns.solve.domain.entity.contest;
 
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.WargameKind;
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
+@Getter
+@Setter
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "contest_problems")
 @EqualsAndHashCode(callSuper = true)
 public class ContestProblem extends Problem {
@@ -22,5 +30,35 @@ public class ContestProblem extends Problem {
     @Column(nullable = true)
     private String problemFile;
 
-    // ... ContestProblem에만 필요한 필드 추가
+    private Integer score;
+    private String category;
+    private WargameKind kind;
+    private boolean isLocked;
+
+    public WargameProblem convertToPlatformProblem(String contestName) {
+        WargameProblem platformProblem = new WargameProblem();
+
+        platformProblem.setTitle(this.getTitle());
+        platformProblem.setDetail(this.getDetail());
+        platformProblem.setType(this.getType()); // ProblemType (Wargame, Assignment, Algorithm)
+        platformProblem.setCreator(this.getCreator());
+        platformProblem.setEntireCount(this.getEntireCount());
+        platformProblem.setCorrectCount(this.getCorrectCount());
+        platformProblem.setTags(this.getTags());
+        platformProblem.setContainerResourceType(this.getContainerResourceType());
+        platformProblem.setPortNumber(this.getPortNumber());
+        platformProblem.setResourceLimit(this.getResourceLimit());
+        platformProblem.setCreatedAt(this.getCreatedAt());
+        platformProblem.setUpdatedAt(this.getUpdatedAt());
+
+        platformProblem.setKind(this.getDomainKind().map(domainKind -> (WargameKind) domainKind).orElse(null));
+        platformProblem.setFlag(this.getFlag());
+        platformProblem.setDockerfileLink(this.getDockerfileLink());
+        platformProblem.setProblemFile(this.getProblemFile());
+
+        platformProblem.setSource(contestName);
+        platformProblem.setIsChecked(false);
+
+        return platformProblem;
+    }
 }

@@ -22,7 +22,7 @@ public class Team {
     @Column(nullable = false, unique = true)
     private String name;
 
-    private String description;
+    private String password;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

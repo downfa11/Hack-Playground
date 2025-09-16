@@ -41,7 +41,7 @@ public class TeamService {
 
         Team team = Team.builder()
                 .name(teamCreateDto.getName())
-                .description(teamCreateDto.getDescription())
+                .password(teamCreateDto.getPassword())
                 .contest(contest)
                 .createdAt(LocalDateTime.now())
                 .build();

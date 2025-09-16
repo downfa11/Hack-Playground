@@ -6,6 +6,8 @@ import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.ProblemType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,7 +16,9 @@ import java.util.Optional;
 
 @Entity
 @Data
+@SuperBuilder
 @Table(name = "problems")
+@NoArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Problem {
 
