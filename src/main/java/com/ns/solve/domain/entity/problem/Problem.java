@@ -5,6 +5,7 @@ import com.ns.solve.domain.entity.Comment;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.ProblemType;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -30,6 +31,7 @@ public class Problem {
     @Column(nullable = false)
     private String title;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isChecked = false;  // 검수전, 완료
 

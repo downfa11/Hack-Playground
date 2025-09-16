@@ -9,14 +9,14 @@ import lombok.Getter;
 public class TeamDto {
     private Long id;
     private String name;
-    private String description;
+    private String password;
     private Long contestId;
 
     public static TeamDto from(Team team) {
         return TeamDto.builder()
                 .id(team.getId())
                 .name(team.getName())
-                .description(team.getDescription())
+                .password(team.getPassword())
                 .contestId(team.getContest().getId())
                 .build();
     }
