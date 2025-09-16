@@ -9,6 +9,7 @@ import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Prize;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,10 +44,12 @@ public class ContestService {
 
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
-        
+
         Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
         List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
         Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream().collect(Collectors.toSet());
+
+        Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
 
         Contest contest = Contest.builder()
                 .title(registerContestRequest.getTitle())
@@ -57,7 +61,7 @@ public class ContestService {
                 .organizerName(registerContestRequest.getOrganizerName())
                 .organizers(organizers)
                 .affiliations(affiliations)
-                .affiliationTypes(registerContestRequest.getAffiliationTypes())
+                .affiliationTypes(affiliationTypes)
                 .prize(registerContestRequest.isPrizeEnabled() ? registerContestRequest.getPrizeMoney() : null)
                 .rules(registerContestRequest.getRules())
                 .reviewConsent(registerContestRequest.isReviewConsent())
@@ -117,7 +121,7 @@ public class ContestService {
 
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
-        
+
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
@@ -134,7 +138,8 @@ public class ContestService {
         Set<User> updatedOrganizers = userRepository.findAllById(modifyContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
         contest.setOrganizers(updatedOrganizers);
 
-        contest.setAffiliationTypes(modifyContestRequest.getAffiliationTypes());
+        Set<AffiliationType> affiliationTypes = new HashSet<>(modifyContestRequest.getAffiliationTypes());
+        contest.setAffiliationTypes(affiliationTypes);
         Set<Affiliation> updatedAffiliations = affiliationRepository.findAllById(modifyContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
         contest.setAffiliations(updatedAffiliations);
 
