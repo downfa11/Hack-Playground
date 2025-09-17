@@ -42,6 +42,8 @@ public class QContest extends EntityPathBase<Contest> {
 
     public final ListPath<Prize, QPrize> prizes = this.<Prize, QPrize>createList("prizes", Prize.class, QPrize.class, PathInits.DIRECT2);
 
+    public final SetPath<com.ns.solve.domain.vo.WargameKind, EnumPath<com.ns.solve.domain.vo.WargameKind>> problemKinds = this.<com.ns.solve.domain.vo.WargameKind, EnumPath<com.ns.solve.domain.vo.WargameKind>>createSet("problemKinds", com.ns.solve.domain.vo.WargameKind.class, EnumPath.class, PathInits.DIRECT2);
+
     public final ListPath<ContestProblem, QContestProblem> problems = this.<ContestProblem, QContestProblem>createList("problems", ContestProblem.class, QContestProblem.class, PathInits.DIRECT2);
 
     public final BooleanPath reviewConsent = createBoolean("reviewConsent");

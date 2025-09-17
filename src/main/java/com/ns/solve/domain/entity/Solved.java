@@ -1,5 +1,7 @@
 package com.ns.solve.domain.entity;
 
+import com.ns.solve.domain.entity.contest.Contest;
+import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.user.User;
 import jakarta.persistence.*;
@@ -28,6 +30,12 @@ public class Solved {
     private Problem solvedProblem;
     
     private boolean solve; // 풀었는지 여부
+
+    @Column(nullable = true)
+    private Contest contest; // 꼭 대회용 문제 아닐 수도 있음
+
+    @Column(nullable = true)
+    private Team team; // 꼭 대회용 문제 아닐 수도 있음
 
     private LocalDateTime solvedTime;
 }

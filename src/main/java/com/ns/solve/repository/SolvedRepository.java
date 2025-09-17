@@ -41,4 +41,7 @@ public interface SolvedRepository extends JpaRepository<Solved, Long> {
 
 
     Long countBySolvedTimeBetween(LocalDateTime start, LocalDateTime end);
+
+
+    List<Solved> findByContestId(Long contestId);
 }

@@ -1,12 +1,15 @@
 package com.ns.solve.service.contest;
 
 import com.ns.solve.domain.dto.contest.JoinTeamRequest;
+import com.ns.solve.domain.dto.contest.ScoreboardDto;
 import com.ns.solve.domain.dto.contest.TeamCreateDto;
 import com.ns.solve.domain.dto.contest.TeamDto;
 import com.ns.solve.domain.dto.user.UserDto;
+import com.ns.solve.domain.entity.Solved;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.repository.SolvedRepository;
 import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.repository.UserRepository;
@@ -18,8 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +32,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final ContestRepository contestRepository;
     private final UserRepository userRepository;
+    private final SolvedRepository solvedRepository;
 
     @Transactional
     public TeamDto createTeam(Long contestId, TeamCreateDto teamCreateDto) {
@@ -81,6 +85,42 @@ public class TeamService {
         return team.getMembers().stream()
                 .map(user -> UserMapper.mapperToUserDto(user))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamDto> getTopTeams(Long contestId) {
+        // 실제 구현에서는 대회 ID에 해당하는 팀만 조회해야 함
+        // 여기서는 임시로 모든 팀을 조회하고 점수 순으로 정렬
+        return teamRepository.findAll().stream()
+                .sorted(Comparator.comparing(Team::getPoints).reversed())
+                .limit(5) // 상위 5개 팀만
+                .map(TeamDto::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<ScoreboardDto> getTimeSeriesData(Long contestId) {
+        List<Solved> solves = solvedRepository.findByContestId(contestId);
+
+        Map<Long, Integer> teamScores = teamRepository.findByContestId(contestId).stream()
+                .collect(Collectors.toMap(Team::getId, team -> 0));
+
+        List<ScoreboardDto> timeSeriesData = new ArrayList<>();
+        solves.sort(Comparator.comparing(Solved::getSolvedTime));
+
+//        for (Solved solve : solves) {
+//            teamScores.computeIfPresent(solve.getTeamId().getId(), (key, score) -> score + solve.getProblemScore());
+//            ScoreboardDto dto = new ScoreboardDto();
+//            dto.setTime(solve.getSolvedTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+//
+//            teamScores.forEach((teamId, score) -> {
+//                String teamName = teamRepository.findById(teamId).orElseThrow().getName();
+//                dto.addScore(teamName, score);
+//            });
+//
+//            timeSeriesData.add(dto);
+//        }
+
+        return timeSeriesData;
     }
 
 }

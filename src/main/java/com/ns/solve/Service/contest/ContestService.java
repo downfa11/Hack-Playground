@@ -11,6 +11,8 @@ import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestRepository;
@@ -49,6 +51,7 @@ public class ContestService {
         List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
         Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream().collect(Collectors.toSet());
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
+        Set<WargameKind> registeredProblmKinds = new HashSet<>(registerContestRequest.getProblemKinds());
 
         Contest contest = Contest.builder()
                 .title(registerContestRequest.getTitle())
@@ -56,6 +59,7 @@ public class ContestService {
                 .startTime(registerContestRequest.getStartTime())
                 .endTime(registerContestRequest.getEndTime())
                 .type(registerContestRequest.getType())
+                .problemKinds(registeredProblmKinds)
                 .maxTeamSize(registerContestRequest.getMaxTeamSize())
                 .organizerName(registerContestRequest.getOrganizerName())
                 .organizers(organizers)
@@ -125,11 +129,14 @@ public class ContestService {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
+        Set<WargameKind> updatedProblmKinds = new HashSet<>(modifyContestRequest.getProblemKinds());
+
         contest.setTitle(modifyContestRequest.getTitle());
         contest.setDescription(modifyContestRequest.getDescription());
         contest.setStartTime(modifyContestRequest.getStartTime());
         contest.setEndTime(modifyContestRequest.getEndTime());
         contest.setType(modifyContestRequest.getType());
+        contest.setProblemKinds(updatedProblmKinds);
         contest.setMaxTeamSize(modifyContestRequest.getMaxTeamSize());
         contest.setOrganizerName(modifyContestRequest.getOrganizerName());
         contest.setPrize(modifyContestRequest.isPrizeEnabled() ? modifyContestRequest.getPrizeMoney() : null);

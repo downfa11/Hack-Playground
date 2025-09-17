@@ -24,8 +24,6 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
 
     public final com.ns.solve.domain.entity.problem.QProblem _super;
 
-    public final StringPath category = createString("category");
-
     //inherited
     public final ListPath<com.ns.solve.domain.entity.Comment, com.ns.solve.domain.entity.QComment> commentList;
 
@@ -46,6 +44,8 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
     //inherited
     public final StringPath detail;
 
+    public final EnumPath<com.ns.solve.domain.vo.ContestProblemDifficulty> difficulty = createEnum("difficulty", com.ns.solve.domain.vo.ContestProblemDifficulty.class);
+
     public final StringPath dockerfileLink = createString("dockerfileLink");
 
     //inherited
@@ -63,6 +63,8 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
 
     public final EnumPath<com.ns.solve.domain.vo.WargameKind> kind = createEnum("kind", com.ns.solve.domain.vo.WargameKind.class);
 
+    public final NumberPath<Integer> points = createNumber("points", Integer.class);
+
     //inherited
     public final NumberPath<Integer> portNumber;
 
@@ -73,8 +75,6 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
 
     // inherited
     public final com.ns.solve.domain.entity.user.QUser reviewer;
-
-    public final NumberPath<Integer> score = createNumber("score", Integer.class);
 
     //inherited
     public final StringPath source;

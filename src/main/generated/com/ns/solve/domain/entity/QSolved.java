@@ -22,6 +22,8 @@ public class QSolved extends EntityPathBase<Solved> {
 
     public static final QSolved solved = new QSolved("solved");
 
+    public final com.ns.solve.domain.entity.contest.QContest contest;
+
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final BooleanPath solve = createBoolean("solve");
@@ -31,6 +33,8 @@ public class QSolved extends EntityPathBase<Solved> {
     public final DateTimePath<java.time.LocalDateTime> solvedTime = createDateTime("solvedTime", java.time.LocalDateTime.class);
 
     public final com.ns.solve.domain.entity.user.QUser solvedUser;
+
+    public final com.ns.solve.domain.entity.contest.QTeam team;
 
     public QSolved(String variable) {
         this(Solved.class, forVariable(variable), INITS);
@@ -50,8 +54,10 @@ public class QSolved extends EntityPathBase<Solved> {
 
     public QSolved(Class<? extends Solved> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
+        this.contest = inits.isInitialized("contest") ? new com.ns.solve.domain.entity.contest.QContest(forProperty("contest")) : null;
         this.solvedProblem = inits.isInitialized("solvedProblem") ? new com.ns.solve.domain.entity.problem.QProblem(forProperty("solvedProblem"), inits.get("solvedProblem")) : null;
         this.solvedUser = inits.isInitialized("solvedUser") ? new com.ns.solve.domain.entity.user.QUser(forProperty("solvedUser")) : null;
+        this.team = inits.isInitialized("team") ? new com.ns.solve.domain.entity.contest.QTeam(forProperty("team"), inits.get("team")) : null;
     }
 
 }

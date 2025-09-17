@@ -2,6 +2,7 @@ package com.ns.solve.domain.entity.contest;
 
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.ContestProblemDifficulty;
 import com.ns.solve.domain.vo.WargameKind;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,8 +31,8 @@ public class ContestProblem extends Problem {
     @Column(nullable = true)
     private String problemFile;
 
-    private Integer score;
-    private String category;
+    private Integer points;
+    private ContestProblemDifficulty difficulty;
     private WargameKind kind;
     private boolean isLocked;
 

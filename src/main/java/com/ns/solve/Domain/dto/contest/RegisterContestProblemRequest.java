@@ -23,12 +23,11 @@ public class RegisterContestProblemRequest {
     private List<String> tags;
 
     @NotNull(message = "점수는 필수입니다.")
-    private Integer score;
+    private Integer points;
 
-    @NotBlank(message = "카테고리는 필수입니다.")
-    private String category;
-
+    @NotBlank(message = "문제 유형은 필수입니다.")
     private WargameKind kind;
+
     private String flag;
     private String dockerfileLink;
     private String problemFile;

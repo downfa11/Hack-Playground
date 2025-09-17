@@ -34,6 +34,8 @@ public class QTeam extends EntityPathBase<Team> {
 
     public final StringPath password = createString("password");
 
+    public final NumberPath<Integer> points = createNumber("points", Integer.class);
+
     public QTeam(String variable) {
         this(Team.class, forVariable(variable), INITS);
     }

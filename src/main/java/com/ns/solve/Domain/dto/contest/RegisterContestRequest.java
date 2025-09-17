@@ -2,6 +2,8 @@ package com.ns.solve.domain.dto.contest;
 
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestType;
+import com.ns.solve.domain.vo.ProblemType;
+import com.ns.solve.domain.vo.WargameKind;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +30,7 @@ public class RegisterContestRequest {
     private List<PrizeDto> prizes;
     private String rules;
     private boolean reviewConsent;
+    private List<WargameKind> problemKinds;
 
     @Getter
     @Builder

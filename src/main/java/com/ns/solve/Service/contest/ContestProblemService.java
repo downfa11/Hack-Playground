@@ -36,8 +36,8 @@ public class ContestProblemService {
                 .type(request.getType())
                 .detail(request.getDetail())
                 .tags(request.getTags())
-                .score(request.getScore())
-                .category(request.getCategory())
+                .points(request.getPoints())
+                .kind(request.getKind())
                 .flag(request.getFlag())
                 .dockerfileLink(request.getDockerfileLink())
                 .problemFile(request.getProblemFile())
@@ -59,8 +59,8 @@ public class ContestProblemService {
 
         problem.setTitle(request.getTitle());
         problem.setDetail(request.getDetail());
-        problem.setScore(request.getScore());
-        problem.setCategory(request.getCategory());
+        problem.setPoints(request.getPoints());
+        problem.setKind(request.getKind());
         problem.setTags(request.getTags());
         problem.setFlag(request.getFlag());
         problem.setDockerfileLink(request.getDockerfileLink());

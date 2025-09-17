@@ -2,9 +2,7 @@ package com.ns.solve.domain.entity.contest;
 
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
-import com.ns.solve.domain.vo.AffiliationType;
-import com.ns.solve.domain.vo.ContestStatus;
-import com.ns.solve.domain.vo.ContestType;
+import com.ns.solve.domain.vo.*;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,6 +46,13 @@ public class Contest {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ContestType type;
+
+    @ElementCollection(targetClass = WargameKind.class)
+    @JoinTable(name = "contest_problem_kinds", joinColumns = @JoinColumn(name = "contest_id"))
+    @Column(name = "problem_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<WargameKind> problemKinds;
+
 
     @Column(nullable = false)
     private String organizerName;

@@ -23,6 +23,7 @@ public class Team {
     private String name;
 
     private String password;
+    private int points;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

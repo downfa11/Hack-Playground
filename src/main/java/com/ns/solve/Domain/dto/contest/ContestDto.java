@@ -25,6 +25,7 @@ public class ContestDto {
     private ContestType type;
     private ContestStatus status;
     private String organizerName;
+    private List<Long> organizerIds;
     private Integer maxTeamSize;
     private String prize;
     private String rules;
@@ -41,6 +42,9 @@ public class ContestDto {
                 .type(contest.getType())
                 .status(contest.getStatus())
                 .organizerName(contest.getOrganizerName())
+                .organizerIds(contest.getOrganizers().stream()
+                        .map(organizer -> organizer.getId())
+                        .toList())
                 .maxTeamSize(contest.getMaxTeamSize())
                 .prize(contest.getPrize())
                 .rules(contest.getRules())
