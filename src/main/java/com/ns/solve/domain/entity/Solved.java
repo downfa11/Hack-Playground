@@ -31,11 +31,13 @@ public class Solved {
     
     private boolean solve; // 풀었는지 여부
 
-    @Column(nullable = true)
-    private Contest contest; // 꼭 대회용 문제 아닐 수도 있음
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contest_id", nullable = true)
+    private Contest contest;  // 풀이 기록은 꼭 대회용이 아닐 수 있음
 
-    @Column(nullable = true)
-    private Team team; // 꼭 대회용 문제 아닐 수도 있음
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = true) // 풀이 기록은 꼭 대회용이 아닐 수 있음
+    private Team team;
 
     private LocalDateTime solvedTime;
 }
