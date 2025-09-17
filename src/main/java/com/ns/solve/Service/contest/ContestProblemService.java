@@ -4,6 +4,7 @@ import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.contest.ContestProblemRepository;
 import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.utils.exception.ErrorCode.ContestErrorCode;
@@ -104,7 +105,7 @@ public class ContestProblemService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContestProblem> getProblems(Long contestId, String category, String searchTerm) {
+    public List<ContestProblem> getProblems(Long contestId, WargameKind kind, String searchTerm) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
@@ -112,8 +113,8 @@ public class ContestProblemService {
             return contestProblemRepository.findByContestAndTitleContainingIgnoreCase(contest, searchTerm);
         }
 
-        if (category != null && !category.isBlank()) {
-            return contestProblemRepository.findByContestAndCategory(contest, category);
+        if (kind != null) {
+            return contestProblemRepository.findByContestAndKind(contest, kind);
         }
 
         return contestProblemRepository.findByContest(contest);

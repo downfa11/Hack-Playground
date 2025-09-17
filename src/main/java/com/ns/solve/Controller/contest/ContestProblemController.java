@@ -3,6 +3,7 @@ package com.ns.solve.controller.contest;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
+import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.contest.ContestProblemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -51,8 +52,8 @@ public class ContestProblemController {
     // -------------일반 사용자 -------------------------------------
 
     @GetMapping
-    public ResponseEntity<List<ContestProblem>> getProblems(@PathVariable Long contestId, @RequestParam(required = false) String category, @RequestParam(required = false) String searchTerm) {
-        List<ContestProblem> problems = contestProblemService.getProblems(contestId, category, searchTerm);
+    public ResponseEntity<List<ContestProblem>> getProblems(@PathVariable Long contestId, @RequestParam(required = false) WargameKind kind, @RequestParam(required = false) String searchTerm) {
+        List<ContestProblem> problems = contestProblemService.getProblems(contestId, kind, searchTerm);
         return ResponseEntity.ok(problems);
     }
 
