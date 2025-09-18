@@ -1,13 +1,21 @@
 package com.ns.solve.controller.contest;
 
+import com.ns.solve.domain.dto.MessageEntity;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.contest.ContestProblemService;
+import com.ns.solve.utils.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -57,5 +65,28 @@ public class ContestProblemController {
         return ResponseEntity.ok(problems);
     }
 
-    // todo. ContestProblem 문제 생성이나 파일 다운로드 등 처리, 정답 여부
+    // 문제 상세 조회
+    @GetMapping("/{problemId}")
+    public ResponseEntity<ContestProblem> getProblemDetail(@PathVariable Long contestId, @PathVariable Long problemId) {
+        ContestProblem problem = contestProblemService.getProblemDetail(contestId, problemId);
+        return ResponseEntity.ok(problem);
+    }
+
+    // 문제 파일 다운로드
+    @GetMapping("/{problemId}/download")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long problemId) {
+        Resource fileResource = contestProblemService.downloadProblemFile(problemId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFilename() + "\"")
+                .body(fileResource);
+    }
+
+    @PostMapping("/{problemId}/solve")
+    public ResponseEntity<MessageEntity> solveProblem(@PathVariable Long contestId, @PathVariable Long problemId, @RequestParam String flag, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(new MessageEntity(
+                "solveProblem Result", contestProblemService.solveProblem(userId, contestId, problemId, flag)));
+    }
 }

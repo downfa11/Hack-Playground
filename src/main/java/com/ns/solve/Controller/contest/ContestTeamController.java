@@ -39,8 +39,8 @@ public class ContestTeamController {
     }
 
     @GetMapping("/top-teams")
-    public ResponseEntity<List<TeamDto>> getTopTeams(@PathVariable Long contestId) {
-        List<TeamDto> topTeams = teamService.getTopTeams(contestId);
+    public ResponseEntity<List<TeamDto>> getTopTeams(@PathVariable Long contestId, @RequestParam int count) {
+        List<TeamDto> topTeams = teamService.getTopTeams(contestId, count);
         return ResponseEntity.ok(topTeams);
     }
 
@@ -48,5 +48,11 @@ public class ContestTeamController {
     public ResponseEntity<List<ScoreboardDto>> getTimeSeriesData(@PathVariable Long contestId) {
         List<ScoreboardDto> timeSeriesData = teamService.getTimeSeriesData(contestId);
         return ResponseEntity.ok(timeSeriesData);
+    }
+
+    @GetMapping("/my-team")
+    public ResponseEntity<TeamDto> getMyTeam(@PathVariable Long contestId, @RequestParam Long userId) {
+        TeamDto team = teamService.getMyTeam(contestId, userId);
+        return ResponseEntity.ok(team);
     }
 }
