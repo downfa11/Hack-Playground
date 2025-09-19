@@ -55,4 +55,10 @@ public class ContestTeamController {
         TeamDto team = teamService.getMyTeam(contestId, userId);
         return ResponseEntity.ok(team);
     }
+
+    @GetMapping("/check-name")
+    public ResponseEntity<Boolean> checkTeamNameDuplication(@PathVariable Long contestId, @RequestParam String teamName) {
+        boolean isDuplicated = teamService.isTeamNameDuplicated(contestId, teamName);
+        return ResponseEntity.ok(isDuplicated);
+    }
 }

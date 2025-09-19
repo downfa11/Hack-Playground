@@ -1,17 +1,12 @@
 package com.ns.solve.service.contest;
 
-import com.ns.solve.domain.dto.contest.ContestDto;
-import com.ns.solve.domain.dto.contest.ContestResultDto;
-import com.ns.solve.domain.dto.contest.JoinContestRequest;
-import com.ns.solve.domain.dto.contest.ModifyContestRequest;
-import com.ns.solve.domain.dto.contest.RegisterContestRequest;
+import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Prize;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
-import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
@@ -188,8 +183,39 @@ public class ContestService {
         User user = userRepository.findById(joinContestRequest.getUserId())
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        // todo. checkAffiliationEligibility(contest, user);
+        if (contest.getStatus() != ContestStatus.UPCOMING) {
+            throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
+        }
 
+        Set<AffiliationType> allowedAffiliationTypes = contest.getAffiliationTypes();
+        Set<Affiliation> allowedAffiliations = contest.getAffiliations();
+
+        boolean isAffiliationRestricted = (allowedAffiliationTypes != null && !allowedAffiliationTypes.isEmpty())
+                || (allowedAffiliations != null && !allowedAffiliations.isEmpty());
+
+        if (isAffiliationRestricted) {
+            boolean isEligible = false;
+
+            if (user.getAffiliations() != null && !user.getAffiliations().isEmpty()) {
+                // 사용자의 소속 중 하나라도 대회 참가 조건에 맞는지 확인
+                for (Affiliation userAffiliation : user.getAffiliations()) {
+                    if (allowedAffiliationTypes != null && allowedAffiliationTypes.contains(userAffiliation.getType())) {
+                        isEligible = true;
+                        break;
+                    }
+                    if (allowedAffiliations != null && allowedAffiliations.contains(userAffiliation)) {
+                        isEligible = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isEligible) {
+                throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+            }
+        }
+
+        // 이미 참가자로 등록되었는지
         if (contest.getParticipants() == null) {
             contest.setParticipants(new java.util.HashSet<>());
         }
@@ -200,5 +226,21 @@ public class ContestService {
 
         contest.getParticipants().add(user);
         contestRepository.save(contest);
+    }
+
+
+    @Transactional(readOnly = true)
+    public boolean isUserParticipating(Long contestId, Long userId) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
+
+        if (contest.getParticipants() == null) {
+            return false;
+        }
+
+        return contest.getParticipants().contains(user);
     }
 }

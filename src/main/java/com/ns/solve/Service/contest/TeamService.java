@@ -128,4 +128,9 @@ public class TeamService {
 
         return timeSeriesData;
     }
+
+
+    public boolean isTeamNameDuplicated(Long contestId, String teamName) {
+        return teamRepository.existsByContestIdAndName(contestId, teamName);
+    }
 }

@@ -1,4 +1,4 @@
-package com.ns.solve.controller.contest;// src/main/java/com/ns/solve/controller/contest/ContestController.java
+package com.ns.solve.controller.contest;
 
 import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.domain.vo.ContestStatus;
@@ -51,5 +51,11 @@ public class ContestController {
     public ResponseEntity<Void> joinContest(@PathVariable Long contestId, @RequestBody JoinContestRequest joinContestRequest) {
         contestService.joinContest(contestId, joinContestRequest);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{contestId}/participants/{userId}")
+    public ResponseEntity<Boolean> isUserParticipating(@PathVariable Long contestId, @PathVariable Long userId) {
+        boolean isParticipating = contestService.isUserParticipating(contestId, userId);
+        return ResponseEntity.ok(isParticipating);
     }
 }

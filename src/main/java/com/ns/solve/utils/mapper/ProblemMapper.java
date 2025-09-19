@@ -109,7 +109,7 @@ public class ProblemMapper {
                 .build();
     }
 
-    public static WrittenProblemSummaryDto mapperToWrittenProblemSummaryDto(Problem problem, List<ProblemReview> problemReviews) { // problemReviews 파라미터 추가
+    public static WrittenProblemSummaryDto mapperToWrittenProblemSummaryDto(Problem problem, List<ProblemReview> problemReviews) {
         String reviewStatus = "PENDING";
         String lastReviewComment = null;
 
