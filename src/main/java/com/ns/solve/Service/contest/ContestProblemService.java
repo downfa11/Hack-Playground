@@ -144,7 +144,7 @@ public class ContestProblemService {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND);
         }
 
-        return contestProblemRepository.findByContestIdAndProblemId(contestId, problemId)
+        return contestProblemRepository.findByContest_IdAndId(contestId, problemId)
                 .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
     }
 

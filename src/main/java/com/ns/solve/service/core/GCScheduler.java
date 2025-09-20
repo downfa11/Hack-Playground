@@ -25,7 +25,6 @@ public class GCScheduler {
     private static final String WARGAME_NAMESPACE = "wargame";
 
     private final KubernetesService kubernetesService;
-    private final WebSocketSessionRegistry sessionRegistry;
 
 
     @Scheduled(fixedDelay = 1 * 60_000)
@@ -82,15 +81,15 @@ public class GCScheduler {
         String userId = labels.get("userId");
         String kind = labels.get("kind");
 
-        if ("WEBHACKING".equals(kind)) {
-            if (!sessionRegistry.isUserConnected(problemId, userId)) {
-                log.info("[GC] Web problem pod {} has no active user session. Deleting...", podName);
-                deletePodByLabel(labelSelector);
-                return;
-            }
-            log.info("[GC] pod {} has active user session.", podName);
-            return;
-        }
+//        if ("WEBHACKING".equals(kind)) {
+//            if (!sessionRegistry.isUserConnected(problemId, userId)) {
+//                log.info("[GC] Web problem pod {} has no active user session. Deleting...", podName);
+//                deletePodByLabel(labelSelector);
+//                return;
+//            }
+//            log.info("[GC] pod {} has active user session.", podName);
+//            return;
+//        }
 
         Optional<Long> lastRequestTimestampOpt = getLastRequestTimestamp(pod);
         Instant creationTime = pod.getMetadata().getCreationTimestamp().toInstant();
