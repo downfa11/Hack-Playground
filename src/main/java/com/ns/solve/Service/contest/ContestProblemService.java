@@ -181,7 +181,7 @@ public class ContestProblemService {
         boolean isCorrect = problem.getFlag().equals(flag);
 
         if (isCorrect) {
-            Team team = teamRepository.findByContestIdAndUserId(contestId, userId)
+            Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId)
                     .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
             recordSolve(contestId, team.getId(), problemId, userId);
         }
