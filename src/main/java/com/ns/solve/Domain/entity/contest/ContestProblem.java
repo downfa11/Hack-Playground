@@ -32,7 +32,11 @@ public class ContestProblem extends Problem {
     private String problemFile;
 
     private Integer points;
+
+    @Enumerated(EnumType.STRING)
     private ContestProblemDifficulty difficulty;
+
+    @Enumerated(EnumType.STRING)
     private WargameKind kind;
     private boolean isLocked;
 
