@@ -1,5 +1,6 @@
 package com.ns.solve.domain.entity.contest;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ns.solve.domain.entity.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,6 +29,7 @@ public class Team {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contest_id", nullable = false)
     private Contest contest;

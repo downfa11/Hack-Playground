@@ -1,5 +1,6 @@
 package com.ns.solve.domain.entity.contest;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.*;
@@ -87,6 +88,7 @@ public class Contest {
     @JoinTable(name = "contest_affiliations", joinColumns = @JoinColumn(name = "contest_id"), inverseJoinColumns = @JoinColumn(name = "affiliation_id"))
     private Set<Affiliation> affiliations;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "contest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContestProblem> problems;
 

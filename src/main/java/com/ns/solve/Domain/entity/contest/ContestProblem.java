@@ -1,5 +1,6 @@
 package com.ns.solve.domain.entity.contest;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
@@ -18,6 +19,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ContestProblem extends Problem {
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contest_id")
     private Contest contest;
