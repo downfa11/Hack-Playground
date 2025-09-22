@@ -187,6 +187,16 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
+        // 운영자인지 확인
+        Set<User> contestOrganizers = contest.getOrganizers();
+        boolean isOrganizer = contestOrganizers != null &&
+                contestOrganizers.stream()
+                        .anyMatch(organizer -> organizer.getId().equals(user.getId()));
+
+        if (isOrganizer) {
+            return;
+        }
+
         Set<AffiliationType> allowedAffiliationTypes = contest.getAffiliationTypes();
         Set<Affiliation> allowedAffiliations = contest.getAffiliations();
 
