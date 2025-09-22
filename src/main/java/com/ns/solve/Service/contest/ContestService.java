@@ -42,10 +42,14 @@ public class ContestService {
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
 
-        Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream().collect(Collectors.toSet());
+        Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream()
+                .collect(Collectors.toSet());
+
         List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
-        Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream().collect(Collectors.toSet());
+        Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream()
+                .collect(Collectors.toSet());
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
+
         Set<WargameKind> registeredProblmKinds = new HashSet<>(registerContestRequest.getProblemKinds());
 
         Contest contest = Contest.builder()

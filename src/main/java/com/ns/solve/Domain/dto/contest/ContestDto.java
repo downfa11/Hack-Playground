@@ -1,8 +1,6 @@
 package com.ns.solve.domain.dto.contest;
 
-import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.contest.Contest;
-import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.domain.vo.ContestType;
@@ -30,7 +28,7 @@ public class ContestDto {
     private String prize;
     private String rules;
     private Set<AffiliationType> affiliationTypes;
-    private List<AffiliationDto> affiliations;
+    private List<Long> affiliationIds;
 
     public static ContestDto from(Contest contest) {
         return ContestDto.builder()
@@ -49,8 +47,8 @@ public class ContestDto {
                 .prize(contest.getPrize())
                 .rules(contest.getRules())
                 .affiliationTypes(contest.getAffiliationTypes())
-                .affiliations(contest.getAffiliations().stream()
-                        .map(AffiliationDto::from)
+                .affiliationIds(contest.getAffiliations().stream()
+                        .map(affiliation -> affiliation.getId())
                         .collect(Collectors.toList()))
                 .build();
     }

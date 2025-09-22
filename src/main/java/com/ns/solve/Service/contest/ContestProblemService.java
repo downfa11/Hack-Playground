@@ -82,9 +82,12 @@ public class ContestProblemService {
         problem.setKind(request.getKind());
         problem.setTags(request.getTags());
         problem.setFlag(request.getFlag());
+        problem.setDifficulty(request.getDifficulty());
         problem.setDockerfileLink(request.getDockerfileLink());
         problem.setProblemFile(request.getProblemFile());
         problem.setKind(request.getKind());
+
+
 
         return contestProblemRepository.save(problem);
     }

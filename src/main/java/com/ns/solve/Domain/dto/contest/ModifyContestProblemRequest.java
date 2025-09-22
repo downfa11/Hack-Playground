@@ -1,5 +1,6 @@
 package com.ns.solve.domain.dto.contest;
 
+import com.ns.solve.domain.vo.ContestProblemDifficulty;
 import com.ns.solve.domain.vo.WargameKind;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,4 +27,6 @@ public class ModifyContestProblemRequest {
     private String flag;
     private String dockerfileLink;
     private String problemFile;
+
+    private ContestProblemDifficulty difficulty;
 }

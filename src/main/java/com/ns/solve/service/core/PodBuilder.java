@@ -254,18 +254,13 @@ public class PodBuilder {
     }
 
     private static V1Container buildReverseProxyContainer(Long problemId, Long userId, WargameKind kind, Integer targetPort, Integer nodePort) {
-        String websocketUrl = "ws://hpg-koren.hpg.svc.cluster.local:8080/ws";
-        String problemContainer = "problem" + problemId + "-" + userId + "-container";
-
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar kindEnv = new V1EnvVar().name("PROBLEM_KIND").value(String.valueOf(kind));
-        V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value(problemContainer);
+        V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value("localhost");
         V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
-        V1EnvVar nodePortEnv = new V1EnvVar().name("NODE_PORT").value(String.valueOf(nodePort));
-        V1EnvVar wsUrlEnv = new V1EnvVar().name("WS_SERVER_URL").value(websocketUrl);
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv, nodePortEnv, wsUrlEnv);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv);
 
         return new V1Container()
                 .name("detache-sidecar")
