@@ -184,6 +184,9 @@ public class PodService {
         WargameKind kind = wargameProblem.getKind();
 
         // 1. 모든 문제에서 Service 먼저 생성
+        if(wargameProblem.getKind().equals(WargameKind.WEBHACKING)){
+            port = 18889; // Web 문제인 경우에는 detache의 Port를 trace
+        }
         V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
         kubernetesService.createService(namespace, service);
 
@@ -196,7 +199,7 @@ public class PodService {
         kubernetesService.createPod(userId, problemId, port, nodePort, kind, namespace, image, resourceLimits);
         String podName = getPodName(userId, problemId);
 
-        if (!kubernetesService.waitPodToReady(namespace, podName, 30)) {
+        if (!kubernetesService.waitPodToReady(namespace, podName, 60)) {
             return "createAndExposePod error - timed out.";
         }
 

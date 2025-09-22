@@ -1,6 +1,5 @@
 package com.ns.solve.service.core;
 
-import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.vo.WargameKind;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
