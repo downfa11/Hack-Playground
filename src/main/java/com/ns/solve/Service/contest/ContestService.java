@@ -121,21 +121,41 @@ public class ContestService {
     public ContestDto updateContest(Long contestId, ModifyContestRequest modifyContestRequest) {
         if (modifyContestRequest.getAffiliationIds() != null && !modifyContestRequest.getAffiliationIds().isEmpty() &&
                 (modifyContestRequest.getAffiliationTypes() == null || modifyContestRequest.getAffiliationTypes().isEmpty())) {
-
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
 
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        Set<WargameKind> updatedProblmKinds = new HashSet<>(modifyContestRequest.getProblemKinds());
+        // 기존 상금 리스트를 삭제하고 새로운 리스트로 교체
+        // 이 과정에서 Hibernate가 OrphanRemoval을 처리하도록 유도하거나,
+        // 직접 삭제 후 새 리스트를 설정하는 방식으로 변경
+        contest.getPrizes().clear(); // 기존 Prize 엔티티의 연관 관계를 끊고 삭제하도록 설정
 
+        if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
+            List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
+                    .map(dto -> Prize.builder()
+                            .rank(dto.getRank())
+                            .name(dto.getName())
+                            .numberOfWinners(dto.getNumberOfWinners())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // 새로운 Prize 엔티티들을 Contest에 추가
+            // (Contest 엔티티에 addPrize 메소드를 구현하는 것이 이상적)
+            newPrizes.forEach(prize -> {
+                prize.setContest(contest);
+                contest.getPrizes().add(prize);
+            });
+        }
+
+        // Contest 엔티티의 다른 필드들 업데이트
         contest.setTitle(modifyContestRequest.getTitle());
         contest.setDescription(modifyContestRequest.getDescription());
         contest.setStartTime(modifyContestRequest.getStartTime());
         contest.setEndTime(modifyContestRequest.getEndTime());
         contest.setType(modifyContestRequest.getType());
-        contest.setProblemKinds(updatedProblmKinds);
+        contest.setProblemKinds(new HashSet<>(modifyContestRequest.getProblemKinds()));
         contest.setMaxTeamSize(modifyContestRequest.getMaxTeamSize());
         contest.setOrganizerName(modifyContestRequest.getOrganizerName());
         contest.setPrize(modifyContestRequest.isPrizeEnabled() ? modifyContestRequest.getPrizeMoney() : null);
@@ -149,20 +169,7 @@ public class ContestService {
         Set<Affiliation> updatedAffiliations = affiliationRepository.findAllById(modifyContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
         contest.setAffiliations(updatedAffiliations);
 
-        prizeRepository.deleteAll(contest.getPrizes());
-        if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
-            List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
-                    .map(dto -> Prize.builder()
-                            .rank(dto.getRank())
-                            .name(dto.getName())
-                            .numberOfWinners(dto.getNumberOfWinners())
-                            .contest(contest)
-                            .build())
-                    .collect(Collectors.toList());
-            prizeRepository.saveAll(newPrizes);
-            contest.setPrizes(newPrizes);
-        }
-
+        // Contest 엔티티만 저장 (자동으로 Prize 엔티티도 함께 저장/삭제)
         Contest updatedContest = contestRepository.save(contest);
         return ContestDto.from(updatedContest);
     }
