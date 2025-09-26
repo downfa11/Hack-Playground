@@ -4,6 +4,7 @@ import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Prize;
 import com.ns.solve.domain.entity.user.Affiliation;
+import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
@@ -198,6 +199,11 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
+        // 플랫폼 관리자인지 확인
+        if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) {
+            return;
+        }
+
         // 운영자인지 확인
         Set<User> contestOrganizers = contest.getOrganizers();
         boolean isOrganizer = contestOrganizers != null &&
@@ -258,10 +264,20 @@ public class ContestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        if (contest.getParticipants() == null) {
-            return false;
+        // 플랫폼 관리자는 건너뛰기
+        if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) {
+            return true;
         }
 
-        return contest.getParticipants().contains(user);
+        // 대회 운영자인지 조건
+        if (!contest.getOrganizers().contains(user)) {
+            return true;
+        }
+
+        Set<User> participants = contest.getParticipants() == null
+                ? Collections.emptySet()
+                : contest.getParticipants();
+
+        return participants.contains(user);
     }
 }
