@@ -194,16 +194,58 @@ public class ContestService {
         return ContestDto.from(updatedContest);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ContestResultDto getContestResults(Long contestId) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        if (!contest.getStatus().equals(ContestStatus.ENDED)) {
-            throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
+        // 대회 종료 여부 확인 or 상태 갱신
+        if (contest.getStatus() != ContestStatus.ENDED) {
+            if (contest.getEndTime().isBefore(LocalDateTime.now())) {
+                contest.setStatus(ContestStatus.ENDED);
+                contestRepository.save(contest);
+            } else {
+                throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
+            }
         }
 
-        return ContestResultDto.from(contest);
+        // 상별 우승자 결정 or 조회
+        for (Prize prize : contest.getPrizes()) {
+            if (prize.getWinners() == null || prize.getWinners().isEmpty()) {
+                Set<User> winners = determineWinnersForPrize(contest, prize);
+                prize.setWinners(winners);
+            }
+        }
+
+        return ContestResultDto.builder()
+                .id(contest.getId())
+                .title(contest.getTitle())
+                .prizes(contest.getPrizes().stream()
+                        .map(prize -> ContestResultDto.PrizeResultDto.builder()
+                                .rank(prize.getRank())
+                                .name(prize.getName())
+                                .winners(prize.getWinners().stream()
+                                        .map(u -> {
+                                            if (contest.getType() == ContestType.INDIVIDUAL) {
+                                                return u.getNickname();
+                                            } else { // TEAM or GROUP
+                                                Team team = teamRepository.findByContestIdAndMembersContains(contest.getId(), u)
+                                                        .orElseThrow();
+                                                return team.getName() + " (" + u.getNickname() + ")";
+                                            }
+                                        })
+                                        .collect(Collectors.toList()))
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    private Set<User> determineWinnersForPrize(Contest contest, Prize prize) {
+        return teamRepository.findByContestId(contest.getId()).stream()
+                    .sorted((t1, t2) -> Integer.compare(t2.getPoints(), t1.getPoints()))
+                    .limit(prize.getNumberOfWinners())
+                    .flatMap(team -> team.getMembers().stream())
+                    .collect(Collectors.toSet());
     }
 
     @Transactional

@@ -1,8 +1,7 @@
 package com.ns.solve.domain.entity.user;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -11,7 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 @Entity
-@Data
+@ToString
+@Getter
+@Setter
 @NoArgsConstructor
 public class User {
 
@@ -52,5 +53,17 @@ public class User {
 
     public boolean isMemberAbove() {
         return this.role != null && this.role.ordinal() > Role.ROLE_MEMBER.ordinal();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        return id != null && id.equals(((User) o).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

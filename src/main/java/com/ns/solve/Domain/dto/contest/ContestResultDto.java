@@ -35,7 +35,7 @@ public class ContestResultDto {
         private String name;
         private int rank;
         private int numberOfWinners;
-        private List<UserDto> winners;
+        private List<String> winners;
 
         public static PrizeResultDto from(Prize prize) {
             return PrizeResultDto.builder()
@@ -43,7 +43,7 @@ public class ContestResultDto {
                     .rank(prize.getRank())
                     .numberOfWinners(prize.getNumberOfWinners())
                     .winners(prize.getWinners().stream()
-                            .map(user -> UserDto.from(user, null))
+                            .map(user -> user.getNickname())
                             .collect(Collectors.toList()))
                     .build();
         }
