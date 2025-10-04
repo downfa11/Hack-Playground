@@ -42,7 +42,7 @@ public class ContestService {
 
     @Transactional
     public ContestDto createContest(RegisterContestRequest registerContestRequest) {
-        if (registerContestRequest.getAffiliationIds() != null && !registerContestRequest.getAffiliationIds().isEmpty() &&
+        if (registerContestRequest.getAffiliations() != null && !registerContestRequest.getAffiliations().isEmpty() &&
                 (registerContestRequest.getAffiliationTypes() == null || registerContestRequest.getAffiliationTypes().isEmpty())) {
 
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
@@ -56,9 +56,15 @@ public class ContestService {
         Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream()
                 .collect(Collectors.toSet());
 
-        List<Long> affiliationIds = registerContestRequest.getAffiliationIds() != null ? registerContestRequest.getAffiliationIds() : Collections.emptyList();
+        List<Long> affiliationIds = registerContestRequest.getAffiliations() != null
+                ? registerContestRequest.getAffiliations().stream()
+                .map(a -> a.getId())
+                .filter(Objects::nonNull)
+                .toList()
+                : Collections.emptyList();
         Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream()
                 .collect(Collectors.toSet());
+
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
 
         List<WargameKind> problemKinds = registerContestRequest.getProblemKinds() != null
@@ -131,7 +137,7 @@ public class ContestService {
 
     @Transactional
     public ContestDto updateContest(Long contestId, ModifyContestRequest modifyContestRequest) {
-        if (modifyContestRequest.getAffiliationIds() != null && !modifyContestRequest.getAffiliationIds().isEmpty() &&
+        if (modifyContestRequest.getAffiliations() != null && !modifyContestRequest.getAffiliations().isEmpty() &&
                 (modifyContestRequest.getAffiliationTypes() == null || modifyContestRequest.getAffiliationTypes().isEmpty())) {
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
@@ -172,8 +178,17 @@ public class ContestService {
 
         Set<AffiliationType> affiliationTypes = new HashSet<>(modifyContestRequest.getAffiliationTypes());
         contest.setAffiliationTypes(affiliationTypes);
-        Set<Affiliation> updatedAffiliations = affiliationRepository.findAllById(modifyContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
-        contest.setAffiliations(updatedAffiliations);
+
+        List<Long> affiliationIds = modifyContestRequest.getAffiliations() != null
+                ? modifyContestRequest.getAffiliations().stream()
+                .map(a -> a.getId())
+                .filter(Objects::nonNull)
+                .toList()
+                : Collections.emptyList();
+        Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream()
+                .collect(Collectors.toSet());
+
+        contest.setAffiliations(affiliations);
 
         Contest updatedContest = contestRepository.save(contest);
         return ContestDto.from(updatedContest);

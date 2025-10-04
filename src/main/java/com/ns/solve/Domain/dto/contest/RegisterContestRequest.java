@@ -1,5 +1,6 @@
 package com.ns.solve.domain.dto.contest;
 
+import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestType;
 import com.ns.solve.domain.vo.ProblemType;
@@ -24,7 +25,7 @@ public class RegisterContestRequest {
     private String organizerName;
     private List<Long> organizerIds;
     private List<AffiliationType> affiliationTypes;
-    private List<Long> affiliationIds;
+    private List<AffiliationDto> affiliations;
     private boolean isPrizeEnabled;
     private String prizeMoney;
     private List<PrizeDto> prizes;

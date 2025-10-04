@@ -59,6 +59,7 @@ public class ContestProblemService {
                 .points(request.getPoints())
                 .kind(request.getKind())
                 .flag(request.getFlag())
+                .difficulty(request.getDifficulty())
                 .dockerfileLink(request.getDockerfileLink())
                 .problemFile(request.getProblemFile())
                 .kind(request.getKind())
