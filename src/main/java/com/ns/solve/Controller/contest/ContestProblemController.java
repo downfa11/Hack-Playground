@@ -1,15 +1,12 @@
 package com.ns.solve.controller.contest;
 
 import com.ns.solve.domain.dto.MessageEntity;
+import com.ns.solve.domain.dto.contest.ContestProblemDto;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
-import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.contest.ContestProblemService;
 import com.ns.solve.utils.CustomUserDetails;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -28,14 +25,24 @@ public class ContestProblemController {
     private final ContestProblemService contestProblemService;
 
     @PostMapping
-    public ResponseEntity<ContestProblem> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest) {
-        ContestProblem newProblem = contestProblemService.createProblem(contestId, registerContestProblemRequest);
+    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest,Authentication authentication) {
+
+        Long userId = null;
+        if (authentication != null) {
+            userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+        }
+        ContestProblemDto newProblem = contestProblemService.createProblem(userId, contestId, registerContestProblemRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(newProblem);
     }
 
     @PutMapping("/{problemId}")
-    public ResponseEntity<ContestProblem> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest) {
-        ContestProblem updatedProblem = contestProblemService.updateProblem(problemId, modifyContestProblemRequest);
+    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest,Authentication authentication) {
+
+        Long userId = null;
+        if (authentication != null) {
+            userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+        }
+        ContestProblemDto updatedProblem = contestProblemService.updateProblem(userId, problemId, modifyContestProblemRequest);
         return ResponseEntity.ok(updatedProblem);
     }
 
@@ -60,15 +67,24 @@ public class ContestProblemController {
     // -------------일반 사용자 -------------------------------------
 
     @GetMapping
-    public ResponseEntity<List<ContestProblem>> getProblems(@PathVariable Long contestId, @RequestParam(required = false) WargameKind kind, @RequestParam(required = false) String searchTerm) {
-        List<ContestProblem> problems = contestProblemService.getProblems(contestId, kind, searchTerm);
+    public ResponseEntity<List<ContestProblemDto>> getProblems(@PathVariable Long contestId, @RequestParam(required = false) WargameKind kind, @RequestParam(required = false) String searchTerm, Authentication authentication) {
+        Long userId = null;
+        if (authentication != null) {
+            userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+        }
+        List<ContestProblemDto> problems = contestProblemService.getProblems(contestId, kind, searchTerm, userId);
         return ResponseEntity.ok(problems);
     }
 
     // 문제 상세 조회
     @GetMapping("/{problemId}")
-    public ResponseEntity<ContestProblem> getProblemDetail(@PathVariable Long contestId, @PathVariable Long problemId) {
-        ContestProblem problem = contestProblemService.getProblemDetail(contestId, problemId);
+    public ResponseEntity<ContestProblemDto> getProblemDetail(@PathVariable Long contestId, @PathVariable Long problemId, Authentication authentication) {
+
+        Long userId = null;
+        if (authentication != null) {
+            userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+        }
+        ContestProblemDto problem = contestProblemService.getProblemDetail(userId, contestId, problemId);
         return ResponseEntity.ok(problem);
     }
 

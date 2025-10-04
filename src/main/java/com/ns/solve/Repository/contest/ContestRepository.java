@@ -2,6 +2,7 @@ package com.ns.solve.repository.contest;
 
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.user.User;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +21,8 @@ public interface ContestRepository extends JpaRepository<Contest, Long> {
     List<Contest> findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(LocalDateTime startTime, LocalDateTime endTime);
 
     List<Contest> findByEndTimeBeforeOrderByEndTimeDesc(LocalDateTime now); // 종료된 대회 목록
+
+    boolean existsByTitleAndStartTime(String title, LocalDateTime startTime);
 
     // 특정 사용자가 참가한 대회 목록
     @Query("SELECT c FROM Contest c JOIN c.participants p WHERE p = :user")

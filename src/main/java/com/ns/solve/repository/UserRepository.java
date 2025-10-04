@@ -62,10 +62,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = """
     SELECT rank FROM (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY score DESC) AS rank
+        SELECT user_id, ROW_NUMBER() OVER (ORDER BY score DESC) AS rank
         FROM user
     ) AS ranked
-    WHERE id = :userId
+    WHERE user_id = :userId
 """, nativeQuery = true)
     Optional<Long> findUserRankById(@Param("userId") Long userId);
 

@@ -1,9 +1,35 @@
 package com.ns.solve.domain.dto.contest;
 
+import com.ns.solve.domain.vo.WargameKind;
+import com.ns.solve.domain.vo.ContestProblemDifficulty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ContestProblemDto {
-    // 여기에서 문제 조회했을때의 시간과 사용자 ID에 대한 문제 마지막 수정일자가 다르면
-    // 사용자가 확인되지 않은 변경사항이 있다는 알람: isNew=True 연산이 필요하다.
-
-    // 사용자 혹은 팀, 소속이 풀었는지 여부도 연산해야한다.   boolean solved
-
+    private Long id;
+    private String title;
+    private String detail;
+    private WargameKind kind;
+    private ContestProblemDifficulty difficulty;
+    private List<String> tags;
+    private Integer points;
+    private String flag;
+    private String dockerfileLink;
+    private String problemFile;
+    private boolean hasContainer;
+    private boolean isLocked;
+    private String source; // contest name
+    private boolean isNew;
+    private boolean solved;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -1,6 +1,8 @@
 package com.ns.solve.controller.contest;
 
 import com.ns.solve.domain.dto.contest.*;
+import com.ns.solve.domain.dto.user.AffiliationDto;
+import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.service.contest.ContestService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -64,4 +68,24 @@ public class ContestController {
         ContestStatisticsDto statistics = contestService.getContestStatistics();
         return ResponseEntity.ok(statistics);
     }
+
+    @GetMapping("/{contestId}/eligible-affiliations/{userId}")
+    public ResponseEntity<Set<AffiliationDto>> getEligibleAffiliations(@PathVariable Long contestId, @PathVariable Long userId) {
+        Set<Affiliation> eligibleAffiliations = contestService.getEligibleAffiliationsForContest(contestId, userId);
+        Set<AffiliationDto> dtoSet = eligibleAffiliations.stream()
+                .map(AffiliationDto::from)
+                .collect(Collectors.toSet());
+
+        return ResponseEntity.ok(dtoSet);
+    }
+
+    @PostMapping("/{contestId}/join-group")
+    public ResponseEntity<Void> joinGroupContest(
+            @PathVariable Long contestId,
+            @RequestBody JoinGroupContestRequest request
+    ) {
+        contestService.joinGroupContest(contestId, request.getUserId(), request.getAffiliationId());
+        return ResponseEntity.ok().build();
+    }
+
 }

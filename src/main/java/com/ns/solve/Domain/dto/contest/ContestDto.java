@@ -1,9 +1,11 @@
 package com.ns.solve.domain.dto.contest;
 
+import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.domain.vo.ContestType;
+import com.ns.solve.domain.vo.WargameKind;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -28,7 +30,8 @@ public class ContestDto {
     private String prize;
     private String rules;
     private Set<AffiliationType> affiliationTypes;
-    private List<Long> affiliationIds;
+    private List<AffiliationDto> affiliations;
+    private Set<WargameKind> problemKinds;
 
     public static ContestDto from(Contest contest) {
         return ContestDto.builder()
@@ -47,9 +50,10 @@ public class ContestDto {
                 .prize(contest.getPrize())
                 .rules(contest.getRules())
                 .affiliationTypes(contest.getAffiliationTypes())
-                .affiliationIds(contest.getAffiliations().stream()
-                        .map(affiliation -> affiliation.getId())
+                .affiliations(contest.getAffiliations().stream()
+                        .map(AffiliationDto::from)
                         .collect(Collectors.toList()))
+                .problemKinds(contest.getProblemKinds())
                 .build();
     }
 }

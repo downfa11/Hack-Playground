@@ -3,16 +3,19 @@ package com.ns.solve.service.contest;
 import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Prize;
+import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestStatus;
+import com.ns.solve.domain.vo.ContestType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.PrizeRepository;
+import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.utils.exception.ErrorCode.ContestErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +32,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ContestService {
+    private final TeamService teamService;
 
     private final ContestRepository contestRepository;
     private final UserRepository userRepository;
     private final AffiliationRepository affiliationRepository;
     private final PrizeRepository prizeRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public ContestDto createContest(RegisterContestRequest registerContestRequest) {
@@ -41,6 +46,11 @@ public class ContestService {
                 (registerContestRequest.getAffiliationTypes() == null || registerContestRequest.getAffiliationTypes().isEmpty())) {
 
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
+        }
+
+        boolean exists = contestRepository.existsByTitleAndStartTime(registerContestRequest.getTitle(), registerContestRequest.getStartTime());
+        if (exists) {
+            throw new SolvedException(ContestErrorCode.CONTEST_ALREADY_EXISTS);
         }
 
         Set<User> organizers = userRepository.findAllById(registerContestRequest.getOrganizerIds()).stream()
@@ -182,72 +192,44 @@ public class ContestService {
     }
 
     @Transactional
-    public void joinContest(Long contestId, JoinContestRequest joinContestRequest) {
+    public void joinContest(Long contestId, JoinContestRequest joinRequest) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        User user = userRepository.findById(joinContestRequest.getUserId())
+        User user = userRepository.findById(joinRequest.getUserId())
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
         if (contest.getStatus() != ContestStatus.UPCOMING) {
-            log.warn("대회 참가 실패 - 대회 상태 불일치: contestId={}, userId={}, status={}",
-                    contestId, user.getId(), contest.getStatus());
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
-        // 운영자인지 확인
-        Set<User> contestOrganizers = contest.getOrganizers();
-        boolean isOrganizer = contestOrganizers != null &&
-                contestOrganizers.stream()
-                        .anyMatch(organizer -> organizer.getId().equals(user.getId()));
-
-        if (isOrganizer) {
-            log.info("운영자는 참가자 등록을 건너뜀: contestId={}, userId={}", contestId, user.getId());
+        // 운영자는 참가자 등록 불필요
+        if (contest.getOrganizers().contains(user)) {
             return;
         }
 
-        Set<AffiliationType> allowedAffiliationTypes = contest.getAffiliationTypes();
-        Set<Affiliation> allowedAffiliations = contest.getAffiliations();
+        // 이미 참가자인지 확인
+        if (contest.getParticipants() != null && contest.getParticipants().contains(user)) {
+            throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
+        }
 
-        boolean isAffiliationRestricted = (allowedAffiliationTypes != null && !allowedAffiliationTypes.isEmpty())
-                || (allowedAffiliations != null && !allowedAffiliations.isEmpty());
-
-        if (isAffiliationRestricted) {
-            boolean isEligible = false;
-
-            if (user.getAffiliations() != null && !user.getAffiliations().isEmpty()) {
-                for (Affiliation userAffiliation : user.getAffiliations()) {
-                    if (allowedAffiliationTypes != null && allowedAffiliationTypes.contains(userAffiliation.getType())) {
-                        isEligible = true;
-                        break;
-                    }
-                    if (allowedAffiliations != null && allowedAffiliations.contains(userAffiliation)) {
-                        isEligible = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!isEligible) {
-                log.warn("대회 참가 실패 - 소속 조건 불일치: contestId={}, userId={}, userAffiliations={}, allowedTypes={}, allowedAffiliations={}",
-                        contestId, user.getId(), user.getAffiliations(), allowedAffiliationTypes, allowedAffiliations);
+        // 단체전 참가 가능 소속 검사
+        if (contest.getType() == ContestType.GROUP) {
+            Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, user.getId());
+            if (eligibleAffiliations.isEmpty()) {
                 throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
             }
         }
 
-        if (contest.getParticipants() == null) {
-            contest.setParticipants(new java.util.HashSet<>());
-        }
-
-        if (contest.getParticipants().contains(user)) {
-            log.warn("대회 참가 실패 - 이미 등록된 사용자: contestId={}, userId={}", contestId, user.getId());
-            throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
-        }
-
+        // 참가자 등록
+        if (contest.getParticipants() == null) contest.setParticipants(new HashSet<>());
         contest.getParticipants().add(user);
         contestRepository.save(contest);
-        log.info("대회 참가 성공: contestId={}, userId={}", contestId, user.getId());
+
+        // 팀 생성 or 반환
+        teamService.getOrCreateTeamForContest(contestId, user, null);
     }
+
 
     @Transactional(readOnly = true)
     public boolean isUserParticipating(Long contestId, Long userId) {
@@ -317,6 +299,75 @@ public class ContestService {
                 .monthlyContests(monthlyContests)
                 .monthlyWinners(monthlyWinners)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Affiliation> getEligibleAffiliationsForContest(Long contestId, Long userId) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
+
+        Set<Affiliation> userAffiliations = user.getAffiliations();
+        if (userAffiliations.isEmpty()) return Collections.emptySet();
+
+        if (contest.getType() != ContestType.GROUP) {
+            return userAffiliations;
+        }
+
+        // 단체전
+        if (!contest.getAffiliations().isEmpty()) {
+            return userAffiliations.stream()
+                    .filter(contest.getAffiliations()::contains)
+                    .collect(Collectors.toSet());
+        } else if (!contest.getAffiliationTypes().isEmpty()) {
+            return userAffiliations.stream()
+                    .filter(a -> contest.getAffiliationTypes().contains(a.getType()))
+                    .collect(Collectors.toSet());
+        }
+
+        return Collections.emptySet();
+    }
+
+    @Transactional
+    public void joinGroupContest(Long contestId, Long userId, Long affiliationId) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
+
+        if (contest.getType() != ContestType.GROUP) {
+            throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
+        }
+
+        if (contest.getStatus() != ContestStatus.UPCOMING) {
+            throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
+        }
+
+        Affiliation chosenAffiliation = user.getAffiliations().stream()
+                .filter(a -> a.getId().equals(affiliationId))
+                .findFirst()
+                .orElseThrow(() -> new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION));
+
+        Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, userId);
+        if (!eligibleAffiliations.contains(chosenAffiliation)) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
+
+        if (contest.getParticipants() == null) {
+            contest.setParticipants(new HashSet<>());
+        }
+        if (contest.getParticipants().contains(user)) {
+            throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
+        }
+
+        Team team = teamService.getOrCreateTeamForContest(contestId, user, chosenAffiliation.getName());
+        teamRepository.save(team);
+
+        contest.getParticipants().add(user);
+        contestRepository.save(contest);
     }
 
 }

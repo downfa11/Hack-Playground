@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface ContestSolvedRepository extends JpaRepository<ContestSolved, Long> {
     List<ContestSolved> findByContest_Id(Long contestId);
-    Optional<ContestSolved> findByContest_IdAndTeam_IdAndSolvedProblem_Id(Long contestId, Long teamId, Long problemId);
+    boolean existsByContest_IdAndTeam_IdAndSolvedProblem_Id(Long contestId, Long teamId, Long problemId);
+
 }

@@ -1,5 +1,6 @@
 package com.ns.solve.service.contest;
 
+import com.ns.solve.domain.dto.contest.ContestProblemDto;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.entity.contest.Contest;
@@ -42,7 +43,7 @@ public class ContestProblemService {
 
 
     @Transactional
-    public ContestProblem createProblem(Long contestId, RegisterContestProblemRequest request) {
+    public ContestProblemDto createProblem(Long userId, Long contestId, RegisterContestProblemRequest request) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
@@ -64,11 +65,13 @@ public class ContestProblemService {
                 .build();
 
         newProblem.setContest(contest);
-        return contestProblemRepository.save(newProblem);
+        contestProblemRepository.save(newProblem);
+
+        return convertToDto(newProblem, newProblem.getContest().getTitle(), userId);
     }
 
     @Transactional
-    public ContestProblem updateProblem(Long problemId, ModifyContestProblemRequest request) {
+    public ContestProblemDto updateProblem(Long userId, Long problemId, ModifyContestProblemRequest request) {
         ContestProblem problem = contestProblemRepository.findById(problemId)
                 .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
 
@@ -89,7 +92,8 @@ public class ContestProblemService {
 
 
 
-        return contestProblemRepository.save(problem);
+        contestProblemRepository.save(problem);
+        return convertToDto(problem, problem.getContest().getTitle(), userId);
     }
 
     @Transactional
@@ -126,29 +130,34 @@ public class ContestProblemService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContestProblem> getProblems(Long contestId, WargameKind kind, String searchTerm) {
+    public List<ContestProblemDto> getProblems(Long contestId, WargameKind kind, String searchTerm, Long userId) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
+        List<ContestProblem> problems;
         if (searchTerm != null && !searchTerm.isBlank()) {
-            return contestProblemRepository.findByContestAndTitleContainingIgnoreCase(contest, searchTerm);
+            problems = contestProblemRepository.findByContestAndTitleContainingIgnoreCase(contest, searchTerm);
+        } else if (kind != null) {
+            problems = contestProblemRepository.findByContestAndKind(contest, kind);
+        } else {
+            problems = contestProblemRepository.findByContest(contest);
         }
 
-        if (kind != null) {
-            return contestProblemRepository.findByContestAndKind(contest, kind);
-        }
-
-        return contestProblemRepository.findByContest(contest);
+        return problems.stream()
+                .map(problem -> convertToDto(problem, contest.getTitle(), userId))
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public ContestProblem getProblemDetail(Long contestId, Long problemId) {
+    public ContestProblemDto getProblemDetail(Long contestId, Long problemId, Long userId) {
         if (!contestRepository.existsById(contestId)) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND);
         }
 
-        return contestProblemRepository.findByContest_IdAndId(contestId, problemId)
+        ContestProblem problem = contestProblemRepository.findByContest_IdAndId(contestId, problemId)
                 .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
+
+        return convertToDto(problem, problem.getContest().getTitle(), userId);
     }
 
 
@@ -187,6 +196,10 @@ public class ContestProblemService {
             Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId)
                     .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
             recordSolve(contestId, team.getId(), problemId, userId);
+
+            int problemPoints = problem.getPoints();
+            team.setPoints(team.getPoints() + problemPoints);
+            teamRepository.save(team);
         }
 
         return isCorrect;
@@ -194,10 +207,7 @@ public class ContestProblemService {
 
     @Transactional
     public void recordSolve(Long contestId, Long teamId, Long problemId, Long userId) {
-        Optional<ContestSolved> existing = contestSolvedRepository
-                .findByContest_IdAndTeam_IdAndSolvedProblem_Id(contestId, teamId, problemId);
-
-        if (existing.isPresent()) {
+        if (contestSolvedRepository.existsByContest_IdAndTeam_IdAndSolvedProblem_Id(contestId, teamId, problemId)) {
             return;
         }
 
@@ -218,6 +228,42 @@ public class ContestProblemService {
         solved.setSolvedTime(LocalDateTime.now());
 
         contestSolvedRepository.save(solved);
+    }
+
+    // 문제 수정하고 10분 이내는 isNew=true
+    private ContestProblemDto convertToDto(ContestProblem problem, String contestName, Long teamId) {
+        boolean solved = false;
+        boolean isNew = false;
+
+        if (teamId != null) {
+            solved = contestSolvedRepository.existsByContest_IdAndTeam_IdAndSolvedProblem_Id(
+                    problem.getContest().getId(), teamId, problem.getId());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (problem.getUpdatedAt() != null && problem.getUpdatedAt().isAfter(now.minusMinutes(10))) {
+            isNew = true;
+        }
+
+        return ContestProblemDto.builder()
+                .id(problem.getId())
+                .title(problem.getTitle())
+                .detail(problem.getDetail())
+                .kind(problem.getKind())
+                .difficulty(problem.getDifficulty())
+                .tags(problem.getTags())
+                .points(problem.getPoints())
+                .flag(problem.getFlag())
+                .dockerfileLink(problem.getDockerfileLink())
+                .problemFile(problem.getProblemFile())
+                .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
+                .isLocked(problem.isLocked())
+                .source(contestName)
+                .isNew(isNew)
+                .solved(solved)
+                .createdAt(problem.getCreatedAt())
+                .updatedAt(problem.getUpdatedAt())
+                .build();
     }
 
 

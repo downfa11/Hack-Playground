@@ -9,6 +9,7 @@ import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestSolved;
 import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.ContestType;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.ContestSolvedRepository;
@@ -22,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,9 +70,15 @@ public class TeamService {
             throw new SolvedException(TeamErrorCode.ALREADY_JOINED_TEAM);
         }
 
+        Integer maxTeamSize = team.getContest().getMaxTeamSize();
+        if (maxTeamSize != null && team.getMembers().size() >= maxTeamSize) {
+            throw new SolvedException(TeamErrorCode.TEAM_FULL);
+        }
+
         team.getMembers().add(user);
         return TeamDto.from(teamRepository.save(team));
     }
+
 
     @Transactional(readOnly = true)
     public List<UserDto> getTeamMembers(Long teamId) {
@@ -145,4 +149,35 @@ public class TeamService {
     public boolean isTeamNameDuplicated(Long contestId, String teamName) {
         return teamRepository.existsByContestIdAndName(contestId, teamName);
     }
+
+    @Transactional
+    public Team getOrCreateTeamForContest(Long contestId, User user, String affiliationName) {
+        Optional<Team> existingTeam = teamRepository.findByContestIdAndMembers_Id(contestId, user.getId());
+        if (existingTeam.isPresent()) return existingTeam.get();
+
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND));
+
+        String teamName;
+        if (contest.getType() == ContestType.INDIVIDUAL) { // 개인전
+            teamName = user.getNickname();
+        } else {
+            if (affiliationName == null || affiliationName.isBlank()) { // 단체전
+                throw new SolvedException(TeamErrorCode.AFFILIATION_NOT_SELECTED);
+            }
+            teamName = affiliationName;
+        }
+
+        Team team = Team.builder()
+                .name(teamName)
+                .contest(contest)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        team.getMembers().add(user);
+        return teamRepository.save(team);
+    }
+
+
+
 }
