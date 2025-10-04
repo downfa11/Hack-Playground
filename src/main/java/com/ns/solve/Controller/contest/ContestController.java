@@ -58,4 +58,10 @@ public class ContestController {
         boolean isParticipating = contestService.isUserParticipating(contestId, userId);
         return ResponseEntity.ok(isParticipating);
     }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<ContestStatisticsDto> getContestStatistics() {
+        ContestStatisticsDto statistics = contestService.getContestStatistics();
+        return ResponseEntity.ok(statistics);
+    }
 }

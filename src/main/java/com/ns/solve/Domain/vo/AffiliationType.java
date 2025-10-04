@@ -7,7 +7,8 @@ public enum AffiliationType {
     UNIVERSITY("학교"),
     COMPANY("기업"),
     ORGANIZATION("단체"),
-    CLUB("동아리");
+    CLUB("동아리"),
+    UNKNOWN("unknown");
 
     private final String value;
 

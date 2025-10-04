@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -289,6 +290,24 @@ public class ContestService {
 
             return UserContestDto.from(contest, winner, rank);
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ContestStatisticsDto getContestStatistics() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfMonth = YearMonth.now().atDay(1).atStartOfDay();
+
+        int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now, now); // 현재 진행중인 대회 수 계산
+        int monthlyContests = contestRepository.countByCreatedAtAfter(startOfMonth); // 이번 달 대회 수 계산
+        int monthlyParticipants = contestRepository.countDistinctParticipantsByJoinDateAfter(startOfMonth); // 이번 달 참가자 수 계산
+        int monthlyWinners = prizeRepository.countDistinctWinnersByContestEndTimeAfter(startOfMonth); // 이번 달 수상자 수 계산
+
+        return ContestStatisticsDto.builder()
+                .ongoingContests(ongoingContests)
+                .monthlyParticipants(monthlyParticipants)
+                .monthlyContests(monthlyContests)
+                .monthlyWinners(monthlyWinners)
+                .build();
     }
 
 }

@@ -3,6 +3,8 @@ package com.ns.solve.repository.contest;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -24,4 +26,11 @@ public interface ContestRepository extends JpaRepository<Contest, Long> {
     List<Contest> findByEndTimeBeforeOrderByEndTimeDesc(LocalDateTime now);
 
     List<Contest> findByParticipantsContaining(User user);
+
+
+    int countByStartTimeBeforeAndEndTimeAfter(LocalDateTime startTime, LocalDateTime endTime); // 현재 진행중인 대회 수
+    int countByCreatedAtAfter(LocalDateTime date); // 월별 대회 수
+    // 월별 참가자 수 계산
+    @Query("SELECT COUNT(DISTINCT p) FROM Contest c JOIN c.participants p WHERE c.startTime >= :startOfMonth")
+    int countDistinctParticipantsByJoinDateAfter(@Param("startOfMonth") LocalDateTime startOfMonth);
 }
