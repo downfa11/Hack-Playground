@@ -1,6 +1,7 @@
 package com.ns.solve.repository.contest;
 
 import com.ns.solve.domain.entity.contest.Contest;
+import com.ns.solve.domain.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -21,4 +22,6 @@ public interface ContestRepository extends JpaRepository<Contest, Long> {
 
     // 종료된 대회 목록 조회 (종료 시간 이전)
     List<Contest> findByEndTimeBeforeOrderByEndTimeDesc(LocalDateTime now);
+
+    List<Contest> findByParticipantsContaining(User user);
 }

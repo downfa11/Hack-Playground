@@ -1,5 +1,7 @@
 package com.ns.solve.domain.dto.user;
 
+import com.ns.solve.domain.dto.contest.UserContestDto;
+import com.ns.solve.domain.dto.problem.WrittenProblemSummaryDto;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
@@ -23,6 +25,8 @@ public class UserDto {
     private Role role;
     private String provider;
     private String account;
+
+    private Long rank;
     private Long entireScore;
     private Map<String, Long> fieldScores;
 
@@ -31,14 +35,16 @@ public class UserDto {
     private LocalDateTime lastActived;
 
     private List<AffiliationDto> affiliations;
+    private List<UserContestDto> contests;
 
-    public static UserDto from(User user) {
+    public static UserDto from(User user, List<UserContestDto> userContests) {
         return UserDto.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
                 .role(user.getRole())
                 .provider(user.getProvider())
                 .account(user.getAccount())
+                .rank(0L)
                 .entireScore(user.getScore())
                 .fieldScores(user.getFieldScores())
                 .created(user.getCreated())
@@ -46,6 +52,7 @@ public class UserDto {
                 .affiliations(user.getAffiliations().stream()
                         .map(AffiliationDto::from)
                         .collect(Collectors.toList()))
+                .contests(userContests)
                 .build();
     }
 }

@@ -16,16 +16,15 @@ import com.ns.solve.repository.contest.PrizeRepository;
 import com.ns.solve.utils.exception.ErrorCode.ContestErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContestService {
@@ -128,10 +127,7 @@ public class ContestService {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        // 기존 상금 리스트를 삭제하고 새로운 리스트로 교체
-        // 이 과정에서 Hibernate가 OrphanRemoval을 처리하도록 유도하거나,
-        // 직접 삭제 후 새 리스트를 설정하는 방식으로 변경
-        contest.getPrizes().clear(); // 기존 Prize 엔티티의 연관 관계를 끊고 삭제하도록 설정
+        contest.getPrizes().clear();
 
         if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
             List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
@@ -142,15 +138,12 @@ public class ContestService {
                             .build())
                     .collect(Collectors.toList());
 
-            // 새로운 Prize 엔티티들을 Contest에 추가
-            // (Contest 엔티티에 addPrize 메소드를 구현하는 것이 이상적)
             newPrizes.forEach(prize -> {
                 prize.setContest(contest);
                 contest.getPrizes().add(prize);
             });
         }
 
-        // Contest 엔티티의 다른 필드들 업데이트
         contest.setTitle(modifyContestRequest.getTitle());
         contest.setDescription(modifyContestRequest.getDescription());
         contest.setStartTime(modifyContestRequest.getStartTime());
@@ -196,12 +189,9 @@ public class ContestService {
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
         if (contest.getStatus() != ContestStatus.UPCOMING) {
+            log.warn("대회 참가 실패 - 대회 상태 불일치: contestId={}, userId={}, status={}",
+                    contestId, user.getId(), contest.getStatus());
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
-        }
-
-        // 플랫폼 관리자인지 확인
-        if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) {
-            return;
         }
 
         // 운영자인지 확인
@@ -211,6 +201,7 @@ public class ContestService {
                         .anyMatch(organizer -> organizer.getId().equals(user.getId()));
 
         if (isOrganizer) {
+            log.info("운영자는 참가자 등록을 건너뜀: contestId={}, userId={}", contestId, user.getId());
             return;
         }
 
@@ -224,7 +215,6 @@ public class ContestService {
             boolean isEligible = false;
 
             if (user.getAffiliations() != null && !user.getAffiliations().isEmpty()) {
-                // 사용자의 소속 중 하나라도 대회 참가 조건에 맞는지 확인
                 for (Affiliation userAffiliation : user.getAffiliations()) {
                     if (allowedAffiliationTypes != null && allowedAffiliationTypes.contains(userAffiliation.getType())) {
                         isEligible = true;
@@ -238,22 +228,26 @@ public class ContestService {
             }
 
             if (!isEligible) {
+                log.warn("대회 참가 실패 - 소속 조건 불일치: contestId={}, userId={}, userAffiliations={}, allowedTypes={}, allowedAffiliations={}",
+                        contestId, user.getId(), user.getAffiliations(), allowedAffiliationTypes, allowedAffiliations);
                 throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
             }
         }
 
-        // 이미 참가자로 등록되었는지
         if (contest.getParticipants() == null) {
             contest.setParticipants(new java.util.HashSet<>());
         }
 
         if (contest.getParticipants().contains(user)) {
+            log.warn("대회 참가 실패 - 이미 등록된 사용자: contestId={}, userId={}", contestId, user.getId());
             throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
         }
 
         contest.getParticipants().add(user);
         contestRepository.save(contest);
+        log.info("대회 참가 성공: contestId={}, userId={}", contestId, user.getId());
     }
+
 
 
     @Transactional(readOnly = true)
@@ -280,4 +274,21 @@ public class ContestService {
 
         return participants.contains(user);
     }
+
+    public List<UserContestDto> getUserContests(User user) {
+        List<Contest> contests = contestRepository.findByParticipantsContaining(user);
+
+        return contests.stream().map(contest -> {
+            Optional<Prize> prizeOpt = prizeRepository.findAll().stream()
+                    .filter(p -> p.getContest().equals(contest)
+                            && p.getWinners().contains(user))
+                    .findFirst();
+
+            boolean winner = prizeOpt.isPresent();
+            int rank = winner ? prizeOpt.get().getRank() : 0;
+
+            return UserContestDto.from(contest, winner, rank);
+        }).toList();
+    }
+
 }

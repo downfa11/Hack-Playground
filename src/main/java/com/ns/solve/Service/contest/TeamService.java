@@ -81,10 +81,22 @@ public class TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
 
+        List<Long> memberIds = team.getMembers().stream()
+                .map(User::getId)
+                .toList();
+        List<Map<String, Object>> usersWithRank = userRepository.findUsersWithRankByIds(memberIds);
+
+        Map<Long, Long> userRankMap = usersWithRank.stream()
+                .collect(Collectors.toMap(row -> ((Number) row.get("id")).longValue(), row -> ((Number) row.get("rank")).longValue()));
+
         return team.getMembers().stream()
-                .map(UserMapper::mapperToUserDto)
+                .map(member -> {
+                    long rank = userRankMap.getOrDefault(member.getId(), 0L);
+                    return UserMapper.mapperToUserDto(member, rank, null, null);
+                })
                 .collect(Collectors.toList());
     }
+
 
     @Transactional(readOnly = true)
     public List<TeamDto> getTopTeams(Long contestId, int count) {

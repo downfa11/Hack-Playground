@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -47,4 +48,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Long countActiveUsersBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     List<User> findByNicknameStartingWithIgnoreCase(String nickname);
+
+    @Query(
+            value = """
+            SELECT u.id, u.nickname, u.score, u.created, u.last_actived,
+                   ROW_NUMBER() OVER (ORDER BY u.score DESC) AS rank
+            FROM user u
+            WHERE u.id IN :userIds
+        """,
+            nativeQuery = true
+    )
+    List<Map<String, Object>> findUsersWithRankByIds(@Param("userIds") List<Long> userIds);
+
+    @Query(value = """
+    SELECT rank FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY score DESC) AS rank
+        FROM user
+    ) AS ranked
+    WHERE id = :userId
+""", nativeQuery = true)
+    Optional<Long> findUserRankById(@Param("userId") Long userId);
+
 }

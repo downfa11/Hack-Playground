@@ -43,7 +43,7 @@ public class ContestResultDto {
                     .rank(prize.getRank())
                     .numberOfWinners(prize.getNumberOfWinners())
                     .winners(prize.getWinners().stream()
-                            .map(UserDto::from)
+                            .map(user -> UserDto.from(user, null))
                             .collect(Collectors.toList()))
                     .build();
         }

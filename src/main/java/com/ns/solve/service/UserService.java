@@ -1,5 +1,6 @@
 package com.ns.solve.service;
 
+import com.ns.solve.domain.dto.contest.UserContestDto;
 import com.ns.solve.domain.dto.user.*;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
@@ -9,6 +10,7 @@ import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.UserRepository;
+import com.ns.solve.service.contest.ContestService;
 import com.ns.solve.service.problem.ProblemService;
 import com.ns.solve.utils.exception.ErrorCode.UserErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
@@ -34,6 +36,7 @@ import java.util.stream.IntStream;
 public class UserService {
     private final ProblemService problemService;
     private final AffiliationService affiliationService;
+    private final ContestService contestService;
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -59,7 +62,7 @@ public class UserService {
 
         user = userRepository.save(user);
         List<String> solvedProblemTitles = problemService.getSolvedProblemsTitle(user.getId());
-        return UserMapper.mapperToUserDto(user, solvedProblemTitles);
+        return UserMapper.mapperToUserDto(user, 0L, solvedProblemTitles, null);
     }
 
     public List<User> getAllUsers() {
@@ -69,16 +72,22 @@ public class UserService {
     public Optional<UserDto> getUserById(Long id) {
         return userRepository.findById(id)
                 .map(user -> {
+                    Long rank = userRepository.findUserRankById(user.getId())
+                            .orElse(0L);
                     List<String> solvedTitles = problemService.getSolvedProblemsTitle(user.getId());
-                    return UserMapper.mapperToUserDto(user, solvedTitles);
+                    List<UserContestDto> contestDtos = contestService.getUserContests(user);
+                    return UserMapper.mapperToUserDto(user, rank, solvedTitles, contestDtos);
                 });
     }
 
     public Optional<UserDto> getUserDtoByNickname(String nickName) {
         return userRepository.findByNickname(nickName)
                 .map(user -> {
+                    Long rank = userRepository.findUserRankById(user.getId())
+                            .orElse(0L);
                     List<String> solvedTitles = problemService.getSolvedProblemsTitle(user.getId());
-                    return UserMapper.mapperToUserDto(user, solvedTitles);
+                    List<UserContestDto> contestDtos = contestService.getUserContests(user);
+                    return UserMapper.mapperToUserDto(user, rank, solvedTitles, contestDtos);
                 });
     }
 
@@ -147,8 +156,11 @@ public class UserService {
         }
         userRepository.save(currentUser);
 
+        Long rank = userRepository.findUserRankById(currentUser.getId())
+                .orElse(0L);
         List<String> solvedTitles = problemService.getSolvedProblemsTitle(currentUser.getId());
-        return UserMapper.mapperToUserDto(currentUser, solvedTitles);
+        List<UserContestDto> contestDtos = contestService.getUserContests(currentUser);
+        return UserMapper.mapperToUserDto(currentUser, rank, solvedTitles, contestDtos);
     }
 
     public void deleteUser(Long currentId, Long deleteId) {
@@ -246,7 +258,10 @@ public class UserService {
 
         List<User> users = userRepository.findByNicknameStartingWithIgnoreCase(nickname);
         return users.stream()
-                .map(UserDto::from)
+                .map(user -> {
+                    List<UserContestDto> contestDtos = contestService.getUserContests(user);
+                    return UserDto.from(user, contestDtos);
+                })
                 .collect(Collectors.toList());
     }
 }

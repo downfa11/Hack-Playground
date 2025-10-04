@@ -1,5 +1,6 @@
 package com.ns.solve.utils.mapper;
 
+import com.ns.solve.domain.dto.contest.UserContestDto;
 import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
 import com.ns.solve.domain.entity.user.Role;
@@ -12,13 +13,14 @@ import java.util.stream.Collectors;
 
 public class UserMapper {
 
-    public static UserDto mapperToUserDto(User user, List<String> solvedTitles) {
+    public static UserDto mapperToUserDto(User user, long rank, List<String> solvedTitles, List<UserContestDto> contestDtos) {
         return new UserDto(
                 user.getId(),
                 user.getNickname(),
                 user.getRole(),
                 user.getProvider(),
                 user.getAccount(),
+                rank,
                 user.getScore(),
                 user.getFieldScores(),
                 solvedTitles,
@@ -26,17 +28,19 @@ public class UserMapper {
                 user.getLastActived(),
                 user.getAffiliations().stream()
                         .map(AffiliationDto::from)
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                contestDtos
         );
     }
 
-    public static UserDto mapperToUserDto(User user) {
+    public static UserDto mapperToUserDto(User user, List<UserContestDto> contestDtos) {
         return new UserDto(
                 user.getId(),
                 user.getNickname(),
                 user.getRole(),
                 user.getProvider(),
                 user.getAccount(),
+                0l,
                 user.getScore(),
                 user.getFieldScores(),
                 null,
@@ -44,7 +48,8 @@ public class UserMapper {
                 user.getLastActived(),
                 user.getAffiliations().stream()
                         .map(AffiliationDto::from)
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                contestDtos
         );
     }
 

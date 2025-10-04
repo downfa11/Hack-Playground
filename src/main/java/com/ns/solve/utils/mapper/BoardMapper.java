@@ -11,7 +11,7 @@ public class BoardMapper {
                 .title(board.getTitle())
                 .type(board.getType())
                 .contents(board.getContents())
-                .creator(UserMapper.mapperToUserDto(board.getCreator()))
+                .creator(UserMapper.mapperToUserDto(board.getCreator(), null))
                 .commentList(board.getCommentList())
                 .createdAt(board.getCreatedAt())
                 .updatedAt(board.getUpdatedAt())

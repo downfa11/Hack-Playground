@@ -15,7 +15,7 @@ public class CommentMapper {
         dto.setType(comment.getType());
 
         if (comment.getCreator() != null) {
-            UserDto userDto = UserMapper.mapperToUserDto(comment.getCreator());
+            UserDto userDto = UserMapper.mapperToUserDto(comment.getCreator(), null);
             dto.setCreator(userDto);
         }
 
