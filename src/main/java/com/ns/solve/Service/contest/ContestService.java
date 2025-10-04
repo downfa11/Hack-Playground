@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -97,25 +97,23 @@ public class ContestService {
 
     @Transactional(readOnly = true)
     public List<ContestDto> getContests(ContestStatus status, String searchTerm) {
+        List<Contest> contests;
+        LocalDateTime now = LocalDateTime.now();
+
         if (searchTerm != null && !searchTerm.isBlank()) {
-            List<Contest> contests = contestRepository.findByTitleContainingIgnoreCase(searchTerm);
-            return contests.stream().map(ContestDto::from).collect(Collectors.toList());
+            contests = contestRepository.findByTitleContainingIgnoreCase(searchTerm);
+        } else if (ContestStatus.UPCOMING.equals(status)) {
+            contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(now);
+        } else if (ContestStatus.ONGOING.equals(status)) {
+            // now 변수를 한 번만 선언해도 됨
+            contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now, now);
+        } else if (ContestStatus.ENDED.equals(status)) {
+            contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(now);
+        } else {
+            contests = contestRepository.findAll();
         }
 
-        if (ContestStatus.UPCOMING.equals(status)) {
-            List<Contest> contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime.now());
-            return contests.stream().map(ContestDto::from).collect(Collectors.toList());
-        } else if (ContestStatus.ONGOING.equals(status)) {
-            LocalDateTime now = LocalDateTime.now();
-            List<Contest> contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now, now);
-            return contests.stream().map(ContestDto::from).collect(Collectors.toList());
-        } else if (ContestStatus.ENDED.equals(status)) {
-            List<Contest> contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(LocalDateTime.now());
-            return contests.stream().map(ContestDto::from).collect(Collectors.toList());
-        } else {
-            List<Contest> contests = contestRepository.findAll();
-            return contests.stream().map(ContestDto::from).collect(Collectors.toList());
-        }
+        return contests.stream().map(ContestDto::from).collect(Collectors.toList());
     }
 
     @Transactional
@@ -164,7 +162,6 @@ public class ContestService {
         Set<Affiliation> updatedAffiliations = affiliationRepository.findAllById(modifyContestRequest.getAffiliationIds()).stream().collect(Collectors.toSet());
         contest.setAffiliations(updatedAffiliations);
 
-        // Contest 엔티티만 저장 (자동으로 Prize 엔티티도 함께 저장/삭제)
         Contest updatedContest = contestRepository.save(contest);
         return ContestDto.from(updatedContest);
     }
@@ -249,8 +246,6 @@ public class ContestService {
         log.info("대회 참가 성공: contestId={}, userId={}", contestId, user.getId());
     }
 
-
-
     @Transactional(readOnly = true)
     public boolean isUserParticipating(Long contestId, Long userId) {
         Contest contest = contestRepository.findById(contestId)
@@ -259,16 +254,17 @@ public class ContestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        // 플랫폼 관리자는 건너뛰기
+        // 플랫폼 관리자 당근빠따로 접근 허용
         if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) {
             return true;
         }
 
-        // 대회 운영자인지 조건
-        if (!contest.getOrganizers().contains(user)) {
+        // 대회 운영자는 참가 명단에 없어도 참가
+        if (contest.getOrganizers().contains(user)) {
             return true;
         }
 
+        // 일반 사용자인 경우, 참가자 명단을 확인
         Set<User> participants = contest.getParticipants() == null
                 ? Collections.emptySet()
                 : contest.getParticipants();
@@ -277,7 +273,7 @@ public class ContestService {
     }
 
     public List<UserContestDto> getUserContests(User user) {
-        List<Contest> contests = contestRepository.findByParticipantsContaining(user);
+        List<Contest> contests = contestRepository.findContestsByParticipant(user);
 
         return contests.stream().map(contest -> {
             Optional<Prize> prizeOpt = prizeRepository.findAll().stream()
@@ -292,15 +288,25 @@ public class ContestService {
         }).toList();
     }
 
+    private LocalDateTime getStartOfMonth() {
+        return LocalDateTime.now()
+                .with(TemporalAdjusters.firstDayOfMonth())
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+    }
+
+
     @Transactional(readOnly = true)
     public ContestStatisticsDto getContestStatistics() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfMonth = YearMonth.now().atDay(1).atStartOfDay();
+        LocalDateTime startOfMonth = getStartOfMonth();
 
-        int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now, now); // 현재 진행중인 대회 수 계산
-        int monthlyContests = contestRepository.countByCreatedAtAfter(startOfMonth); // 이번 달 대회 수 계산
-        int monthlyParticipants = contestRepository.countDistinctParticipantsByJoinDateAfter(startOfMonth); // 이번 달 참가자 수 계산
-        int monthlyWinners = prizeRepository.countDistinctWinnersByContestEndTimeAfter(startOfMonth); // 이번 달 수상자 수 계산
+        int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now, now);
+        int monthlyContests = contestRepository.countByStartTimeAfter(startOfMonth);
+        int monthlyParticipants = contestRepository.countDistinctParticipantsByStartTimeAfter(startOfMonth);
+        int monthlyWinners = prizeRepository.countDistinctWinnersByContestEndTimeAfter(startOfMonth);
 
         return ContestStatisticsDto.builder()
                 .ongoingContests(ongoingContests)
