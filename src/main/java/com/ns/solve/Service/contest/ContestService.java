@@ -51,7 +51,10 @@ public class ContestService {
                 .collect(Collectors.toSet());
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
 
-        Set<WargameKind> registeredProblmKinds = new HashSet<>(registerContestRequest.getProblemKinds());
+        List<WargameKind> problemKinds = registerContestRequest.getProblemKinds() != null
+                ? registerContestRequest.getProblemKinds()
+                : Collections.emptyList();
+        Set<WargameKind> registeredProblmKinds = new HashSet<>(problemKinds);
 
         Contest contest = Contest.builder()
                 .title(registerContestRequest.getTitle())
