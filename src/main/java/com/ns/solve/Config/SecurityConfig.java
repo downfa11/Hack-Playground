@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/reissue", "/token-validate", "/api/k8s/koren").permitAll()
+                        .requestMatchers("/login", "/reissue", "/token-validate", "/api/pods/koren").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/problems/statistics", "/api/problems/completed", "/api/boards", "/api/users/sorted-by-score", "/api/contests", "/api/contests/statistics").permitAll()
                         .requestMatchers("/ws/**").permitAll()

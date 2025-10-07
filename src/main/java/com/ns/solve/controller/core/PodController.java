@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -54,5 +55,21 @@ public class PodController {
     @GetMapping("/active")
     public ResponseEntity<List<SolveInfo>> getCurrentSolveMembers(@RequestParam String namespace) {
         return ResponseEntity.ok(podService.findCurrentSolveMembers(namespace));
+    }
+
+    @Operation(summary = "이미지 기반 문제 생성 및 URL 반환", description = "이미지와 문제 유형(HTTP/TCP)을 기반으로 K8s Pod를 생성하고 접근 URL을 반환합니다.")
+    @PostMapping("/koren")
+    public ResponseEntity<String> createProblemFromImageAndGetUrl(@RequestParam String image, @RequestParam boolean isHttp) {
+        try {
+            String url = podService.createProblemAndGetUrl(image, isHttp);
+            if (url != null && !url.startsWith("Error")) {
+                return ResponseEntity.ok(url);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(url);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to create problem environment: " + e.getMessage());
+        }
     }
 }

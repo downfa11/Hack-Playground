@@ -4,6 +4,7 @@ import com.ns.solve.domain.dto.problem.SolveInfo;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.UserService;
 import com.ns.solve.service.problem.ProblemService;
@@ -322,6 +323,48 @@ public class PodService {
         }
 
         return "Success";
+    }
+
+    // ---
+
+    public String createProblemAndGetUrl(String image, boolean isHttp) {
+        Random random = new Random();
+        Long userId = 1000000L + random.nextInt(1000000);
+        Long problemId = 1000000L + random.nextInt(1000000);
+
+        WargameKind kind = isHttp ? WargameKind.WEBHACKING : WargameKind.SYSTEM;
+        WargameProblem tempProblem = buildTemporaryWargameProblem(problemId, image, kind);
+        String podName = getPodName(userId, problemId);
+
+        try {
+            Optional<String> phaseOpt = kubernetesService.getPodPhase("wargame", podName);
+            if (phaseOpt.isPresent()) {
+                throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION,
+                        String.format("Pod already exists for generated userId(%d) and problemId(%d). Please retry.", userId, problemId));
+            }
+
+            log.info("Creating K8s resources for temporary problem. userId: {}, problemId: {}, image: {}", userId, problemId, image);
+            return createAndExposePod(tempProblem, userId);
+        } catch (SolvedException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to createProblemAndGetUrl {}: {}", podName, e.getMessage(), e);
+            return "Error creating problem environment: " + e.getMessage();
+        }
+    }
+
+    private WargameProblem buildTemporaryWargameProblem(Long problemId, String image, WargameKind kind) {
+        WargameProblem problem = new WargameProblem();
+        problem.setId(problemId);
+        problem.setDockerfileLink(image);
+        problem.setKind(kind);
+        problem.setPortNumber(80);
+        problem.setType(ProblemType.WARGAME);
+
+        Map<String, Integer> resourceLimits = Map.of("cpu", 1000, "memory", 512);
+        problem.setResourceLimit(resourceLimits);
+
+        return problem;
     }
 }
 
