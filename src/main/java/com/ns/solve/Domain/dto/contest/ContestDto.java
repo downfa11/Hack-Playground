@@ -3,7 +3,6 @@ package com.ns.solve.domain.dto.contest;
 import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.vo.AffiliationType;
-import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.domain.vo.ContestType;
 import com.ns.solve.domain.vo.WargameKind;
 import lombok.Builder;
@@ -23,7 +22,6 @@ public class ContestDto {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private ContestType type;
-    private ContestStatus status;
     private String organizerName;
     private List<Long> organizerIds;
     private Integer maxTeamSize;
@@ -41,7 +39,6 @@ public class ContestDto {
                 .startTime(contest.getStartTime())
                 .endTime(contest.getEndTime())
                 .type(contest.getType())
-                .status(contest.getStatus())
                 .organizerName(contest.getOrganizerName())
                 .organizerIds(contest.getOrganizers().stream()
                         .map(organizer -> organizer.getId())

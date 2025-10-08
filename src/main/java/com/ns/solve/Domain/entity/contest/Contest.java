@@ -42,10 +42,6 @@ public class Contest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ContestStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ContestType type;
 
     @ElementCollection(targetClass = WargameKind.class)

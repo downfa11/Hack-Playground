@@ -87,7 +87,6 @@ public class ContestService {
                 .prize(registerContestRequest.isPrizeEnabled() ? registerContestRequest.getPrizeMoney() : null)
                 .rules(registerContestRequest.getRules())
                 .reviewConsent(registerContestRequest.isReviewConsent())
-                .status(ContestStatus.UPCOMING)
                 .build();
 
         Contest newContest = contestRepository.save(contest);
@@ -121,13 +120,20 @@ public class ContestService {
 
         if (searchTerm != null && !searchTerm.isBlank()) {
             contests = contestRepository.findByTitleContainingIgnoreCase(searchTerm);
-        } else if (ContestStatus.UPCOMING.equals(status)) {
-            contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(now);
-        } else if (ContestStatus.ONGOING.equals(status)) {
-            // now 변수를 한 번만 선언해도 됨
-            contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now, now);
-        } else if (ContestStatus.ENDED.equals(status)) {
-            contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(now);
+        } else if (status != null) {
+            switch (status) {
+                case UPCOMING:
+                    contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(now);
+                    break;
+                case ONGOING:
+                    contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now, now);
+                    break;
+                case ENDED:
+                    contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(now);
+                    break;
+                default:
+                    contests = contestRepository.findAll();
+            }
         } else {
             contests = contestRepository.findAll();
         }
@@ -200,13 +206,8 @@ public class ContestService {
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
         // 대회 종료 여부 확인 or 상태 갱신
-        if (contest.getStatus() != ContestStatus.ENDED) {
-            if (contest.getEndTime().isBefore(LocalDateTime.now())) {
-                contest.setStatus(ContestStatus.ENDED);
-                contestRepository.save(contest);
-            } else {
-                throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
-            }
+        if (contest.getEndTime().isAfter(LocalDateTime.now())) {
+            throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
         }
 
         // 상별 우승자 결정 or 조회
@@ -256,7 +257,7 @@ public class ContestService {
         User user = userRepository.findById(joinRequest.getUserId())
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        if (contest.getStatus() != ContestStatus.UPCOMING) {
+        if (contest.getStartTime().isBefore(LocalDateTime.now())) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
@@ -273,7 +274,7 @@ public class ContestService {
         // 단체전 참가 가능 소속 검사
         if (contest.getType() == ContestType.GROUP) {
             Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, user.getId());
-            if (eligibleAffiliations.isEmpty()) {
+            if (eligibleAffiliations.isEmpty() || contest.getStartTime().isBefore(LocalDateTime.now())) {
                 throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
             }
         }
@@ -399,7 +400,7 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
         }
 
-        if (contest.getStatus() != ContestStatus.UPCOMING) {
+        if (contest.getStartTime().isBefore(LocalDateTime.now())) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 

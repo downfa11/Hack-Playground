@@ -52,8 +52,6 @@ public class QContest extends EntityPathBase<Contest> {
 
     public final DateTimePath<java.time.LocalDateTime> startTime = createDateTime("startTime", java.time.LocalDateTime.class);
 
-    public final EnumPath<com.ns.solve.domain.vo.ContestStatus> status = createEnum("status", com.ns.solve.domain.vo.ContestStatus.class);
-
     public final StringPath title = createString("title");
 
     public final EnumPath<com.ns.solve.domain.vo.ContestType> type = createEnum("type", com.ns.solve.domain.vo.ContestType.class);
