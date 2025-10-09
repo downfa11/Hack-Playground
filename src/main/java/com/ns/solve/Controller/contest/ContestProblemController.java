@@ -79,12 +79,12 @@ public class ContestProblemController {
     // 문제 상세 조회
     @GetMapping("/{problemId}")
     public ResponseEntity<ContestProblemDto> getProblemDetail(@PathVariable Long contestId, @PathVariable Long problemId, Authentication authentication) {
-
         Long userId = null;
         if (authentication != null) {
             userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
         }
-        ContestProblemDto problem = contestProblemService.getProblemDetail(userId, contestId, problemId);
+
+        ContestProblemDto problem = contestProblemService.getProblemDetail(contestId, problemId, userId);
         return ResponseEntity.ok(problem);
     }
 
