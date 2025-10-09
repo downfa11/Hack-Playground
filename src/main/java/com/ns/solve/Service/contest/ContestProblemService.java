@@ -3,6 +3,7 @@ package com.ns.solve.service.contest;
 import com.ns.solve.domain.dto.contest.ContestProblemDto;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
+import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.entity.contest.ContestSolved;
@@ -254,6 +255,7 @@ public class ContestProblemService {
                 .title(problem.getTitle())
                 .detail(problem.getDetail())
                 .kind(problem.getKind())
+                .creator(UserDto.from(problem.getCreator(), null))
                 .difficulty(problem.getDifficulty())
                 .tags(problem.getTags())
                 .points(problem.getPoints())
