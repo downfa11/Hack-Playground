@@ -46,7 +46,7 @@ public class ContestProblemService {
 
 
     @Transactional
-    public ContestProblemDto createProblem(Long userId, Long contestId, RegisterContestProblemRequest request) {
+    public ContestProblemDto createProblem(Long contestId, RegisterContestProblemRequest request) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
@@ -71,11 +71,11 @@ public class ContestProblemService {
         newProblem.setContest(contest);
         contestProblemRepository.save(newProblem);
 
-        return convertToDto(newProblem, newProblem.getContest().getTitle(), userId);
+        return convertToDto(newProblem, newProblem.getContest().getTitle(), null);
     }
 
     @Transactional
-    public ContestProblemDto updateProblem(Long userId, Long problemId, ModifyContestProblemRequest request) {
+    public ContestProblemDto updateProblem(Long problemId, ModifyContestProblemRequest request) {
         ContestProblem problem = contestProblemRepository.findById(problemId)
                 .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
 
@@ -97,7 +97,7 @@ public class ContestProblemService {
 
 
         contestProblemRepository.save(problem);
-        return convertToDto(problem, problem.getContest().getTitle(), userId);
+        return convertToDto(problem, problem.getContest().getTitle(), null);
     }
 
     @Transactional
@@ -147,22 +147,27 @@ public class ContestProblemService {
             problems = contestProblemRepository.findByContest(contest);
         }
 
+        Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId).orElse(null);
+        Long teamId = (team != null) ? team.getId() : null;
+
         return problems.stream()
-                .map(problem -> convertToDto(problem, contest.getTitle(), userId))
+                .map(problem -> convertToDto(problem, contest.getTitle(), teamId))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ContestProblemDto getProblemDetail(Long contestId, Long problemId, Long userId) {
         if (!contestRepository.existsById(contestId)) {
-            log.error("getProblemDetail: {} {} {}", contestId, problemId, userId);
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND);
         }
 
         ContestProblem problem = contestProblemRepository.findByContest_IdAndId(contestId, problemId)
                 .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
 
-        return convertToDto(problem, problem.getContest().getTitle(), userId);
+        Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId).orElse(null);
+        Long teamId = (team != null) ? team.getId() : null;
+
+        return convertToDto(problem, problem.getContest().getTitle(), teamId);
     }
 
 
@@ -171,17 +176,17 @@ public class ContestProblemService {
             Problem problem = contestProblemRepository.findById(problemId)
                     .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND, "problemId: " + problemId));
 
-            if (!(problem instanceof WargameProblem wargameProblem)) {
-                throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION, "only supported for wargame");
+            if (!(problem instanceof ContestProblem contestProblem)) {
+                throw new SolvedException(ProblemErrorCode.INVALID_PROBLEM_OPERATION, "only supported for contestProblem");
             }
 
-            if (wargameProblem.getProblemFile() == null) {
+            if (contestProblem.getProblemFile() == null) {
                 throw new SolvedException(ProblemErrorCode.FILE_NOT_FOUND, "problemId : " + problemId);
             }
 
-            Resource resource = fileService.downloadFile(wargameProblem.getProblemFile());
+            Resource resource = fileService.downloadFile(contestProblem.getProblemFile());
             if (!resource.exists()) {
-                throw new SolvedException(ProblemErrorCode.FILE_NOT_FOUND, wargameProblem.getProblemFile());
+                throw new SolvedException(ProblemErrorCode.FILE_NOT_FOUND, contestProblem.getProblemFile());
             }
 
             return resource;
@@ -238,13 +243,13 @@ public class ContestProblemService {
     // 문제 수정하고 10분 이내는 isNew=true
     private ContestProblemDto convertToDto(ContestProblem problem, String contestName, Long teamId) {
         boolean solved = false;
-        boolean isNew = false;
 
         if (teamId != null) {
             solved = contestSolvedRepository.existsByContest_IdAndTeam_IdAndSolvedProblem_Id(
                     problem.getContest().getId(), teamId, problem.getId());
         }
 
+        boolean isNew = false;
         LocalDateTime now = LocalDateTime.now();
         if (problem.getUpdatedAt() != null && problem.getUpdatedAt().isAfter(now.minusMinutes(10))) {
             isNew = true;
@@ -271,6 +276,5 @@ public class ContestProblemService {
                 .updatedAt(problem.getUpdatedAt())
                 .build();
     }
-
 
 }

@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface TeamRepository extends JpaRepository<Team, Long> {
     boolean existsByContestAndName(Contest contest, String name);
     boolean existsByContestIdAndName(Long contestId, String name);
+    boolean existsByContestIdAndMembersContains(Long contestId, User member);
     int countByContestId(Long contestId);
     List<Team> findByContestId(Long contestId);
     Optional<Team> findByContestIdAndMembers_Id(Long contestId, Long memberId);

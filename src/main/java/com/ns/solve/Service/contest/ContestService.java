@@ -297,10 +297,7 @@ public class ContestService {
 
         // 단체전 참가 가능 소속 검사
         if (contest.getType() == ContestType.GROUP) {
-            Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, user.getId());
-            if (eligibleAffiliations.isEmpty() || contest.getStartTime().isBefore(nowKST())) {
-                throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-            }
+            throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
         }
 
         // 참가자 등록
@@ -322,21 +319,20 @@ public class ContestService {
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
         // 플랫폼 관리자 당근빠따로 접근 허용
-        if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) {
-            return true;
-        }
-
+        if (user.getRole() == Role.ROLE_ADMIN || user.getRole() == Role.ROLE_VALIDATOR) return true;
         // 대회 운영자는 참가 명단에 없어도 참가
-        if (contest.getOrganizers().contains(user)) {
-            return true;
-        }
+        if (contest.getOrganizers().contains(user)) return true;
+
 
         // 일반 사용자인 경우, 참가자 명단을 확인
-        Set<User> participants = contest.getParticipants() == null
-                ? Collections.emptySet()
-                : contest.getParticipants();
+        if (contest.getParticipants() == null || !contest.getParticipants().contains(user)) {
+            return false;
+        }
 
-        return participants.contains(user);
+        if (contest.getType() == ContestType.INDIVIDUAL) return true;
+
+        // 팀/단체전의 경우 실제 팀에 소속되어 있어야 참가 중으로 판단
+        return teamRepository.existsByContestIdAndMembersContains(contestId, user);
     }
 
     public List<UserContestDto> getUserContests(User user) {
