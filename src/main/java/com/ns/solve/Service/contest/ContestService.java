@@ -48,6 +48,9 @@ public class ContestService {
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
 
+        validateContestTime(registerContestRequest.getStartTime(), registerContestRequest.getEndTime());
+
+
         boolean exists = contestRepository.existsByTitleAndStartTime(registerContestRequest.getTitle(), registerContestRequest.getStartTime());
         if (exists) {
             throw new SolvedException(ContestErrorCode.CONTEST_ALREADY_EXISTS);
@@ -103,14 +106,21 @@ public class ContestService {
             prizeRepository.saveAll(prizes);
             newContest.setPrizes(prizes);
         }
-        return ContestDto.from(newContest);
+
+        return ContestDto.from(newContest, 0);
     }
 
     @Transactional(readOnly = true)
     public ContestDto getContestById(Long contestId) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
-        return ContestDto.from(contest);
+
+        int teamCount = 0;
+        if (contest.getType() != ContestType.INDIVIDUAL) {
+            teamCount = teamRepository.countByContestId(contestId);
+        }
+
+        return ContestDto.from(contest, teamCount);
     }
 
     @Transactional(readOnly = true)
@@ -138,7 +148,12 @@ public class ContestService {
             contests = contestRepository.findAll();
         }
 
-        return contests.stream().map(ContestDto::from).collect(Collectors.toList());
+        return contests.stream()
+                .map(contest -> {
+                    int teamCount = contest.getType() == ContestType.INDIVIDUAL ? 0 : teamRepository.countByContestId(contest.getId());
+                    return ContestDto.from(contest, teamCount);
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -147,6 +162,8 @@ public class ContestService {
                 (modifyContestRequest.getAffiliationTypes() == null || modifyContestRequest.getAffiliationTypes().isEmpty())) {
             throw new IllegalArgumentException("특정 소속을 지정하려면 소속 유형도 함께 선택해야 합니다.");
         }
+
+        validateContestTime(modifyContestRequest.getStartTime(), modifyContestRequest.getEndTime());
 
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
@@ -197,7 +214,12 @@ public class ContestService {
         contest.setAffiliations(affiliations);
 
         Contest updatedContest = contestRepository.save(contest);
-        return ContestDto.from(updatedContest);
+
+        int teamCount = 0;
+        if (contest.getType() != ContestType.INDIVIDUAL) {
+            teamCount = teamRepository.countByContestId(contestId);
+        }
+        return ContestDto.from(updatedContest, teamCount);
     }
 
     @Transactional
@@ -428,4 +450,21 @@ public class ContestService {
         contestRepository.save(contest);
     }
 
+    private void validateContestTime(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("시작 시간과 종료 시간은 반드시 입력해야 합니다.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 시작 시간은 종료 시간 이전
+        if (!start.isBefore(end)) {
+            throw new IllegalArgumentException("대회의 시작 시간은 종료 시간보다 반드시 이전이어야 합니다.");
+        }
+
+        // 종료 시간은 현재 시간 이후
+        if (end.isBefore(now)) {
+            throw new IllegalArgumentException("종료 시간을 현재 시간보다 이전으로 설정할 수 없습니다.");
+        }
+    }
 }

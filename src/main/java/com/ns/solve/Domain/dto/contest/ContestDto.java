@@ -24,6 +24,8 @@ public class ContestDto {
     private ContestType type;
     private String organizerName;
     private List<Long> organizerIds;
+    private Integer participantCount;
+    private Integer teamCount;
     private Integer maxTeamSize;
     private String prize;
     private String rules;
@@ -31,7 +33,7 @@ public class ContestDto {
     private List<AffiliationDto> affiliations;
     private Set<WargameKind> problemKinds;
 
-    public static ContestDto from(Contest contest) {
+    public static ContestDto from(Contest contest, Integer teamCount) {
         return ContestDto.builder()
                 .id(contest.getId())
                 .title(contest.getTitle())
@@ -43,6 +45,8 @@ public class ContestDto {
                 .organizerIds(contest.getOrganizers().stream()
                         .map(organizer -> organizer.getId())
                         .toList())
+                .participantCount(contest.getParticipants().size())
+                .teamCount(teamCount)
                 .maxTeamSize(contest.getMaxTeamSize())
                 .prize(contest.getPrize())
                 .rules(contest.getRules())
