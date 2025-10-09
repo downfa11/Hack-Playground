@@ -23,6 +23,7 @@ import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
 import com.ns.solve.utils.exception.ErrorCode.TeamErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContestProblemService {
@@ -152,6 +154,7 @@ public class ContestProblemService {
     @Transactional(readOnly = true)
     public ContestProblemDto getProblemDetail(Long contestId, Long problemId, Long userId) {
         if (!contestRepository.existsById(contestId)) {
+            log.error("getProblemDetail: {} {} {}", contestId, problemId, userId);
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND);
         }
 
