@@ -34,6 +34,8 @@ public class ContestDto {
     private Set<WargameKind> problemKinds;
 
     public static ContestDto from(Contest contest, Integer teamCount) {
+        int participantCount = (contest.getParticipants() != null) ? contest.getParticipants().size() : 0;
+
         return ContestDto.builder()
                 .id(contest.getId())
                 .title(contest.getTitle())
@@ -45,7 +47,7 @@ public class ContestDto {
                 .organizerIds(contest.getOrganizers().stream()
                         .map(organizer -> organizer.getId())
                         .toList())
-                .participantCount(contest.getParticipants().size())
+                .participantCount(participantCount)
                 .teamCount(teamCount)
                 .maxTeamSize(contest.getMaxTeamSize())
                 .prize(contest.getPrize())

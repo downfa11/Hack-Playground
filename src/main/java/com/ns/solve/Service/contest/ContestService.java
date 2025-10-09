@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -126,7 +128,7 @@ public class ContestService {
     @Transactional(readOnly = true)
     public List<ContestDto> getContests(ContestStatus status, String searchTerm) {
         List<Contest> contests;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = nowKST();
 
         if (searchTerm != null && !searchTerm.isBlank()) {
             contests = contestRepository.findByTitleContainingIgnoreCase(searchTerm);
@@ -228,7 +230,7 @@ public class ContestService {
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
         // 대회 종료 여부 확인 or 상태 갱신
-        if (contest.getEndTime().isAfter(LocalDateTime.now())) {
+        if (contest.getEndTime().isAfter(nowKST())) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
         }
 
@@ -279,7 +281,7 @@ public class ContestService {
         User user = userRepository.findById(joinRequest.getUserId())
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        if (contest.getStartTime().isBefore(LocalDateTime.now())) {
+        if (contest.getStartTime().isBefore(nowKST())) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
@@ -296,7 +298,7 @@ public class ContestService {
         // 단체전 참가 가능 소속 검사
         if (contest.getType() == ContestType.GROUP) {
             Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, user.getId());
-            if (eligibleAffiliations.isEmpty() || contest.getStartTime().isBefore(LocalDateTime.now())) {
+            if (eligibleAffiliations.isEmpty() || contest.getStartTime().isBefore(nowKST())) {
                 throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
             }
         }
@@ -354,7 +356,7 @@ public class ContestService {
     }
 
     private LocalDateTime getStartOfMonth() {
-        return LocalDateTime.now()
+        return nowKST()
                 .with(TemporalAdjusters.firstDayOfMonth())
                 .withHour(0)
                 .withMinute(0)
@@ -365,7 +367,7 @@ public class ContestService {
 
     @Transactional(readOnly = true)
     public ContestStatisticsDto getContestStatistics() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = nowKST();
         LocalDateTime startOfMonth = getStartOfMonth();
 
         int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now, now);
@@ -422,7 +424,7 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
         }
 
-        if (contest.getStartTime().isBefore(LocalDateTime.now())) {
+        if (contest.getStartTime().isBefore(nowKST())) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
         }
 
@@ -455,7 +457,7 @@ public class ContestService {
             throw new IllegalArgumentException("시작 시간과 종료 시간은 반드시 입력해야 합니다.");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = nowKST();
 
         // 시작 시간은 종료 시간 이전
         if (!start.isBefore(end)) {
@@ -467,4 +469,9 @@ public class ContestService {
             throw new IllegalArgumentException("종료 시간을 현재 시간보다 이전으로 설정할 수 없습니다.");
         }
     }
+
+    private LocalDateTime nowKST() {
+        return ZonedDateTime.now(ZoneId.of("Asia/Seoul")).toLocalDateTime();
+    }
+
 }
