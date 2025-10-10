@@ -128,20 +128,20 @@ public class ContestService {
     @Transactional(readOnly = true)
     public List<ContestDto> getContests(ContestStatus status, String searchTerm) {
         List<Contest> contests;
-        LocalDateTime now = nowKST();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
 
         if (searchTerm != null && !searchTerm.isBlank()) {
             contests = contestRepository.findByTitleContainingIgnoreCase(searchTerm);
         } else if (status != null) {
             switch (status) {
                 case UPCOMING:
-                    contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(now);
+                    contests = contestRepository.findByStartTimeAfterOrderByStartTimeAsc(now.toLocalDateTime());
                     break;
                 case ONGOING:
-                    contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now, now);
+                    contests = contestRepository.findByStartTimeBeforeAndEndTimeAfterOrderByEndTimeAsc(now.toLocalDateTime(), now.toLocalDateTime());
                     break;
                 case ENDED:
-                    contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(now);
+                    contests = contestRepository.findByEndTimeBeforeOrderByEndTimeDesc(now.toLocalDateTime());
                     break;
                 default:
                     contests = contestRepository.findAll();
@@ -230,9 +230,13 @@ public class ContestService {
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
         // 대회 종료 여부 확인 or 상태 갱신
-        if (contest.getEndTime().isAfter(nowKST())) {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime contestEndKST = contest.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
+
+        if (contestEndKST.isAfter(now)) {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
         }
+
 
         // 상별 우승자 결정 or 조회
         for (Prize prize : contest.getPrizes()) {
@@ -281,9 +285,13 @@ public class ContestService {
         User user = userRepository.findById(joinRequest.getUserId())
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
-        if (contest.getStartTime().isBefore(nowKST())) {
-            throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
+        ZonedDateTime startTimeKST = contest.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime endTimeKST = contest.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
+
+        if (nowKST().isBefore(startTimeKST) || nowKST().isAfter(endTimeKST)) {
+            throw new SolvedException(ContestErrorCode.CONTEST_INVALID_DATE);
         }
+
 
         // 운영자는 참가자 등록 불필요
         if (contest.getOrganizers().contains(user)) {
@@ -352,21 +360,24 @@ public class ContestService {
     }
 
     private LocalDateTime getStartOfMonth() {
-        return nowKST()
+        ZonedDateTime nowKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime startOfMonth = nowKST
                 .with(TemporalAdjusters.firstDayOfMonth())
                 .withHour(0)
                 .withMinute(0)
                 .withSecond(0)
                 .withNano(0);
+        return startOfMonth.toLocalDateTime();
     }
+
 
 
     @Transactional(readOnly = true)
     public ContestStatisticsDto getContestStatistics() {
-        LocalDateTime now = nowKST();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
         LocalDateTime startOfMonth = getStartOfMonth();
 
-        int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now, now);
+        int ongoingContests = contestRepository.countByStartTimeBeforeAndEndTimeAfter(now.toLocalDateTime(), now.toLocalDateTime());
         int monthlyContests = contestRepository.countByStartTimeAfter(startOfMonth);
         int monthlyParticipants = contestRepository.countDistinctParticipantsByStartTimeAfter(startOfMonth);
         int monthlyWinners = prizeRepository.countDistinctWinnersByContestEndTimeAfter(startOfMonth);
@@ -420,9 +431,13 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
         }
 
-        if (contest.getStartTime().isBefore(nowKST())) {
-            throw new SolvedException(ContestErrorCode.CONTEST_NOT_UPCOMING);
+        ZonedDateTime startTimeKST = contest.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime endTimeKST = contest.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
+
+        if (nowKST().isBefore(startTimeKST) || nowKST().isAfter(endTimeKST)) {
+            throw new SolvedException(ContestErrorCode.CONTEST_INVALID_DATE);
         }
+
 
         Affiliation chosenAffiliation = user.getAffiliations().stream()
                 .filter(a -> a.getId().equals(affiliationId))
@@ -453,21 +468,23 @@ public class ContestService {
             throw new IllegalArgumentException("시작 시간과 종료 시간은 반드시 입력해야 합니다.");
         }
 
-        LocalDateTime now = nowKST();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime startKST = start.atZone(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime endKST = end.atZone(ZoneId.of("Asia/Seoul"));
 
         // 시작 시간은 종료 시간 이전
-        if (!start.isBefore(end)) {
+        if (!startKST.isBefore(endKST)) {
             throw new IllegalArgumentException("대회의 시작 시간은 종료 시간보다 반드시 이전이어야 합니다.");
         }
 
         // 종료 시간은 현재 시간 이후
-        if (end.isBefore(now)) {
+        if (endKST.isBefore(now)) {
             throw new IllegalArgumentException("종료 시간을 현재 시간보다 이전으로 설정할 수 없습니다.");
         }
     }
 
-    private LocalDateTime nowKST() {
-        return ZonedDateTime.now(ZoneId.of("Asia/Seoul")).toLocalDateTime();
+    private ZonedDateTime nowKST() {
+        return ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
 }
