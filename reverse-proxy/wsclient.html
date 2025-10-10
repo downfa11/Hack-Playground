@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>wsclient</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #log {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-height: 120px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      font-size: 12px;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <h1>문제 컨테이너 페이지</h1>
+  <p>이 영역에 문제 컨테이너의 웹서버 페이지가 그대로 표시됩니다.</p>
+
+  <div id="log"></div>
+
+  <script>
+    const logDiv = document.getElementById('log');
+    function log(msg) {
+      console.log(msg);
+      const p = document.createElement('div');
+      p.textContent = msg;
+      logDiv.appendChild(p);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+
+    ws.onopen = () => log('✅ WebSocket 연결됨');
+    ws.onmessage = (e) => log('📩 서버 메시지: ' + e.data);
+    ws.onerror = (e) => log('⚠️ WebSocket 에러');
+    ws.onclose = () => log('🔌 WebSocket 종료됨');
+
+    window.addEventListener('beforeunload', () => {
+      ws.close();
+      log('⛔ 페이지 종료로 WebSocket 종료 호출');
+    });
+  </script>
+</body>
+</html>

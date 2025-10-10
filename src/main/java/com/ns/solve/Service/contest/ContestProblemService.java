@@ -9,7 +9,6 @@ import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.entity.contest.ContestSolved;
 import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.UserRepository;
@@ -31,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -65,7 +63,6 @@ public class ContestProblemService {
                 .difficulty(request.getDifficulty())
                 .dockerfileLink(request.getDockerfileLink())
                 .problemFile(request.getProblemFile())
-                .kind(request.getKind())
                 .build();
 
         newProblem.setContest(contest);
@@ -92,9 +89,6 @@ public class ContestProblemService {
         problem.setDifficulty(request.getDifficulty());
         problem.setDockerfileLink(request.getDockerfileLink());
         problem.setProblemFile(request.getProblemFile());
-        problem.setKind(request.getKind());
-
-
 
         contestProblemRepository.save(problem);
         return convertToDto(problem, problem.getContest().getTitle(), null);
@@ -264,7 +258,6 @@ public class ContestProblemService {
                 .difficulty(problem.getDifficulty())
                 .tags(problem.getTags())
                 .points(problem.getPoints())
-                .flag(problem.getFlag())
                 .dockerfileLink(problem.getDockerfileLink())
                 .problemFile(problem.getProblemFile())
                 .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
@@ -272,6 +265,8 @@ public class ContestProblemService {
                 .source(contestName)
                 .isNew(isNew)
                 .solved(solved)
+                .entireCount(problem.getEntireCount())
+                .correctCount(problem.getCorrectCount())
                 .createdAt(problem.getCreatedAt())
                 .updatedAt(problem.getUpdatedAt())
                 .build();

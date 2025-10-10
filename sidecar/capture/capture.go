@@ -17,15 +17,17 @@ import (
 
 const snapshotLen = 1024
 const promiscuous = true
-const filter = "tcp[tcpflags] & (tcp-syn|tcp-fin|tcp-rst|tcp-ack) != 0"
+const filter = "tcp"
 
-type IPTimestamp struct {
+type IPEvent struct {
 	IP        string    `json:"ip"`
 	Timestamp time.Time `json:"timestamp"`
-	Protocol  string    `json:"protocol"`
+	Protocol  string    `json:"protocol"` // SYN, ACK, FIN, RST, KeepAlive
+	Payload   string    `json:"payload"`
 }
 
-var ipTimestamps = make(map[string]IPTimestamp)
+var ipActive = make(map[string]IPEvent)
+var ipHistory = make([]IPEvent, 0)
 
 func StartPacketCapture(cfg config.Config) {
 	go func() {
@@ -56,37 +58,63 @@ func StartPacketCapture(cfg config.Config) {
 			ip := ipLayer.(*layers.IPv4)
 			tcp := tcpLayer.(*layers.TCP)
 
+			srcIP := ip.SrcIP.String()
+			now := time.Now()
+
+			var proto string
+			payload := string(tcp.Payload)
+
 			if tcp.SYN && !tcp.ACK {
-				srcIP := ip.SrcIP.String()
-				now := time.Now()
-				ipTimestamps[srcIP] = IPTimestamp{
-					IP:        srcIP,
-					Timestamp: now,
-					Protocol:  "TCP",
+				proto = "SYN"
+			} else if tcp.FIN {
+				proto = "FIN"
+			} else if tcp.RST {
+				proto = "RST"
+			} else if tcp.ACK {
+				if len(tcp.Payload) == 0 {
+					proto = "KeepAlive"
+				} else {
+					proto = "ACK"
 				}
+			} else {
+				proto = "OTHER"
+			}
 
-				if tcp.FIN || tcp.RST {
-					delete(ipTimestamps, srcIP)
-				}
+			event := IPEvent{
+				IP:        srcIP,
+				Timestamp: now,
+				Protocol:  proto,
+				Payload:   payload,
+			}
 
-				data, err := json.MarshalIndent(getLatestTimestamps(), "", "  ")
-				if err != nil {
-					log.Printf("Failed to marshal timestamps: %v", err)
-					continue
-				}
+			if proto == "SYN" || proto == "ACK" || proto == "KeepAlive" {
+				ipActive[srcIP] = event
+				log.Printf("[Active Connections] src=%s proto=%s payload=%q", srcIP, proto, payload)
+			} else if proto == "FIN" || proto == "RST" {
+				ipHistory = append(ipHistory, event)
+				delete(ipActive, srcIP)
+				log.Printf("[Connection Closed] src=%s proto=%s", srcIP, proto)
+			}
 
-				if err := utils.WriteToFile(cfg.FilePath, data); err != nil {
-					log.Printf("Failed to write timestamp log to file: %v", err)
-				}
+			allEvents := append(ipHistory, mapToSlice(ipActive)...)
+			data, err := json.MarshalIndent(allEvents, "", "  ")
+			if err != nil {
+				log.Printf("Failed to marshal timestamps: %v", err)
+				continue
+			}
+
+			if err := utils.WriteToFile(cfg.FilePath, data); err != nil {
+				log.Printf("Failed to write timestamp log to file: %v", err)
 			}
 		}
 	}()
 }
 
-func getLatestTimestamps() []IPTimestamp {
-	results := make([]IPTimestamp, 0, len(ipTimestamps))
-	for _, ts := range ipTimestamps {
-		results = append(results, ts)
+// ipActive map -> slice
+func mapToSlice(m map[string]IPEvent) []IPEvent {
+	results := make([]IPEvent, 0, len(m))
+	for _, v := range m {
+		results = append(results, v)
 	}
 	return results
 }

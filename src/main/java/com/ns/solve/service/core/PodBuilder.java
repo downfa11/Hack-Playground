@@ -257,10 +257,10 @@ public class PodBuilder {
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar kindEnv = new V1EnvVar().name("PROBLEM_KIND").value(String.valueOf(kind));
-        V1EnvVar httpUrlEnv = new V1EnvVar().name("HTTP_URL").value("localhost");
         V1EnvVar httpPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
+        V1EnvVar nodePortEnv = new V1EnvVar().name("NODE_PORT").value(String.valueOf(nodePort));
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpUrlEnv, httpPortEnv);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, kindEnv, httpPortEnv, nodePortEnv);
 
         return new V1Container()
                 .name("detache-sidecar")

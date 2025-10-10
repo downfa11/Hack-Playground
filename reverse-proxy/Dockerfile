@@ -13,6 +13,7 @@ FROM alpine:3.20
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /app/detache /usr/local/bin/detache
+COPY /wsclient.html /wsclient.html
 USER appuser
 
 CMD ["/usr/local/bin/detache"]

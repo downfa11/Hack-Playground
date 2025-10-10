@@ -24,7 +24,6 @@ public class ContestProblemDto {
     private ContestProblemDifficulty difficulty;
     private List<String> tags;
     private Integer points;
-    private String flag;
     private String dockerfileLink;
     private String problemFile;
     private boolean hasContainer;
@@ -32,6 +31,10 @@ public class ContestProblemDto {
     private String source; // contest name
     private boolean isNew;
     private boolean solved;
+
+    private Double entireCount;
+    private Double correctCount;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

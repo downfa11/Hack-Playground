@@ -1,6 +1,7 @@
 package com.ns.solve.service.core;
 
 import com.ns.solve.domain.dto.problem.SolveInfo;
+import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
@@ -67,7 +68,10 @@ public class PodService {
                 .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
         Problem problem = problemService.getProblemById(problemId);
-        if (!problem.getIsChecked()) {
+        if (problem instanceof WargameProblem wargameProblem && !problem.getIsChecked()) {
+            throw new SolvedException(ProblemErrorCode.ACCESS_DENIED);
+        }
+        if (!(problem instanceof WargameProblem) && !(problem instanceof ContestProblem)) {
             throw new SolvedException(ProblemErrorCode.ACCESS_DENIED);
         }
 
@@ -133,7 +137,12 @@ public class PodService {
     private String handleProblemType(Problem problem, Long userId) {
         String type = problem.getType().getTypeName();
         if ("wargame".equals(type)) {
-            return ensureRunningOrCreate((WargameProblem) problem, userId);
+            if (problem instanceof WargameProblem wargameProblem) {
+                return ensureRunningOrCreate(wargameProblem, userId);
+            } else if (problem instanceof ContestProblem contestProblem) {
+                return ensureRunningOrCreate(contestProblem, userId);
+            }
+            return "Invalid Wargame type: " + type;
         }
         return "Invalid Problem type: " + type;
     }
@@ -160,6 +169,24 @@ public class PodService {
             return "Error creating pod";
         }
     }
+
+    public String ensureRunningOrCreate(ContestProblem contestProblem, Long userId) {
+        String namespace = contestProblem.getType().getTypeName();
+        String podName = getPodName(userId, contestProblem.getId());
+
+        try {
+            Optional<String> phaseOpt = kubernetesService.getPodPhase(namespace, podName);
+            if (phaseOpt.isPresent()) {
+                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, contestProblem.getId(), contestProblem.getKind(), contestProblem.getPortNumber(), contestProblem.getContainerResourceType());
+            }
+
+            return createAndExposePod(contestProblem, userId);
+        } catch (Exception e) {
+            log.error("Failed to ensureRunningOrCreate {}: {}", podName, e.getMessage(), e);
+            return "Error creating pod";
+        }
+    }
+
 
     private String handleExistingPod(String namespace, String podName, String phase, Long userId, Long problemId, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
         if ("Running".equals(phase) && kubernetesService.isPodReady(namespace, podName)){
@@ -201,6 +228,48 @@ public class PodService {
         String podName = getPodName(userId, problemId);
 
         if (!kubernetesService.waitPodToReady(namespace, podName, 60)) {
+            try {
+                kubernetesService.deleteService(namespace, serviceName); // pod 장애시 service 리소스 회수
+            } catch (Exception rollbackException) {
+                log.error("Rollback failed for service {} after pod creation timeout: {}", serviceName, rollbackException.getMessage());
+            }
+            return "createAndExposePod error - timed out.";
+        }
+
+        // 4. Pod Ready 후 URL 반환
+        return exposePod(userId, problemId, namespace, kind, port, nodePort);
+    }
+
+    private String createAndExposePod(ContestProblem contestProblem, Long userId) throws ApiException {
+        Long problemId = contestProblem.getId();
+        String namespace = contestProblem.getType().getTypeName();
+        Integer port = contestProblem.getPortNumber();
+        Map<String, Integer> resourceLimits = contestProblem.getResourceLimit();
+        String image = contestProblem.getDockerfileLink();
+        WargameKind kind = contestProblem.getKind();
+
+        // 1. 모든 문제에서 Service 먼저 생성
+        if(contestProblem.getKind().equals(WargameKind.WEBHACKING)){
+            port = 18889; // todo. Web 문제인 경우에는 detache의 Port를 trace
+        }
+        V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
+        kubernetesService.createService(namespace, service);
+
+        // 2. 생성된 Service 조회 후 NodePort 확보
+        String serviceName = service.getMetadata().getName();
+        V1Service createdService = kubernetesService.getService(namespace, serviceName);
+        Integer nodePort = createdService.getSpec().getPorts().get(0).getNodePort();
+
+        // 3. Pod 생성 (NodePort 전달)
+        kubernetesService.createPod(userId, problemId, port, nodePort, kind, namespace, image, resourceLimits);
+        String podName = getPodName(userId, problemId);
+
+        if (!kubernetesService.waitPodToReady(namespace, podName, 60)) {
+            try {
+                kubernetesService.deleteService(namespace, serviceName); // pod 장애시 service 리소스 회수
+            } catch (Exception rollbackException) {
+                log.error("Rollback failed for service {} after pod creation timeout: {}", serviceName, rollbackException.getMessage());
+            }
             return "createAndExposePod error - timed out.";
         }
 
