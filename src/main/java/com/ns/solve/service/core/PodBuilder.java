@@ -236,10 +236,10 @@ public class PodBuilder {
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
         V1EnvVar port = new V1EnvVar().name("PORT").value("18888");
-        V1EnvVar TargetPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
+        V1EnvVar targetPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
 
 
-        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port);
+        List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port, targetPortEnv);
 
         return new V1Container()
                 .name("attache-sidecar")
