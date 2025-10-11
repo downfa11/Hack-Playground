@@ -36,5 +36,6 @@ public class Team {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "team_members", joinColumns = @JoinColumn(name = "team_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Builder.Default
     private Set<User> members = new HashSet<>();
 }

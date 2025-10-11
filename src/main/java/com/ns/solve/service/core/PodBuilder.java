@@ -11,7 +11,7 @@ public class PodBuilder {
 
     public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
         String podName = PodBuilder.getPodName(userId, problemId);
-        List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId)));
+        List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId, targetPort)));
 
         if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
             containers.add(buildReverseProxyContainer(problemId, userId, kind, targetPort, nodePort));
@@ -231,11 +231,13 @@ public class PodBuilder {
     }
 
     // 현재 io.kubernetes.client.openapi.models.V1Container에는 lifecycle.type 없음 (kubernetes native sidecar)
-    private static V1Container buildSidecarContainer(Long problemId, Long userId) {
+    private static V1Container buildSidecarContainer(Long problemId, Long userId, Integer targetPort) {
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
         V1EnvVar port = new V1EnvVar().name("PORT").value("18888");
+        V1EnvVar TargetPortEnv = new V1EnvVar().name("HTTP_PORT").value(String.valueOf(targetPort));
+
 
         List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port);
 
@@ -249,7 +251,8 @@ public class PodBuilder {
                         .allowPrivilegeEscalation(true)
                         .runAsUser(0L)
                         .capabilities(new V1Capabilities().addAddItem("NET_ADMIN")
-                                .addAddItem("NET_RAW"))
+                                .addAddItem("NET_RAW")
+                                .addAddItem("NET_BPF"))
                 );
     }
 

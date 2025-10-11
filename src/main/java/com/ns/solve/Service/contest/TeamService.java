@@ -168,13 +168,16 @@ public class TeamService {
             teamName = affiliationName;
         }
 
+        Set<User> initialMembers = new HashSet<>();
+        initialMembers.add(user);
+
         Team team = Team.builder()
                 .name(teamName)
                 .contest(contest)
                 .createdAt(LocalDateTime.now())
+                .members(initialMembers)
                 .build();
 
-        team.getMembers().add(user);
         return teamRepository.save(team);
     }
 

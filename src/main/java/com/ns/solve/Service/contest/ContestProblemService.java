@@ -17,10 +17,7 @@ import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.ContestSolvedRepository;
 import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.service.FileService;
-import com.ns.solve.utils.exception.ErrorCode.ContestErrorCode;
-import com.ns.solve.utils.exception.ErrorCode.ContestProblemErrorCode;
-import com.ns.solve.utils.exception.ErrorCode.ProblemErrorCode;
-import com.ns.solve.utils.exception.ErrorCode.TeamErrorCode;
+import com.ns.solve.utils.exception.ErrorCode.*;
 import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,17 +41,28 @@ public class ContestProblemService {
 
 
     @Transactional
-    public ContestProblemDto createProblem(Long contestId, RegisterContestProblemRequest request) {
+    public ContestProblemDto createProblem(Long contestId, Long userId, RegisterContestProblemRequest request) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
+        if (contest.getOrganizers() == null || contest.getOrganizers().isEmpty()) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
+        if (!contest.getOrganizers().contains(user)) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
         if (contestProblemRepository.existsByContestAndTitle(contest, request.getTitle())) {
             throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
         }
 
-        ContestProblem newProblem = ContestProblem.builder()
+        LocalDateTime now = LocalDateTime.now();
+        ContestProblem problem = ContestProblem.builder()
                 .title(request.getTitle())
+                .contest(contest)
                 .type(request.getType())
+                .creator(user)
                 .detail(request.getDetail())
                 .tags(request.getTags())
                 .points(request.getPoints())
@@ -63,20 +71,30 @@ public class ContestProblemService {
                 .difficulty(request.getDifficulty())
                 .dockerfileLink(request.getDockerfileLink())
                 .problemFile(request.getProblemFile())
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
 
-        newProblem.setContest(contest);
-        contestProblemRepository.save(newProblem);
-
+        ContestProblem newProblem = contestProblemRepository.save(problem);
         return convertToDto(newProblem, newProblem.getContest().getTitle(), null);
     }
 
     @Transactional
-    public ContestProblemDto updateProblem(Long problemId, ModifyContestProblemRequest request) {
+    public ContestProblemDto updateProblem(Long problemId, Long userId, ModifyContestProblemRequest request) {
         ContestProblem problem = contestProblemRepository.findById(problemId)
                 .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
-        if (!problem.getTitle().equals(request.getTitle()) && contestProblemRepository.existsByContestAndTitle(problem.getContest(), request.getTitle())) {
+        Contest contest = problem.getContest();
+        if (contest.getOrganizers() == null || contest.getOrganizers().isEmpty()) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
+        if (!contest.getOrganizers().contains(user)) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
+        if (!problem.getTitle().trim().equals(request.getTitle().trim())
+                && contestProblemRepository.existsByContestAndTitle(problem.getContest(), request.getTitle())) {
             throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
         }
 
@@ -89,9 +107,10 @@ public class ContestProblemService {
         problem.setDifficulty(request.getDifficulty());
         problem.setDockerfileLink(request.getDockerfileLink());
         problem.setProblemFile(request.getProblemFile());
+        problem.setUpdatedAt(LocalDateTime.now());
 
-        contestProblemRepository.save(problem);
-        return convertToDto(problem, problem.getContest().getTitle(), null);
+        ContestProblem newProblem = contestProblemRepository.save(problem);
+        return convertToDto(newProblem, newProblem.getContest().getTitle(), null);
     }
 
     @Transactional

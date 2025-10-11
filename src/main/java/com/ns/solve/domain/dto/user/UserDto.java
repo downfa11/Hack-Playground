@@ -38,6 +38,8 @@ public class UserDto {
     private List<UserContestDto> contests;
 
     public static UserDto from(User user, List<UserContestDto> userContests) {
+        if(user==null) return null;
+
         return UserDto.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())

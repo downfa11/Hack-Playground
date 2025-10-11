@@ -25,14 +25,20 @@ public class ContestProblemController {
     private final ContestProblemService contestProblemService;
 
     @PostMapping
-    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest) {
-        ContestProblemDto newProblem = contestProblemService.createProblem(contestId, registerContestProblemRequest);
+    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        ContestProblemDto newProblem = contestProblemService.createProblem(contestId, userId, registerContestProblemRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(newProblem);
     }
 
     @PutMapping("/{problemId}")
-    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest) {
-        ContestProblemDto updatedProblem = contestProblemService.updateProblem(problemId, modifyContestProblemRequest);
+    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        ContestProblemDto updatedProblem = contestProblemService.updateProblem(problemId, userId, modifyContestProblemRequest);
         return ResponseEntity.ok(updatedProblem);
     }
 

@@ -6,19 +6,20 @@ import (
 )
 
 type Config struct {
-	ProblemID string
-	UserID    string
-	UUID      string
-	FilePath  string
-	HttpPort  string
+	ProblemID  string
+	UserID     string
+	FilePath   string
+	HttpPort   string
+	TargetPort string
 }
 
 func LoadConfig() Config {
 	cfg := Config{
-		ProblemID: os.Getenv("PROBLEM_ID"),
-		UserID:    os.Getenv("USER_ID"),
-		FilePath:  os.Getenv("FILE_PATH"),
-		HttpPort:  os.Getenv("PORT"),
+		ProblemID:  os.Getenv("PROBLEM_ID"),
+		UserID:     os.Getenv("USER_ID"),
+		FilePath:   os.Getenv("FILE_PATH"),
+		HttpPort:   os.Getenv("PORT"),
+		TargetPort: os.Getenv("TARGET_PORT"),
 	}
 
 	if cfg.FilePath == "" {
