@@ -8,8 +8,10 @@ import com.ns.solve.domain.dto.user.UserDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestSolved;
 import com.ns.solve.domain.entity.contest.Team;
+import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.ContestType;
+import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.ContestSolvedRepository;
@@ -34,6 +36,7 @@ public class TeamService {
     private final ContestRepository contestRepository;
     private final UserRepository userRepository;
     private final ContestSolvedRepository contestSolvedRepository;
+    private final AffiliationRepository affiliationRepository;
 
     @Transactional
     public TeamDto createTeam(Long contestId, TeamCreateDto teamCreateDto) {
@@ -56,9 +59,32 @@ public class TeamService {
 
     @Transactional
     public TeamDto joinTeam(Long contestId, JoinTeamRequest joinRequest) {
-        Team team = teamRepository.findById(joinRequest.getTeamId())
-                .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND));
 
+        Team team;
+        if(contest.getType().equals(ContestType.GROUP)) {
+            if(joinRequest.getAffiliationId()==null)
+                throw new SolvedException(TeamErrorCode.AFFILIATION_NOT_SELECTED);
+
+            Affiliation affiliation = affiliationRepository.findById(joinRequest.getAffiliationId())
+                    .orElseThrow(() -> new SolvedException(TeamErrorCode.AFFILIATION_NOT_SELECTED));
+
+            // 팀이 없으면 소속 이름으로 만들거나, 소속 이름으로 참가
+            String affiliationName = affiliation.getName();
+            team = teamRepository.findByContestIdAndName(contestId, affiliationName)
+                    .orElseGet(() -> {
+                        Team newTeam = Team.builder()
+                                .contest(contest)
+                                .name(affiliationName)
+                                .members(new HashSet<>())
+                                .build();
+                        return teamRepository.save(newTeam);
+                    });
+        } else {
+            team = teamRepository.findById(joinRequest.getTeamId())
+                    .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
+        }
         if (!team.getContest().getId().equals(contestId)) {
             throw new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND);
         }
@@ -151,22 +177,12 @@ public class TeamService {
     }
 
     @Transactional
-    public Team getOrCreateTeamForContest(Long contestId, User user, String affiliationName) {
-        Optional<Team> existingTeam = teamRepository.findByContestIdAndMembers_Id(contestId, user.getId());
+    public Team getOrCreateTeamForContest(Contest contest, User user) {
+        Optional<Team> existingTeam = teamRepository.findByContestIdAndMembers_Id(contest.getId(), user.getId());
         if (existingTeam.isPresent()) return existingTeam.get();
 
-        Contest contest = contestRepository.findById(contestId)
-                .orElseThrow(() -> new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND));
-
         String teamName;
-        if (contest.getType() == ContestType.INDIVIDUAL) { // 개인전
-            teamName = user.getNickname();
-        } else {
-            if (affiliationName == null || affiliationName.isBlank()) { // 단체전
-                throw new SolvedException(TeamErrorCode.AFFILIATION_NOT_SELECTED);
-            }
-            teamName = affiliationName;
-        }
+        teamName = user.getNickname();
 
         Set<User> initialMembers = new HashSet<>();
         initialMembers.add(user);
@@ -180,7 +196,4 @@ public class TeamService {
 
         return teamRepository.save(team);
     }
-
-
-
 }

@@ -17,6 +17,7 @@ import com.ns.solve.repository.contest.ContestRepository;
 import com.ns.solve.repository.contest.PrizeRepository;
 import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.utils.exception.ErrorCode.ContestErrorCode;
+import com.ns.solve.utils.exception.ErrorCode.TeamErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -278,11 +279,11 @@ public class ContestService {
     }
 
     @Transactional
-    public void joinContest(Long contestId, JoinContestRequest joinRequest) {
+    public void joinContest(Long contestId, Long userId) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        User user = userRepository.findById(joinRequest.getUserId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
 
         ZonedDateTime startTimeKST = contest.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
@@ -291,7 +292,6 @@ public class ContestService {
         if (nowKST().isBefore(startTimeKST) || nowKST().isAfter(endTimeKST)) {
             throw new SolvedException(ContestErrorCode.CONTEST_INVALID_DATE);
         }
-
 
         // 운영자는 참가자 등록 불필요
         if (contest.getOrganizers().contains(user)) {
@@ -303,18 +303,14 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
         }
 
-        // 단체전 참가 가능 소속 검사
-        if (contest.getType() == ContestType.GROUP) {
-            throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
-        }
-
         // 참가자 등록
         if (contest.getParticipants() == null) contest.setParticipants(new HashSet<>());
         contest.getParticipants().add(user);
         contestRepository.save(contest);
 
-        // 팀 생성 or 반환
-        teamService.getOrCreateTeamForContest(contestId, user, null);
+        if(contest.getType().equals(ContestType.INDIVIDUAL)) {
+            teamService.getOrCreateTeamForContest(contest, user);
+        }
     }
 
 
@@ -417,50 +413,6 @@ public class ContestService {
         }
 
         return Collections.emptySet();
-    }
-
-    @Transactional
-    public void joinGroupContest(Long contestId, Long userId, Long affiliationId) {
-        Contest contest = contestRepository.findById(contestId)
-                .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new SolvedException(ContestErrorCode.USER_NOT_FOUND));
-
-        if (contest.getType() != ContestType.GROUP) {
-            throw new SolvedException(ContestErrorCode.INVALID_CONTEST_TYPE);
-        }
-
-        ZonedDateTime startTimeKST = contest.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
-        ZonedDateTime endTimeKST = contest.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
-
-        if (nowKST().isBefore(startTimeKST) || nowKST().isAfter(endTimeKST)) {
-            throw new SolvedException(ContestErrorCode.CONTEST_INVALID_DATE);
-        }
-
-
-        Affiliation chosenAffiliation = user.getAffiliations().stream()
-                .filter(a -> a.getId().equals(affiliationId))
-                .findFirst()
-                .orElseThrow(() -> new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION));
-
-        Set<Affiliation> eligibleAffiliations = getEligibleAffiliationsForContest(contestId, userId);
-        if (!eligibleAffiliations.contains(chosenAffiliation)) {
-            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-        }
-
-        if (contest.getParticipants() == null) {
-            contest.setParticipants(new HashSet<>());
-        }
-        if (contest.getParticipants().contains(user)) {
-            throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
-        }
-
-        Team team = teamService.getOrCreateTeamForContest(contestId, user, chosenAffiliation.getName());
-        teamRepository.save(team);
-
-        contest.getParticipants().add(user);
-        contestRepository.save(contest);
     }
 
     private void validateContestTime(LocalDateTime start, LocalDateTime end) {

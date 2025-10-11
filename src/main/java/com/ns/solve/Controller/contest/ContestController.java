@@ -5,9 +5,11 @@ import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.vo.ContestStatus;
 import com.ns.solve.service.contest.ContestService;
+import com.ns.solve.utils.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,8 +54,11 @@ public class ContestController {
     }
 
     @PostMapping("/{contestId}/join")
-    public ResponseEntity<Void> joinContest(@PathVariable Long contestId, @RequestBody JoinContestRequest joinContestRequest) {
-        contestService.joinContest(contestId, joinContestRequest);
+    public ResponseEntity<Void> joinContest(@PathVariable Long contestId, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        contestService.joinContest(contestId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -77,15 +82,6 @@ public class ContestController {
                 .collect(Collectors.toSet());
 
         return ResponseEntity.ok(dtoSet);
-    }
-
-    @PostMapping("/{contestId}/join-group")
-    public ResponseEntity<Void> joinGroupContest(
-            @PathVariable Long contestId,
-            @RequestBody JoinGroupContestRequest request
-    ) {
-        contestService.joinGroupContest(contestId, request.getUserId(), request.getAffiliationId());
-        return ResponseEntity.ok().build();
     }
 
 }
