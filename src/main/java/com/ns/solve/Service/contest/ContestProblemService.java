@@ -10,6 +10,7 @@ import com.ns.solve.domain.entity.contest.ContestSolved;
 import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.user.User;
+import com.ns.solve.domain.vo.FileInfo;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestProblemRepository;
@@ -19,11 +20,13 @@ import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.service.FileService;
 import com.ns.solve.utils.exception.ErrorCode.*;
 import com.ns.solve.utils.exception.SolvedException;
+import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,18 +44,13 @@ public class ContestProblemService {
 
 
     @Transactional
-    public ContestProblemDto createProblem(Long contestId, Long userId, RegisterContestProblemRequest request) {
+    public ContestProblemDto createProblem(Long contestId, Long userId, RegisterContestProblemRequest request, MultipartFile file) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
-        if (contest.getOrganizers() == null || contest.getOrganizers().isEmpty()) {
-            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-        }
-        if (!contest.getOrganizers().contains(user)) {
-            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-        }
+        checkContestOrganizerAuthorizationOrThrow(user, contest);
         if (contestProblemRepository.existsByContestAndTitle(contest, request.getTitle())) {
             throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
         }
@@ -68,31 +66,28 @@ public class ContestProblemService {
                 .points(request.getPoints())
                 .kind(request.getKind())
                 .flag(request.getFlag())
+                .portNumber(request.getPortNumber())
                 .difficulty(request.getDifficulty())
                 .dockerfileLink(request.getDockerfileLink())
-                .problemFile(request.getProblemFile())
+                .entireCount((double) 0)
+                .correctCount((double) 0)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
 
         ContestProblem newProblem = contestProblemRepository.save(problem);
+        handleFileUpload(file, newProblem);
         return convertToDto(newProblem, newProblem.getContest().getTitle(), null);
     }
 
     @Transactional
-    public ContestProblemDto updateProblem(Long problemId, Long userId, ModifyContestProblemRequest request) {
+    public ContestProblemDto updateProblem(Long problemId, Long userId, ModifyContestProblemRequest request, MultipartFile file) {
         ContestProblem problem = contestProblemRepository.findById(problemId)
                 .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
 
-        Contest contest = problem.getContest();
-        if (contest.getOrganizers() == null || contest.getOrganizers().isEmpty()) {
-            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-        }
-        if (!contest.getOrganizers().contains(user)) {
-            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
-        }
+        checkContestOrganizerAuthorizationOrThrow(user, problem.getContest());
         if (!problem.getTitle().trim().equals(request.getTitle().trim())
                 && contestProblemRepository.existsByContestAndTitle(problem.getContest(), request.getTitle())) {
             throw new SolvedException(ContestProblemErrorCode.DUPLICATE_PROBLEM_TITLE);
@@ -105,11 +100,12 @@ public class ContestProblemService {
         problem.setTags(request.getTags());
         problem.setFlag(request.getFlag());
         problem.setDifficulty(request.getDifficulty());
+        problem.setPortNumber(request.getPortNumber());
         problem.setDockerfileLink(request.getDockerfileLink());
-        problem.setProblemFile(request.getProblemFile());
         problem.setUpdatedAt(LocalDateTime.now());
 
         ContestProblem newProblem = contestProblemRepository.save(problem);
+        handleFileUpload(file, newProblem);
         return convertToDto(newProblem, newProblem.getContest().getTitle(), null);
     }
 
@@ -119,6 +115,38 @@ public class ContestProblemService {
             throw new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND);
         }
         contestProblemRepository.deleteById(problemId);
+    }
+
+    @Transactional
+    public void uploadFile(Long problemId, Long userId, MultipartFile file) {
+        ContestProblem problem = contestProblemRepository.findById(problemId)
+                .orElseThrow(() -> new SolvedException(ContestProblemErrorCode.CONTEST_PROBLEM_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND));
+
+        checkContestOrganizerAuthorizationOrThrow(user, problem.getContest());
+        handleFileUpload(file, problem);
+    }
+
+    private void handleFileUpload(MultipartFile file, ContestProblem problem) {
+        if (file != null && !file.isEmpty()) {
+            if (problem.getProblemFile() != null) {
+                fileService.deleteFile(problem.getProblemFile());
+            }
+
+            FileInfo fileInfo = fileService.uploadFile(problem.getId(), file);
+            problem.setProblemFile(fileInfo.fileName());
+            problem.setProblemFileSize(fileInfo.fileSize());
+
+            contestProblemRepository.save(problem);
+            log.info("ContestProblem {} file uploaded: {}", problem.getId(), fileInfo.fileName());
+        }
+    }
+
+    private void checkContestOrganizerAuthorizationOrThrow(User user, Contest contest) {
+        if (contest.getOrganizers() == null || contest.getOrganizers().isEmpty() || !contest.getOrganizers().contains(user)) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_AFFILIATION);
+        }
     }
 
     @Transactional
@@ -213,17 +241,26 @@ public class ContestProblemService {
         ContestProblem problem = contestProblemRepository.findById(problemId)
                 .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
 
+        if (problem.getFlag() == null || flag == null) {
+            return false;
+        }
+
+        Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId)
+                .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
+
+        boolean alreadySolved = contestSolvedRepository.existsByContest_IdAndTeam_IdAndSolvedProblem_Id(contestId, team.getId(), problemId);
         boolean isCorrect = problem.getFlag().equals(flag);
 
-        if (isCorrect) {
-            Team team = teamRepository.findByContestIdAndMembers_Id(contestId, userId)
-                    .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
+        if (isCorrect && !alreadySolved) {
             recordSolve(contestId, team.getId(), problemId, userId);
-
             int problemPoints = problem.getPoints();
             team.setPoints(team.getPoints() + problemPoints);
             teamRepository.save(team);
+
+            problem.setCorrectCount(problem.getCorrectCount() + 1);
         }
+        problem.setEntireCount(problem.getEntireCount() + 1);
+        contestProblemRepository.save(problem);
 
         return isCorrect;
     }

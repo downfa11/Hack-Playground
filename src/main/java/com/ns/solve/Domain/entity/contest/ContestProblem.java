@@ -33,6 +33,9 @@ public class ContestProblem extends Problem {
     @Column(nullable = true)
     private String problemFile;
 
+    @Column(nullable = true)
+    private Long problemFileSize;
+
     private Integer points;
 
     @Enumerated(EnumType.STRING)
@@ -41,31 +44,4 @@ public class ContestProblem extends Problem {
     @Enumerated(EnumType.STRING)
     private WargameKind kind;
     private boolean isLocked;
-
-    public WargameProblem convertToPlatformProblem(String contestName) {
-        WargameProblem platformProblem = new WargameProblem();
-
-        platformProblem.setTitle(this.getTitle());
-        platformProblem.setDetail(this.getDetail());
-        platformProblem.setType(this.getType()); // ProblemType (Wargame, Assignment, Algorithm)
-        platformProblem.setCreator(this.getCreator());
-        platformProblem.setEntireCount(this.getEntireCount());
-        platformProblem.setCorrectCount(this.getCorrectCount());
-        platformProblem.setTags(this.getTags());
-        platformProblem.setContainerResourceType(this.getContainerResourceType());
-        platformProblem.setPortNumber(this.getPortNumber());
-        platformProblem.setResourceLimit(this.getResourceLimit());
-        platformProblem.setCreatedAt(this.getCreatedAt());
-        platformProblem.setUpdatedAt(this.getUpdatedAt());
-
-        platformProblem.setKind(this.getDomainKind().map(domainKind -> (WargameKind) domainKind).orElse(null));
-        platformProblem.setFlag(this.getFlag());
-        platformProblem.setDockerfileLink(this.getDockerfileLink());
-        platformProblem.setProblemFile(this.getProblemFile());
-
-        platformProblem.setSource(contestName);
-        platformProblem.setIsChecked(false);
-
-        return platformProblem;
-    }
 }

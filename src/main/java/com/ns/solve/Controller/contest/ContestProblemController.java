@@ -11,9 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,21 +26,23 @@ public class ContestProblemController {
 
     private final ContestProblemService contestProblemService;
 
-    @PostMapping
-    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest, Authentication authentication) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest,
+                                                           @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
 
-        ContestProblemDto newProblem = contestProblemService.createProblem(contestId, userId, registerContestProblemRequest);
+        ContestProblemDto newProblem = contestProblemService.createProblem(contestId, userId, registerContestProblemRequest, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(newProblem);
     }
 
-    @PutMapping("/{problemId}")
-    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest, Authentication authentication) {
+    @PutMapping(value="/{problemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest,
+                                                           @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
 
-        ContestProblemDto updatedProblem = contestProblemService.updateProblem(problemId, userId, modifyContestProblemRequest);
+        ContestProblemDto updatedProblem = contestProblemService.updateProblem(problemId, userId, modifyContestProblemRequest, file);
         return ResponseEntity.ok(updatedProblem);
     }
 
@@ -46,6 +50,16 @@ public class ContestProblemController {
     public ResponseEntity<Void> deleteProblem(@PathVariable Long problemId) {
         contestProblemService.deleteProblem(problemId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/{problemId}/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MessageEntity> uploadProblemFile(@PathVariable Long problemId, @RequestPart("file") MultipartFile file, Authentication authentication) {
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        contestProblemService.uploadFile(problemId, userId, file);
+        return ResponseEntity.ok(new MessageEntity("file upload", "File uploaded successfully."));
     }
 
     @PostMapping("/{problemId}/lock")

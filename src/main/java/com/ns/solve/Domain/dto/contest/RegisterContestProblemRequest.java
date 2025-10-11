@@ -29,8 +29,10 @@ public class RegisterContestProblemRequest {
     @NotBlank(message = "문제 유형은 필수입니다.")
     private WargameKind kind;
 
+    @NotBlank(message = "플래그(Flag)는 필수입니다.")
     private String flag;
+
+    private int portNumber;
     private String dockerfileLink;
-    private String problemFile;
     private ContestProblemDifficulty difficulty;
 }
