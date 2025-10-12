@@ -3,6 +3,7 @@ package com.ns.solve.utils.mapper;
 import com.ns.solve.domain.dto.contest.UserContestDto;
 import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.dto.user.UserFirstBloodDto;
+import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.dto.user.UserDto;
@@ -26,9 +27,7 @@ public class UserMapper {
                 solvedTitles,
                 user.getCreated(),
                 user.getLastActived(),
-                user.getAffiliations().stream()
-                        .map(AffiliationDto::from)
-                        .collect(Collectors.toList()),
+                (List<Affiliation>) user.getAffiliations(),
                 contestDtos
         );
     }
@@ -46,9 +45,7 @@ public class UserMapper {
                 null,
                 user.getCreated(),
                 user.getLastActived(),
-                user.getAffiliations().stream()
-                        .map(AffiliationDto::from)
-                        .collect(Collectors.toList()),
+                (List<Affiliation>) user.getAffiliations(),
                 contestDtos
         );
     }
