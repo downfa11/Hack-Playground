@@ -27,7 +27,8 @@ public class UserMapper {
                 solvedTitles,
                 user.getCreated(),
                 user.getLastActived(),
-                (List<Affiliation>) user.getAffiliations(),
+                user.getAffiliations() != null ? user.getAffiliations().stream()
+                        .collect(Collectors.toList()) : List.of(),
                 contestDtos
         );
     }
@@ -45,7 +46,8 @@ public class UserMapper {
                 null,
                 user.getCreated(),
                 user.getLastActived(),
-                (List<Affiliation>) user.getAffiliations(),
+                user.getAffiliations() != null ? user.getAffiliations().stream()
+                        .collect(Collectors.toList()) : List.of(),
                 contestDtos
         );
     }

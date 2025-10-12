@@ -51,7 +51,8 @@ public class UserDto {
                 .fieldScores(user.getFieldScores())
                 .created(user.getCreated())
                 .lastActived(user.getLastActived())
-                .affiliations((List<Affiliation>) user.getAffiliations())
+                .affiliations(user.getAffiliations() != null ? user.getAffiliations().stream()
+                        .collect(Collectors.toList()) : List.of())
                 .contests(userContests)
                 .build();
     }
