@@ -34,7 +34,7 @@ public class UserDto {
     private LocalDateTime created;
     private LocalDateTime lastActived;
 
-    private List<Affiliation> affiliations;
+    private List<AffiliationDto> affiliations;
     private List<UserContestDto> contests;
 
     public static UserDto from(User user, List<UserContestDto> userContests) {
@@ -52,6 +52,7 @@ public class UserDto {
                 .created(user.getCreated())
                 .lastActived(user.getLastActived())
                 .affiliations(user.getAffiliations() != null ? user.getAffiliations().stream()
+                        .map(AffiliationDto::from)
                         .collect(Collectors.toList()) : List.of())
                 .contests(userContests)
                 .build();

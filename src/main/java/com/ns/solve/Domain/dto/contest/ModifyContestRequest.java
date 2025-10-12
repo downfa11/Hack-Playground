@@ -3,7 +3,6 @@ package com.ns.solve.domain.dto.contest;
 import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestType;
-import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import lombok.Builder;
 import lombok.Getter;
