@@ -113,7 +113,9 @@ public class UserService {
                     User user = userPage.getContent().get(i);
                     long rank = page * size + i + 1;
                     long score = (domainKind == null) ? user.getScore() : user.getFieldScores().getOrDefault(fieldKey, 0L);
-                    List<Affiliation> affiliations = user.getAffiliations().stream().collect(Collectors.toList());
+                    List<AffiliationDto> affiliations = user.getAffiliations().stream()
+                            .map(aff -> AffiliationDto.from(aff))
+                            .collect(Collectors.toList());
                     return new UserRankDto(rank, user.getNickname(), score, affiliations, user.getCreated(), user.getLastActived());
                 }).toList();
 
