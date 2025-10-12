@@ -4,20 +4,28 @@ import com.ns.solve.domain.entity.contest.Team;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class TeamDto {
-    private Long id;
+    private Long teamId;
+    private Long contestId;
     private String name;
     private String password;
-    private Long contestId;
+    private int score;
+    private List<String> memberList;
 
     public static TeamDto from(Team team) {
         return TeamDto.builder()
-                .id(team.getId())
+                .teamId(team.getId())
                 .name(team.getName())
                 .password(team.getPassword())
                 .contestId(team.getContest().getId())
+                .score(team.getPoints())
+                .memberList(team.getMembers().stream()
+                        .map(m -> m.getNickname())
+                        .toList())
                 .build();
     }
 }
