@@ -333,10 +333,7 @@ public class ContestService {
             return false;
         }
 
-        if (contest.getType() == ContestType.INDIVIDUAL) return true;
-
-        // 팀/단체전의 경우 실제 팀에 소속되어 있어야 참가 중으로 판단
-        return teamRepository.existsByContestIdAndMembersContains(contestId, user);
+        return true;
     }
 
     public List<UserContestDto> getUserContests(User user) {
