@@ -49,17 +49,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByNicknameStartingWithIgnoreCase(String nickname);
 
-    @Query(
-            value = """
-            SELECT u.id, u.nickname, u.score, u.created, u.last_actived,
-                   ROW_NUMBER() OVER (ORDER BY u.score DESC) AS rank
-            FROM user u
-            WHERE u.id IN :userIds
-        """,
-            nativeQuery = true
-    )
-    List<Map<String, Object>> findUsersWithRankByIds(@Param("userIds") List<Long> userIds);
-
     @Query(value = """
     SELECT rank FROM (
         SELECT user_id, ROW_NUMBER() OVER (ORDER BY score DESC) AS rank

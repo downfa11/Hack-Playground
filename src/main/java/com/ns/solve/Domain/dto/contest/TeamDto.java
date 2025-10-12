@@ -4,8 +4,6 @@ import com.ns.solve.domain.entity.contest.Team;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
 @Builder
 public class TeamDto {
@@ -14,7 +12,6 @@ public class TeamDto {
     private String name;
     private String password;
     private int score;
-    private List<String> memberList;
 
     public static TeamDto from(Team team) {
         return TeamDto.builder()
@@ -23,9 +20,6 @@ public class TeamDto {
                 .password(team.getPassword())
                 .contestId(team.getContest().getId())
                 .score(team.getPoints())
-                .memberList(team.getMembers().stream()
-                        .map(m -> m.getNickname())
-                        .toList())
                 .build();
     }
 }

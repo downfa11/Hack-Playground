@@ -1,10 +1,6 @@
 package com.ns.solve.controller.contest;
 
-import com.ns.solve.domain.dto.contest.JoinTeamRequest;
-import com.ns.solve.domain.dto.contest.ScoreboardDto;
-import com.ns.solve.domain.dto.contest.TeamCreateDto;
-import com.ns.solve.domain.dto.contest.TeamDto;
-import com.ns.solve.domain.dto.user.UserDto;
+import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.service.contest.TeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,8 +29,8 @@ public class ContestTeamController {
     }
 
     @GetMapping("/{teamId}/members")
-    public ResponseEntity<List<UserDto>> getTeamMembers(@PathVariable Long contestId, @PathVariable Long teamId) {
-        List<UserDto> members = teamService.getTeamMembers(teamId);
+    public ResponseEntity<List<TeamUserScoreDto>> getTeamMembers(@PathVariable Long contestId, @PathVariable Long teamId) {
+        List<TeamUserScoreDto> members = teamService.getTeamMembers(contestId, teamId);
         return ResponseEntity.ok(members);
     }
 

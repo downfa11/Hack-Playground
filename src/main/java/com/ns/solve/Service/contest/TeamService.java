@@ -1,10 +1,6 @@
 package com.ns.solve.service.contest;
 
-import com.ns.solve.domain.dto.contest.JoinTeamRequest;
-import com.ns.solve.domain.dto.contest.ScoreboardDto;
-import com.ns.solve.domain.dto.contest.TeamCreateDto;
-import com.ns.solve.domain.dto.contest.TeamDto;
-import com.ns.solve.domain.dto.user.UserDto;
+import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.ContestSolved;
 import com.ns.solve.domain.entity.contest.Team;
@@ -18,7 +14,6 @@ import com.ns.solve.repository.contest.ContestSolvedRepository;
 import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.utils.exception.ErrorCode.TeamErrorCode;
 import com.ns.solve.utils.exception.SolvedException;
-import com.ns.solve.utils.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,23 +102,25 @@ public class TeamService {
 
 
     @Transactional(readOnly = true)
-    public List<UserDto> getTeamMembers(Long teamId) {
+    public List<TeamUserScoreDto> getTeamMembers(Long contestId, Long teamId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
 
-        List<Long> memberIds = team.getMembers().stream()
-                .map(User::getId)
-                .toList();
-        List<Map<String, Object>> usersWithRank = userRepository.findUsersWithRankByIds(memberIds);
+        List<ContestSolved> solvedList = contestSolvedRepository.findByContest_Id(contestId);
 
-        Map<Long, Long> userRankMap = usersWithRank.stream()
-                .collect(Collectors.toMap(row -> ((Number) row.get("id")).longValue(), row -> ((Number) row.get("rank")).longValue()));
+        // 해당 팀의 사용자별 점수 집계
+        Map<Long, Integer> userScores = new HashMap<>();
+        for (ContestSolved solve : solvedList) {
+            User user = solve.getSolvedUser();
+            if (team.getMembers().contains(user)) {
+                int points = solve.getSolvedProblem().getPoints();
+                userScores.merge(user.getId(), points, Integer::sum);
+            }
+        }
 
+        // UserContestDto 변환
         return team.getMembers().stream()
-                .map(member -> {
-                    long rank = userRankMap.getOrDefault(member.getId(), 0L);
-                    return UserMapper.mapperToUserDto(member, rank, null, null);
-                })
+                .map(user -> TeamUserScoreDto.from(user, userScores.getOrDefault(user.getId(), 0)))
                 .collect(Collectors.toList());
     }
 
