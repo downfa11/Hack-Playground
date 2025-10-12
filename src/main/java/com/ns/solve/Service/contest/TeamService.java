@@ -73,6 +73,7 @@ public class TeamService {
                                 .contest(contest)
                                 .name(affiliationName)
                                 .members(new HashSet<>())
+                                .createdAt(LocalDateTime.now())
                                 .build();
                         return teamRepository.save(newTeam);
                     });
