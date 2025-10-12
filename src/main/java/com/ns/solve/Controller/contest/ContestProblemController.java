@@ -27,7 +27,7 @@ public class ContestProblemController {
     private final ContestProblemService contestProblemService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestBody RegisterContestProblemRequest registerContestProblemRequest,
+    public ResponseEntity<ContestProblemDto> createProblem(@PathVariable Long contestId, @RequestPart("data") RegisterContestProblemRequest registerContestProblemRequest,
                                                            @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
@@ -37,7 +37,7 @@ public class ContestProblemController {
     }
 
     @PutMapping(value="/{problemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestBody ModifyContestProblemRequest modifyContestProblemRequest,
+    public ResponseEntity<ContestProblemDto> updateProblem(@PathVariable Long problemId, @RequestPart("data") ModifyContestProblemRequest modifyContestProblemRequest,
                                                            @RequestPart(value = "file", required = false) MultipartFile file, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
