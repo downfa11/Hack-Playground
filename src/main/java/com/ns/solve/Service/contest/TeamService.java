@@ -161,7 +161,7 @@ public class TeamService {
             teamScores.computeIfPresent(teamId, (k, v) -> v + problemScore);
 
             ScoreboardDto dto = new ScoreboardDto();
-            dto.setTime(solve.getSolvedTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+            dto.setTime(solve.getSolvedTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             teamScores.forEach((id, score) -> dto.addScore(teamNames.get(id), score));
             timeSeriesData.add(dto);
         }

@@ -303,6 +303,11 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.ALREADY_REGISTERED);
         }
 
+        // 참가자 권한 검증
+        if (!isEligibleToJoin(contest, user)) {
+            throw new SolvedException(ContestErrorCode.NOT_ELIGIBLE_TO_JOIN);
+        }
+
         // 참가자 등록
         if (contest.getParticipants() == null) contest.setParticipants(new HashSet<>());
         contest.getParticipants().add(user);
@@ -311,6 +316,40 @@ public class ContestService {
         if(contest.getType().equals(ContestType.INDIVIDUAL)) {
             teamService.getOrCreateTeamForContest(contest, user);
         }
+    }
+
+    private boolean isEligibleToJoin(Contest contest, User user) {
+        // 소속 제한이 없으면 누구나 참가 가능
+        if (contest.getAffiliations().isEmpty() && contest.getAffiliationTypes().isEmpty()) {
+            return true;
+        }
+
+        Set<Affiliation> userAffiliations = user.getAffiliations();
+
+        // 사용자에게 소속이 없으면 참가 불가
+        if (userAffiliations == null || userAffiliations.isEmpty()) {
+            return false;
+        }
+
+        // 특정 소속이 지정된 경우
+        if (!contest.getAffiliations().isEmpty()) {
+            boolean hasMatchingAffiliation = userAffiliations.stream()
+                    .anyMatch(contest.getAffiliations()::contains);
+            if (hasMatchingAffiliation) {
+                return true;
+            }
+        }
+
+        // 소속 유형이 지정된 경우
+        if (!contest.getAffiliationTypes().isEmpty()) {
+            boolean hasMatchingType = userAffiliations.stream()
+                    .anyMatch(a -> contest.getAffiliationTypes().contains(a.getType()));
+            if (hasMatchingType) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

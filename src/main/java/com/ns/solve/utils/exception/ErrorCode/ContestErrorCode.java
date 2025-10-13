@@ -14,7 +14,8 @@ public enum ContestErrorCode implements BaseErrorCode {
     CONTEST_INVALID_DATE(HttpStatus.INTERNAL_SERVER_ERROR, "대회 날짜가 잘못되었습니다."),
     NOT_ELIGIBLE_AFFILIATION(HttpStatus.UNAUTHORIZED, "대회의 참가 조건을 만족하지 않습니다."),
     CONTEST_ALREADY_EXISTS(HttpStatus.INTERNAL_SERVER_ERROR, "이미 존재하는 대회입니다."),
-    INVALID_CONTEST_TYPE(HttpStatus.INTERNAL_SERVER_ERROR, "잘못된 대회 유형입니다.");
+    INVALID_CONTEST_TYPE(HttpStatus.INTERNAL_SERVER_ERROR, "잘못된 대회 유형입니다."),
+    NOT_ELIGIBLE_TO_JOIN(HttpStatus.UNAUTHORIZED, "참가할 자격이 안됩니다.");
     private final HttpStatus status;
     private final String message;
 }
