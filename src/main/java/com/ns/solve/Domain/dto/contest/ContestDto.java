@@ -23,7 +23,7 @@ public class ContestDto {
     private LocalDateTime endTime;
     private ContestType type;
     private String organizerName;
-    private List<String> organizers;
+    private List<Long> organizerIds;
     private Integer participantCount;
     private Integer teamCount;
     private Integer maxTeamSize;
@@ -44,8 +44,8 @@ public class ContestDto {
                 .endTime(contest.getEndTime())
                 .type(contest.getType())
                 .organizerName(contest.getOrganizerName())
-                .organizers(contest.getOrganizers().stream()
-                        .map(organizer -> organizer.getNickname())
+                .organizerIds(contest.getOrganizers().stream()
+                        .map(organizer -> organizer.getId())
                         .toList())
                 .participantCount(participantCount)
                 .teamCount(teamCount)
