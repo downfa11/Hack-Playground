@@ -38,4 +38,11 @@ public interface ContestRepository extends JpaRepository<Contest, Long> {
     // 월별 참가자 수
     @Query("SELECT COUNT(DISTINCT p) FROM Contest c JOIN c.participants p WHERE c.startTime >= :startOfMonth")
     int countDistinctParticipantsByStartTimeAfter(@Param("startOfMonth") LocalDateTime startOfMonth);
+
+
+    // 해당 대회의 운영자인지 userId로 검색
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM Contest c JOIN c.organizers u " +
+            "WHERE c.id = :contestId AND u.id = :userId")
+    boolean isUserOrganizer(@Param("contestId") Long contestId, @Param("userId") Long userId);
 }

@@ -1,8 +1,9 @@
 package com.ns.solve.domain.dto.contest;
 
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
+import com.ns.solve.domain.vo.WargameKind;
+import io.kubernetes.client.proto.V1Networking;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +16,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContestProblemDto {
+public class ContestProblemForOrganizerDto {
     private Long id;
     private String title;
     private String detail;
@@ -23,13 +24,13 @@ public class ContestProblemDto {
     private WargameKind kind;
     private ContestProblemDifficulty difficulty;
     private List<String> tags;
+    private String flag;
     private Integer points;
+    private String dockerfileLink;
+    private Integer portNumber;
     private String problemFile;
     private boolean hasContainer;
     private boolean isLocked;
-    private String source; // contest name
-    private boolean isNew;
-    private boolean solved;
 
     private Double entireCount;
     private Double correctCount;

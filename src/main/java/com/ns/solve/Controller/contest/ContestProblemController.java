@@ -2,6 +2,7 @@ package com.ns.solve.controller.contest;
 
 import com.ns.solve.domain.dto.MessageEntity;
 import com.ns.solve.domain.dto.contest.ContestProblemDto;
+import com.ns.solve.domain.dto.contest.ContestProblemForOrganizerDto;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.vo.WargameKind;
@@ -97,6 +98,19 @@ public class ContestProblemController {
         ContestProblemDto problem = contestProblemService.getProblemDetail(contestId, problemId, userId);
         return ResponseEntity.ok(problem);
     }
+
+    // 대회 운영자의 문제 엄청~~ 상세 조회
+    @GetMapping("/{problemId}/organizer")
+    public ResponseEntity<ContestProblemForOrganizerDto> getProblemDetailForOrganizer(@PathVariable Long contestId, @PathVariable Long problemId, Authentication authentication) {
+        Long userId = null;
+        if (authentication != null) {
+            userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+        }
+
+        ContestProblemForOrganizerDto problem = contestProblemService.getProblemDetailForOrganizer(contestId, problemId, userId);
+        return ResponseEntity.ok(problem);
+    }
+
 
     // 문제 파일 다운로드
     @GetMapping("/{problemId}/download")

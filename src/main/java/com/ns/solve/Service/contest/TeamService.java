@@ -77,12 +77,16 @@ public class TeamService {
                                 .build();
                         return teamRepository.save(newTeam);
                     });
-        } else {
-            team = teamRepository.findById(joinRequest.getTeamId())
-                    .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
         }
-        if (!team.getContest().getId().equals(contestId)) {
-            throw new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND);
+
+        else {
+            team = teamRepository.findByContestIdAndName(contestId, joinRequest.getTeamName())
+                    .orElseThrow(() -> new SolvedException(TeamErrorCode.TEAM_NOT_FOUND));
+
+            String password = team.getPassword();
+            if(!password.isEmpty() && !password.equals(joinRequest.getTeamPassword())){
+                throw new SolvedException(TeamErrorCode.INVALID_ACCESS_TEAM);
+            }
         }
 
         User user = userRepository.findById(joinRequest.getUserId())

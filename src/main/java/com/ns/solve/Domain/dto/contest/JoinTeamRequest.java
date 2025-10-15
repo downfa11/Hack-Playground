@@ -6,7 +6,8 @@ import javax.annotation.Nullable;
 
 @Getter
 public class JoinTeamRequest {
-    private Long teamId;
+    private String teamName;
+    private String teamPassword;
     private Long userId;
     @Nullable
     private Long affiliationId;

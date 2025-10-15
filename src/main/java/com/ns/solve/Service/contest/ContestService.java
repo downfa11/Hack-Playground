@@ -63,10 +63,7 @@ public class ContestService {
                 .collect(Collectors.toSet());
 
         List<Long> affiliationIds = registerContestRequest.getAffiliations() != null
-                ? registerContestRequest.getAffiliations().stream()
-                .map(a -> a.getId())
-                .filter(Objects::nonNull)
-                .toList()
+                ? registerContestRequest.getAffiliations().stream().map(a -> a.getId()).filter(Objects::nonNull).toList()
                 : Collections.emptyList();
         Set<Affiliation> affiliations = affiliationRepository.findAllById(affiliationIds).stream()
                 .collect(Collectors.toSet());

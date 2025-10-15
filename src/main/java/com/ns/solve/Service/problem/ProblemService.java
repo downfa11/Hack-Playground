@@ -474,7 +474,7 @@ public class ProblemService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(UserErrorCode.USER_NOT_FOUND, "userId: " + userId));
 
-        Page<Problem> problemsPage = problemRepository.findByUserId(userId, pageable);
+        Page<WargameProblem> problemsPage = problemRepository.findWargameProblemsByCreatorId(userId, pageable);
 
         return problemsPage.map(problem -> {
             List<ProblemReview> reviews = problemReviewRepository.findProblemReviewsByProblemId(problem.getId());

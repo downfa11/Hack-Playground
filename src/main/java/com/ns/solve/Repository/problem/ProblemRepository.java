@@ -1,6 +1,8 @@
 package com.ns.solve.repository.problem;
 
 import com.ns.solve.domain.entity.problem.Problem;
+import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.ProblemType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,6 +27,6 @@ public interface ProblemRepository extends JpaRepository<Problem, Long>, Problem
     List<Object[]> countWargameProblemsGroupedByKind(); // wargame만 한정
 
 
-    @Query("SELECT p FROM Problem p WHERE p.creator.id = :userId")
-    Page<Problem> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    @Query("SELECT wp FROM WargameProblem wp WHERE wp.creator.id = :userId")
+    Page<WargameProblem> findWargameProblemsByCreatorId(@Param("userId") Long userId, Pageable pageable);
 }

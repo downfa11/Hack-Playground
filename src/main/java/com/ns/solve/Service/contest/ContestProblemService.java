@@ -1,6 +1,7 @@
 package com.ns.solve.service.contest;
 
 import com.ns.solve.domain.dto.contest.ContestProblemDto;
+import com.ns.solve.domain.dto.contest.ContestProblemForOrganizerDto;
 import com.ns.solve.domain.dto.contest.ModifyContestProblemRequest;
 import com.ns.solve.domain.dto.contest.RegisterContestProblemRequest;
 import com.ns.solve.domain.dto.user.UserDto;
@@ -20,7 +21,6 @@ import com.ns.solve.repository.contest.TeamRepository;
 import com.ns.solve.service.FileService;
 import com.ns.solve.utils.exception.ErrorCode.*;
 import com.ns.solve.utils.exception.SolvedException;
-import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -211,6 +211,18 @@ public class ContestProblemService {
         return convertToDto(problem, problem.getContest().getTitle(), teamId);
     }
 
+    @Transactional(readOnly = true)
+    public ContestProblemForOrganizerDto getProblemDetailForOrganizer(Long contestId, Long problemId, Long userId) {
+        if (!contestRepository.isUserOrganizer(contestId, userId)) {
+            throw new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND);
+        }
+
+        ContestProblem problem = contestProblemRepository.findByContest_IdAndId(contestId, problemId)
+                .orElseThrow(() -> new SolvedException(ProblemErrorCode.PROBLEM_NOT_FOUND));
+
+        return convertToForOrganizerDto(problem);
+    }
+
 
     public Resource downloadProblemFile(Long problemId) {
         try {
@@ -314,13 +326,36 @@ public class ContestProblemService {
                 .difficulty(problem.getDifficulty())
                 .tags(problem.getTags())
                 .points(problem.getPoints())
-                .dockerfileLink(problem.getDockerfileLink())
                 .problemFile(problem.getProblemFile())
                 .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
                 .isLocked(problem.isLocked())
                 .source(contestName)
                 .isNew(isNew)
                 .solved(solved)
+                .entireCount(problem.getEntireCount())
+                .correctCount(problem.getCorrectCount())
+                .createdAt(problem.getCreatedAt())
+                .updatedAt(problem.getUpdatedAt())
+                .build();
+    }
+
+
+    private ContestProblemForOrganizerDto convertToForOrganizerDto(ContestProblem problem) {
+        return ContestProblemForOrganizerDto.builder()
+                .id(problem.getId())
+                .title(problem.getTitle())
+                .detail(problem.getDetail())
+                .kind(problem.getKind())
+                .creator(UserDto.from(problem.getCreator(), null))
+                .difficulty(problem.getDifficulty())
+                .tags(problem.getTags())
+                .points(problem.getPoints())
+                .flag(problem.getFlag())
+                .dockerfileLink(problem.getDockerfileLink())
+                .portNumber(problem.getPortNumber())
+                .problemFile(problem.getProblemFile())
+                .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
+                .isLocked(problem.isLocked())
                 .entireCount(problem.getEntireCount())
                 .correctCount(problem.getCorrectCount())
                 .createdAt(problem.getCreatedAt())
