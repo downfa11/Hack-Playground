@@ -11,7 +11,8 @@ public class PodBuilder {
 
     public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
         String podName = PodBuilder.getPodName(userId, problemId);
-        List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId, targetPort)));
+        Integer actualTargetPort = (kind == WargameKind.WEBHACKING) ? 18889 : targetPort;
+        List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId, actualTargetPort)));
 
         if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
             containers.add(buildReverseProxyContainer(problemId, userId, kind, targetPort, nodePort));
@@ -24,7 +25,7 @@ public class PodBuilder {
                 .securityContext(new V1PodSecurityContext()
                         // .seccompProfile(new V1SeccompProfile().type("RuntimeDefault"))
                         .seccompProfile(new V1SeccompProfile().type("Unconfined"))
-                        .runAsNonRoot(false)
+                        // .runAsNonRoot(false)
                         .runAsUser(1001L)
                         .runAsGroup(1001L)
                         .fsGroup(1001L)
@@ -237,7 +238,6 @@ public class PodBuilder {
         V1EnvVar filePath = new V1EnvVar().name("FILE_PATH").value("/tmp/last_connections.json");
         V1EnvVar port = new V1EnvVar().name("PORT").value("18888");
         V1EnvVar targetPortEnv = new V1EnvVar().name("TARGET_PORT").value(String.valueOf(targetPort));
-
 
         List<V1EnvVar> envVars = List.of(problemIdEnv, userIdEnv, filePath, port, targetPortEnv);
 
