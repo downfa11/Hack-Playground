@@ -32,6 +32,7 @@ public class ContestDto {
     private Set<AffiliationType> affiliationTypes;
     private List<AffiliationDto> affiliations;
     private Set<WargameKind> problemKinds;
+    private List<PrizeDto> prizes;
 
     public static ContestDto from(Contest contest, Integer teamCount) {
         int participantCount = (contest.getParticipants() != null) ? contest.getParticipants().size() : 0;
@@ -57,6 +58,22 @@ public class ContestDto {
                         .map(AffiliationDto::from)
                         .collect(Collectors.toList()))
                 .problemKinds(contest.getProblemKinds())
+                .prizes(contest.getPrizes().stream()
+                        .map(prize ->
+                            PrizeDto.builder()
+                                    .name(prize.getName())
+                                    .rank(prize.getRank())
+                                    .numberOfWinners(prize.getNumberOfWinners())
+                                    .build())
+                        .toList())
                 .build();
+    }
+
+    @Getter
+    @Builder
+    public static class PrizeDto {
+        private int rank;
+        private String name;
+        private int numberOfWinners;
     }
 }
