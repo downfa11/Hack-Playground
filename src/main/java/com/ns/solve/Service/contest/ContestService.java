@@ -316,12 +316,12 @@ public class ContestService {
 
     private boolean isEligibleToJoin(Contest contest, User user) {
         // 소속 제한이 없으면 누구나 참가 가능
-        if (contest.getAffiliations().isEmpty() && contest.getAffiliationTypes().isEmpty()) {
+        boolean notRestricted = contest.getAffiliationTypes().isEmpty() || contest.getAffiliationTypes().size() == AffiliationType.values().length;
+        if (contest.getAffiliations().isEmpty() && notRestricted) {
             return true;
         }
 
         Set<Affiliation> userAffiliations = user.getAffiliations();
-
         // 특정 소속이 지정된 경우
         if (!contest.getAffiliations().isEmpty()) {
             boolean hasMatchingAffiliation = userAffiliations.stream()
@@ -332,7 +332,7 @@ public class ContestService {
         }
 
         // 소속 유형이 지정된 경우
-        if (!contest.getAffiliationTypes().isEmpty() || contest.getAffiliationTypes().size()>=4) {
+        if (!contest.getAffiliationTypes().isEmpty()) {
             boolean hasMatchingType = userAffiliations.stream()
                     .anyMatch(a -> contest.getAffiliationTypes().contains(a.getType()));
             if (hasMatchingType) {
