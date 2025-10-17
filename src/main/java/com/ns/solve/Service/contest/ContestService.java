@@ -322,11 +322,6 @@ public class ContestService {
 
         Set<Affiliation> userAffiliations = user.getAffiliations();
 
-        // 사용자에게 소속이 없으면 참가 불가
-        if (userAffiliations == null || userAffiliations.isEmpty()) {
-            return false;
-        }
-
         // 특정 소속이 지정된 경우
         if (!contest.getAffiliations().isEmpty()) {
             boolean hasMatchingAffiliation = userAffiliations.stream()
