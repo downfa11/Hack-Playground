@@ -34,13 +34,16 @@ public class TeamService {
     private final AffiliationRepository affiliationRepository;
 
     @Transactional
-    public TeamDto createTeam(Long contestId, TeamCreateDto teamCreateDto) {
+    public TeamDto createTeam(Long contestId, Long userId, TeamCreateDto teamCreateDto) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND));
 
         if (teamRepository.existsByContestAndName(contest, teamCreateDto.getName())) {
             throw new SolvedException(TeamErrorCode.DUPLICATE_TEAM_NAME);
         }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new SolvedException(TeamErrorCode.USER_NOT_FOUND));
 
         Team team = Team.builder()
                 .name(teamCreateDto.getName())
@@ -49,11 +52,12 @@ public class TeamService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        team.getMembers().add(user);
         return TeamDto.from(teamRepository.save(team));
     }
 
     @Transactional
-    public TeamDto joinTeam(Long contestId, JoinTeamRequest joinRequest) {
+    public TeamDto joinTeam(Long contestId, Long userId, JoinTeamRequest joinRequest) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(TeamErrorCode.CONTEST_NOT_FOUND));
 
@@ -89,7 +93,7 @@ public class TeamService {
             }
         }
 
-        User user = userRepository.findById(joinRequest.getUserId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new SolvedException(TeamErrorCode.USER_NOT_FOUND));
 
         if (team.getMembers().contains(user)) {

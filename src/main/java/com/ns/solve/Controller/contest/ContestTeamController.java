@@ -2,9 +2,11 @@ package com.ns.solve.controller.contest;
 
 import com.ns.solve.domain.dto.contest.*;
 import com.ns.solve.service.contest.TeamService;
+import com.ns.solve.utils.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,14 +19,20 @@ public class ContestTeamController {
     private final TeamService teamService;
 
     @PostMapping
-    public ResponseEntity<TeamDto> createTeam(@PathVariable Long contestId, @RequestBody TeamCreateDto teamCreateDto) {
-        TeamDto newTeam = teamService.createTeam(contestId, teamCreateDto);
+    public ResponseEntity<TeamDto> createTeam(@PathVariable Long contestId, @RequestBody TeamCreateDto teamCreateDto, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        TeamDto newTeam = teamService.createTeam(contestId, userId, teamCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(newTeam);
     }
 
     @PostMapping("/join")
-    public ResponseEntity<TeamDto> joinTeam(@PathVariable Long contestId, @RequestBody JoinTeamRequest joinRequest) {
-        TeamDto joinedTeam = teamService.joinTeam(contestId, joinRequest);
+    public ResponseEntity<TeamDto> joinTeam(@PathVariable Long contestId, @RequestBody JoinTeamRequest joinRequest, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        TeamDto joinedTeam = teamService.joinTeam(contestId, userId, joinRequest);
         return ResponseEntity.ok(joinedTeam);
     }
 

@@ -92,7 +92,7 @@ public class ContestService {
                 .reviewConsent(registerContestRequest.isReviewConsent())
                 .build();
 
-        if (registerContestRequest.getPrizes() != null && registerContestRequest.isPrizeEnabled()) {
+        if (registerContestRequest.getPrizes() != null) {
             List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
                             .rank(dto.getRank())
