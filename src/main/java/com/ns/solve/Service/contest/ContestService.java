@@ -92,20 +92,20 @@ public class ContestService {
                 .reviewConsent(registerContestRequest.isReviewConsent())
                 .build();
 
-        Contest newContest = contestRepository.save(contest);
-
         if (registerContestRequest.getPrizes() != null && registerContestRequest.isPrizeEnabled()) {
             List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
                             .rank(dto.getRank())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
-                            .contest(newContest)
+                            .contest(contest)
                             .build())
                     .collect(Collectors.toList());
             prizeRepository.saveAll(prizes);
-            newContest.setPrizes(prizes);
+            contest.setPrizes(prizes);
         }
+
+        Contest newContest = contestRepository.save(contest);
 
         return ContestDto.from(newContest, 0);
     }
@@ -212,7 +212,6 @@ public class ContestService {
                 .collect(Collectors.toSet());
 
         contest.setAffiliations(affiliations);
-
         Contest updatedContest = contestRepository.save(contest);
 
         int teamCount = 0;
