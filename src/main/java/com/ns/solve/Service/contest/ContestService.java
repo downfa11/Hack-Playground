@@ -322,6 +322,11 @@ public class ContestService {
         }
 
         Set<Affiliation> userAffiliations = user.getAffiliations();
+        // 소속이 없으면 단체전에 참가하지 못하는거여 시방!!!!
+        if (userAffiliations.isEmpty() && contest.getType().equals(ContestType.GROUP)){
+            return false;
+        }
+
         // 특정 소속이 지정된 경우
         if (!contest.getAffiliations().isEmpty()) {
             boolean hasMatchingAffiliation = userAffiliations.stream()
