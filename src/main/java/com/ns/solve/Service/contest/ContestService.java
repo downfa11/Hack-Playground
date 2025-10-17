@@ -332,7 +332,7 @@ public class ContestService {
         }
 
         // 소속 유형이 지정된 경우
-        if (!contest.getAffiliationTypes().isEmpty()) {
+        if (!contest.getAffiliationTypes().isEmpty() || contest.getAffiliationTypes().size()>=4) {
             boolean hasMatchingType = userAffiliations.stream()
                     .anyMatch(a -> contest.getAffiliationTypes().contains(a.getType()));
             if (hasMatchingType) {
