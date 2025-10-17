@@ -11,7 +11,7 @@ public class PodBuilder {
 
     public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
         String podName = PodBuilder.getPodName(userId, problemId);
-        Integer actualTargetPort = (kind == WargameKind.WEBHACKING) ? 18889 : targetPort;
+        Integer actualTargetPort = (kind == WargameKind.WEBHACKING) ? nodePort : targetPort;
         List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId, actualTargetPort)));
 
         if(kind.equals(WargameKind.WEBHACKING)) {  // 웹문제면 reverse-proxy-container 추가
