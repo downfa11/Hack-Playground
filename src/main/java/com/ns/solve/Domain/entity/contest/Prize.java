@@ -23,7 +23,7 @@ public class Prize {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "rank_order")
     private int rank;
 
     @Column(nullable = false, length = 100)

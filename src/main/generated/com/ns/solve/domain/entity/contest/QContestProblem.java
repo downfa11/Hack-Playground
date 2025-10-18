@@ -70,6 +70,8 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
 
     public final StringPath problemFile = createString("problemFile");
 
+    public final NumberPath<Long> problemFileSize = createNumber("problemFileSize", Long.class);
+
     //inherited
     public final MapPath<String, Integer, NumberPath<Integer>> resourceLimit;
 
