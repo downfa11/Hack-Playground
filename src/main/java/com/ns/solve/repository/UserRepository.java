@@ -50,9 +50,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByNicknameStartingWithIgnoreCase(String nickname);
 
     @Query(value = """
-    SELECT rank FROM (
-        SELECT user_id, ROW_NUMBER() OVER (ORDER BY score DESC) AS rank
-        FROM user
+    SELECT `rank` FROM (
+        SELECT user_id, ROW_NUMBER() OVER (ORDER BY score DESC) AS `rank`
+        FROM `user`
     ) AS ranked
     WHERE user_id = :userId
 """, nativeQuery = true)
