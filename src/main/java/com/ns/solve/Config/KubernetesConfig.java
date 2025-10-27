@@ -20,16 +20,16 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class KubernetesConfig {
-    @Value("${k8s.api.server.url}")
-    private String apiUrl;
-
-    @Value("${k8s.token}")
-    private String k8sToken;
-
-    @Value("${k8s.ca.path}")
-    private String caPath;
-
-
+//    @Value("${k8s.api.server.url}")
+//    private String apiUrl;
+//
+//    @Value("${k8s.token}")
+//    private String k8sToken;
+//
+//    @Value("${k8s.ca.path}")
+//    private String caPath;
+//
+//
 //    @Bean
 //    public ApiClient apiClient() throws IOException {
 //        // 인증서와 토큰 설정
