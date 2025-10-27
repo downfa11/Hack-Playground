@@ -30,50 +30,50 @@ public class KubernetesConfig {
     private String caPath;
 
 
-    @Bean
-    public ApiClient apiClient() throws IOException {
-        // 인증서와 토큰 설정
-        ApiClient client = new ApiClient();
-
-        client.setBasePath(apiUrl);
-        client.setApiKey("Bearer "+ k8sToken);
-        client.setDebugging(true);
-
-        // SSL 인증서 설정
-        try (InputStream caCertInputStream = new FileInputStream(caPath)) {
-            client.setSslCaCert(caCertInputStream);
-        }
-
-        // ApiClient client =  Config.defaultClient(); // ~/.kube/config
-        io.kubernetes.client.openapi.Configuration.setDefaultApiClient(client);
-
-        try {
-            CoreV1Api testApi = new CoreV1Api(client);
-            testApi.listNamespace(null, null, null, null, null, null, null, null, null, null);  // 헬스 체크
-            log.info("Kubernetes API Connection successed ✅");
-        } catch (Exception e) {
-            throw new IOException("Kubernetes API Connection Failed ❌", e);
-        }
-
-        return client;
-    }
 //    @Bean
 //    public ApiClient apiClient() throws IOException {
-//        ApiClient client;
+//        // 인증서와 토큰 설정
+//        ApiClient client = new ApiClient();
+//
+//        client.setBasePath(apiUrl);
+//        client.setApiKey("Bearer "+ k8sToken);
+//        client.setDebugging(true);
+//
+//        // SSL 인증서 설정
+//        try (InputStream caCertInputStream = new FileInputStream(caPath)) {
+//            client.setSslCaCert(caCertInputStream);
+//        }
+//
+//        // ApiClient client =  Config.defaultClient(); // ~/.kube/config
+//        io.kubernetes.client.openapi.Configuration.setDefaultApiClient(client);
+//
 //        try {
-//            client = Config.fromCluster();
-//            client.setDebugging(true);
-//
-//            io.kubernetes.client.openapi.Configuration.setDefaultApiClient(client);
+//            CoreV1Api testApi = new CoreV1Api(client);
+//            testApi.listNamespace(null, null, null, null, null, null, null, null, null, null);  // 헬스 체크
 //            log.info("Kubernetes API Connection successed ✅");
-//
 //        } catch (Exception e) {
-//            log.error("Kubernetes API Connection Failed ❌", e);
-//            throw new IOException("Kubernetes API Connection Failed ❌: " + e.getMessage(), e);
+//            throw new IOException("Kubernetes API Connection Failed ❌", e);
 //        }
 //
 //        return client;
 //    }
+    @Bean
+    public ApiClient apiClient() throws IOException {
+        ApiClient client;
+        try {
+            client = Config.fromCluster();
+            client.setDebugging(true);
+
+            io.kubernetes.client.openapi.Configuration.setDefaultApiClient(client);
+            log.info("Kubernetes API Connection successed ✅");
+
+        } catch (Exception e) {
+            log.error("Kubernetes API Connection Failed ❌", e);
+            throw new IOException("Kubernetes API Connection Failed ❌: " + e.getMessage(), e);
+        }
+
+        return client;
+    }
 
     @Bean
     public CoreV1Api coreV1Api(ApiClient apiClient) {
