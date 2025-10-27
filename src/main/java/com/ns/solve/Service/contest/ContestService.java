@@ -1,16 +1,14 @@
 package com.ns.solve.service.contest;
 
 import com.ns.solve.domain.dto.contest.*;
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.entity.contest.Prize;
 import com.ns.solve.domain.entity.contest.Team;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
-import com.ns.solve.domain.vo.AffiliationType;
-import com.ns.solve.domain.vo.ContestStatus;
-import com.ns.solve.domain.vo.ContestType;
-import com.ns.solve.domain.vo.WargameKind;
+import com.ns.solve.domain.vo.*;
 import com.ns.solve.repository.AffiliationRepository;
 import com.ns.solve.repository.UserRepository;
 import com.ns.solve.repository.contest.ContestRepository;
@@ -70,10 +68,14 @@ public class ContestService {
 
         Set<AffiliationType> affiliationTypes = new HashSet<>(registerContestRequest.getAffiliationTypes());
 
-        List<WargameKind> problemKinds = registerContestRequest.getProblemKinds() != null
+        List<DomainKind> problemKinds = registerContestRequest.getProblemKinds() != null
                 ? registerContestRequest.getProblemKinds()
                 : Collections.emptyList();
-        Set<WargameKind> registeredProblmKinds = new HashSet<>(problemKinds);
+
+        Set<ContestWargameKind> registeredProblmKinds = problemKinds.stream()
+                .filter(ContestWargameKind.class::isInstance)
+                .map(ContestWargameKind.class::cast)
+                .collect(Collectors.toSet());
 
         Contest contest = Contest.builder()
                 .title(registerContestRequest.getTitle())
@@ -190,7 +192,14 @@ public class ContestService {
         contest.setStartTime(modifyContestRequest.getStartTime());
         contest.setEndTime(modifyContestRequest.getEndTime());
         contest.setType(modifyContestRequest.getType());
-        contest.setProblemKinds(new HashSet<>(modifyContestRequest.getProblemKinds()));
+        contest.setProblemKinds(
+                Optional.ofNullable(modifyContestRequest.getProblemKinds())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .filter(ContestWargameKind.class::isInstance)
+                        .map(ContestWargameKind.class::cast)
+                        .collect(Collectors.toSet())
+        );
         contest.setMaxTeamSize(modifyContestRequest.getMaxTeamSize());
         contest.setOrganizerName(modifyContestRequest.getOrganizerName());
         contest.setPrize(modifyContestRequest.isPrizeEnabled() ? modifyContestRequest.getPrizeMoney() : null);

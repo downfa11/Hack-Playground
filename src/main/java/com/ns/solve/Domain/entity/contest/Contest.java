@@ -48,7 +48,7 @@ public class Contest {
     @JoinTable(name = "contest_problem_kinds", joinColumns = @JoinColumn(name = "contest_id"))
     @Column(name = "problem_type", nullable = false)
     @Enumerated(EnumType.STRING)
-    private Set<WargameKind> problemKinds;
+    private Set<ContestWargameKind> problemKinds;
 
 
     @Column(nullable = false)
