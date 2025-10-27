@@ -181,13 +181,15 @@ public class ContestService {
                 contest.getPrizes().add(prize);
             });
         }
+        List<ContestWargameKind> problemKindsList = modifyContestRequest.getProblemKinds();
+        Set<ContestWargameKind> problemKindsSet = new HashSet<>(problemKindsList);
 
         contest.setTitle(modifyContestRequest.getTitle());
         contest.setDescription(modifyContestRequest.getDescription());
         contest.setStartTime(modifyContestRequest.getStartTime());
         contest.setEndTime(modifyContestRequest.getEndTime());
         contest.setType(modifyContestRequest.getType());
-        contest.setProblemKinds((Set<ContestWargameKind>) modifyContestRequest.getProblemKinds());
+        contest.setProblemKinds(problemKindsSet);
         contest.setMaxTeamSize(modifyContestRequest.getMaxTeamSize());
         contest.setOrganizerName(modifyContestRequest.getOrganizerName());
         contest.setPrize(modifyContestRequest.isPrizeEnabled() ? modifyContestRequest.getPrizeMoney() : null);
