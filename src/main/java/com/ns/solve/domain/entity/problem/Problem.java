@@ -2,6 +2,7 @@ package com.ns.solve.domain.entity.problem;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.entity.Comment;
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.entity.user.User;
 import com.ns.solve.domain.vo.ProblemType;
 import jakarta.persistence.*;

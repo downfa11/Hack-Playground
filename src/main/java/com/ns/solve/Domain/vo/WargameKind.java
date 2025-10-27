@@ -1,6 +1,6 @@
 package com.ns.solve.domain.vo;
 
-import com.ns.solve.domain.entity.problem.DomainKind;
+import com.ns.solve.domain.entity.DomainKind;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

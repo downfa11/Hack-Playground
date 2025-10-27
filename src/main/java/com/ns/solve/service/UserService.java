@@ -2,11 +2,9 @@ package com.ns.solve.service;
 
 import com.ns.solve.domain.dto.contest.UserContestDto;
 import com.ns.solve.domain.dto.user.*;
-import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.Role;
 import com.ns.solve.domain.entity.user.User;
-import com.ns.solve.domain.entity.problem.DomainKind;
-import com.ns.solve.domain.vo.BoardType;
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.repository.UserRepository;

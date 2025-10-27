@@ -2,9 +2,8 @@ package com.ns.solve.domain.entity.contest;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ns.solve.domain.entity.problem.Problem;
-import com.ns.solve.domain.entity.problem.WargameProblem;
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
-import com.ns.solve.domain.vo.WargameKind;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -42,6 +41,6 @@ public class ContestProblem extends Problem {
     private ContestProblemDifficulty difficulty;
 
     @Enumerated(EnumType.STRING)
-    private WargameKind kind;
+    private ContestWargameKind kind;
     private boolean isLocked;
 }
