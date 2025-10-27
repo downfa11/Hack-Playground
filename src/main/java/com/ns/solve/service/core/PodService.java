@@ -1,10 +1,12 @@
 package com.ns.solve.service.core;
 
 import com.ns.solve.domain.dto.problem.SolveInfo;
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.entity.contest.ContestProblem;
 import com.ns.solve.domain.entity.problem.ContainerResourceType;
 import com.ns.solve.domain.entity.problem.Problem;
 import com.ns.solve.domain.entity.problem.WargameProblem;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import com.ns.solve.domain.vo.ProblemType;
 import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.service.UserService;
@@ -160,7 +162,7 @@ public class PodService {
         try {
             Optional<String> phaseOpt = kubernetesService.getPodPhase(namespace, podName);
             if (phaseOpt.isPresent()) {
-                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, wargameProblem.getId(), wargameProblem.getKind(), wargameProblem.getPortNumber(), wargameProblem.getContainerResourceType());
+                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, wargameProblem.getId());
             }
 
             return createAndExposePod(wargameProblem, userId);
@@ -177,7 +179,7 @@ public class PodService {
         try {
             Optional<String> phaseOpt = kubernetesService.getPodPhase(namespace, podName);
             if (phaseOpt.isPresent()) {
-                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, contestProblem.getId(), contestProblem.getKind(), contestProblem.getPortNumber(), contestProblem.getContainerResourceType());
+                return handleExistingPod(namespace, podName, phaseOpt.get(), userId, contestProblem.getId());
             }
 
             return createAndExposePod(contestProblem, userId);
@@ -188,7 +190,7 @@ public class PodService {
     }
 
 
-    private String handleExistingPod(String namespace, String podName, String phase, Long userId, Long problemId, WargameKind kind, Integer port, ContainerResourceType containerResourceType) {
+    private String handleExistingPod(String namespace, String podName, String phase, Long userId, Long problemId) {
         if ("Running".equals(phase) && kubernetesService.isPodReady(namespace, podName)){
             // 멀쩡한 경우
             Problem problem = problemService.getProblemById(problemId);
@@ -243,7 +245,7 @@ public class PodService {
         Integer port = contestProblem.getPortNumber();
         Map<String, Integer> resourceLimits = contestProblem.getResourceLimit();
         String image = contestProblem.getDockerfileLink();
-        WargameKind kind = contestProblem.getKind();
+        DomainKind kind = contestProblem.getKind();
 
         // 1. 모든 문제에서 Service 먼저 생성
         V1Service service = PodBuilder.buildService(userId, problemId, kind, port);
@@ -275,7 +277,7 @@ public class PodService {
      * Pod를 외부 노출 (Service + Ingress 생성)
      * NodePort는 필요 시 전달
      */
-    public String exposePod(Long userId, Long problemId, String namespace, WargameKind kind, Integer port, Integer nodePort) {
+    public String exposePod(Long userId, Long problemId, String namespace, DomainKind kind, Integer port, Integer nodePort) {
         try {
             String uuid = UUID.randomUUID().toString();
             String url;

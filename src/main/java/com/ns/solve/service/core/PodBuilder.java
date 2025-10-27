@@ -1,5 +1,6 @@
 package com.ns.solve.service.core;
 
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.vo.WargameKind;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
@@ -9,7 +10,7 @@ import java.util.*;
 
 public class PodBuilder {
 
-    public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, WargameKind kind, String image, Map<String, Integer> resourceLimits) {
+    public static V1PodSpec buildPodSpec(Long problemId, Long userId, Integer targetPort, Integer nodePort, DomainKind kind, String image, Map<String, Integer> resourceLimits) {
         String podName = PodBuilder.getPodName(userId, problemId);
         List<V1Container> containers = new ArrayList<>(List.of(buildContainer(podName, image, resourceLimits), buildSidecarContainer(problemId, userId, targetPort)));
 
@@ -90,7 +91,7 @@ public class PodBuilder {
 
     // webhacking 문제는 ClusterIP Service + IngressRoute
     // 포렌식 등의 쉡 접속 문제는 NodePort Service + TCP
-    public static V1Service buildService(Long userId, Long problemId, WargameKind kind, Integer port) {
+    public static V1Service buildService(Long userId, Long problemId, DomainKind kind, Integer port) {
         V1Service service = new V1Service();
         V1ObjectMeta metadata = new V1ObjectMeta();
         String podName = getPodName(userId, problemId);
@@ -255,7 +256,7 @@ public class PodBuilder {
                 );
     }
 
-    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, WargameKind kind, Integer targetPort, Integer nodePort) {
+    private static V1Container buildReverseProxyContainer(Long problemId, Long userId, DomainKind kind, Integer targetPort, Integer nodePort) {
         V1EnvVar problemIdEnv = new V1EnvVar().name("PROBLEM_ID").value(String.valueOf(problemId));
         V1EnvVar userIdEnv = new V1EnvVar().name("USER_ID").value(String.valueOf(userId));
         V1EnvVar kindEnv = new V1EnvVar().name("PROBLEM_KIND").value(String.valueOf(kind));

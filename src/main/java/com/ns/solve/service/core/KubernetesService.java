@@ -2,6 +2,7 @@ package com.ns.solve.service.core;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ns.solve.domain.entity.DomainKind;
 import com.ns.solve.domain.vo.BoardType;
 import com.ns.solve.domain.vo.WargameKind;
 import io.kubernetes.client.Exec;
@@ -32,7 +33,7 @@ public class KubernetesService {
 
 
     // 특정 Pod 생성
-    public V1Pod createPod(Long userId, Long problemId, Integer targetPort, Integer nodePort, WargameKind kind, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
+    public V1Pod createPod(Long userId, Long problemId, Integer targetPort, Integer nodePort, DomainKind kind, String namespace, String image, Map<String, Integer> resourceLimits) throws ApiException {
         String podName = PodBuilder.getPodName(userId, problemId);
 
         Map<String, String> labels = new HashMap<>();
