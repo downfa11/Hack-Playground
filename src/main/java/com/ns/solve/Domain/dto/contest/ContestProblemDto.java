@@ -1,8 +1,8 @@
 package com.ns.solve.domain.dto.contest;
 
 import com.ns.solve.domain.dto.user.UserDto;
-import com.ns.solve.domain.vo.WargameKind;
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +20,7 @@ public class ContestProblemDto {
     private String title;
     private String detail;
     private UserDto creator;
-    private WargameKind kind;
+    private ContestWargameKind kind;
     private ContestProblemDifficulty difficulty;
     private List<String> tags;
     private Integer points;

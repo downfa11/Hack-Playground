@@ -1,11 +1,12 @@
 package com.ns.solve.domain.dto.contest;
 
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
-import com.ns.solve.domain.vo.WargameKind;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.util.List;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class ModifyContestProblemRequest {
@@ -22,7 +23,7 @@ public class ModifyContestProblemRequest {
     private List<String> tags;
 
     @NotBlank(message = "문제 유형은 필수입니다.")
-    private WargameKind kind;
+    private ContestWargameKind kind;
 
     @NotBlank(message = "플래그(Flag)는 필수입니다.")
     private String flag;

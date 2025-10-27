@@ -1,8 +1,8 @@
 package com.ns.solve.domain.dto.contest;
 
 import com.ns.solve.domain.vo.ContestProblemDifficulty;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import com.ns.solve.domain.vo.ProblemType;
-import com.ns.solve.domain.vo.WargameKind;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -27,7 +27,7 @@ public class RegisterContestProblemRequest {
     private Integer points;
 
     @NotBlank(message = "문제 유형은 필수입니다.")
-    private WargameKind kind;
+    private ContestWargameKind kind;
 
     @NotBlank(message = "플래그(Flag)는 필수입니다.")
     private String flag;
