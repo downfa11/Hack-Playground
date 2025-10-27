@@ -4,7 +4,7 @@ import com.ns.solve.domain.dto.user.AffiliationDto;
 import com.ns.solve.domain.entity.contest.Contest;
 import com.ns.solve.domain.vo.AffiliationType;
 import com.ns.solve.domain.vo.ContestType;
-import com.ns.solve.domain.vo.WargameKind;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -31,7 +31,7 @@ public class ContestDto {
     private String rules;
     private Set<AffiliationType> affiliationTypes;
     private List<AffiliationDto> affiliations;
-    private Set<WargameKind> problemKinds;
+    private Set<ContestWargameKind> problemKinds;
     private List<PrizeDto> prizes;
 
     public static ContestDto from(Contest contest, Integer teamCount) {
