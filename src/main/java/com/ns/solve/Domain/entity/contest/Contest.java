@@ -3,13 +3,11 @@ package com.ns.solve.domain.entity.contest;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ns.solve.domain.entity.user.Affiliation;
 import com.ns.solve.domain.entity.user.User;
-import com.ns.solve.domain.vo.*;
+import com.ns.solve.domain.vo.AffiliationType;
+import com.ns.solve.domain.vo.ContestType;
+import com.ns.solve.domain.vo.ContestWargameKind;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,7 +42,7 @@ public class Contest {
     @Column(nullable = false)
     private ContestType type;
 
-    @ElementCollection(targetClass = WargameKind.class)
+    @ElementCollection(targetClass = ContestWargameKind.class)
     @JoinTable(name = "contest_problem_kinds", joinColumns = @JoinColumn(name = "contest_id"))
     @Column(name = "problem_type", nullable = false)
     @Enumerated(EnumType.STRING)
