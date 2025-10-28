@@ -68,7 +68,9 @@ public class ContestProblemService {
                 .flag(request.getFlag())
                 .portNumber(request.getPortNumber())
                 .difficulty(request.getDifficulty())
-                .dockerfileLink(request.getDockerfileLink())
+                .dockerfileLink(request.getDockerfileLink() != null && !request.getDockerfileLink().isBlank()
+                        ? request.getDockerfileLink().trim()
+                        : null)
                 .entireCount((double) 0)
                 .correctCount((double) 0)
                 .createdAt(now)
@@ -101,7 +103,9 @@ public class ContestProblemService {
         problem.setFlag(request.getFlag());
         problem.setDifficulty(request.getDifficulty());
         problem.setPortNumber(request.getPortNumber());
-        problem.setDockerfileLink(request.getDockerfileLink());
+        problem.setDockerfileLink(request.getDockerfileLink() != null && !request.getDockerfileLink().isBlank()
+                ? request.getDockerfileLink().trim()
+                : null);
         problem.setUpdatedAt(LocalDateTime.now());
 
         ContestProblem newProblem = contestProblemRepository.save(problem);
@@ -327,7 +331,7 @@ public class ContestProblemService {
                 .tags(problem.getTags())
                 .points(problem.getPoints())
                 .problemFile(problem.getProblemFile())
-                .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
+                .hasContainer(problem.getDockerfileLink() != null)
                 .isLocked(problem.isLocked())
                 .source(contestName)
                 .isNew(isNew)
@@ -354,7 +358,7 @@ public class ContestProblemService {
                 .dockerfileLink(problem.getDockerfileLink())
                 .portNumber(problem.getPortNumber())
                 .problemFile(problem.getProblemFile())
-                .hasContainer(problem.getDockerfileLink() != null || problem.getProblemFile() != null)
+                .hasContainer(problem.getDockerfileLink() != null)
                 .isLocked(problem.isLocked())
                 .entireCount(problem.getEntireCount())
                 .correctCount(problem.getCorrectCount())
