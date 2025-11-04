@@ -12,7 +12,7 @@ COPY . .
 
 RUN ./gradlew bootJar
 
-FROM openjdk:21-slim
+FROM eclipse-temurin:21-jre
 
 RUN mkdir /logs
 
