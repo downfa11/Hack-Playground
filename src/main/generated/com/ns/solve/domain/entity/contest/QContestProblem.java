@@ -61,7 +61,7 @@ public class QContestProblem extends EntityPathBase<ContestProblem> {
 
     public final BooleanPath isLocked = createBoolean("isLocked");
 
-    public final EnumPath<com.ns.solve.domain.vo.WargameKind> kind = createEnum("kind", com.ns.solve.domain.vo.WargameKind.class);
+    public final EnumPath<com.ns.solve.domain.vo.ContestWargameKind> kind = createEnum("kind", com.ns.solve.domain.vo.ContestWargameKind.class);
 
     public final NumberPath<Integer> points = createNumber("points", Integer.class);
 

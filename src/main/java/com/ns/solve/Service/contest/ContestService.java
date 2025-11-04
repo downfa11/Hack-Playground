@@ -89,22 +89,23 @@ public class ContestService {
                 .reviewConsent(registerContestRequest.isReviewConsent())
                 .build();
 
+        Contest savedContest = contestRepository.save(contest);
+
         if (registerContestRequest.getPrizes() != null) {
             List<Prize> prizes = registerContestRequest.getPrizes().stream()
                     .map(dto -> Prize.builder()
                             .rank(dto.getRank())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
-                            .contest(contest)
+                            .contest(savedContest)
                             .build())
                     .collect(Collectors.toList());
+
             prizeRepository.saveAll(prizes);
-            contest.setPrizes(prizes);
+            savedContest.setPrizes(prizes);
         }
 
-        Contest newContest = contestRepository.save(contest);
-
-        return ContestDto.from(newContest, 0);
+        return ContestDto.from(savedContest, 0);
     }
 
     @Transactional(readOnly = true)
