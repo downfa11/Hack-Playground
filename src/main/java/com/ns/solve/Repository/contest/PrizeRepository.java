@@ -22,4 +22,18 @@ public interface PrizeRepository extends JpaRepository<Prize, Long> {
             "LEFT JOIN FETCH p.winners w " +
             "WHERE :user MEMBER OF p.winners")
     List<Prize> findPrizesWithContestAndWinnersByUser(@Param("user") User user);
+
+    @Query("select case when count(p) > 0 then true else false end " +
+            "from Prize p join p.winners w where p.contest.id = :contestId")
+    boolean existsWinnersByContestId(@Param("contestId") Long contestId);
+
+    @Query("""
+    select distinct p
+    from Prize p
+    join fetch p.contest c
+    left join fetch p.winners w
+    where c.id = :contestId
+    """)
+    List<Prize> findByContestIdWithWinners(@Param("contestId") Long contestId);
+
 }

@@ -166,22 +166,39 @@ public class ContestService {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        contest.getPrizes().clear();
+        Map<Integer, Prize> existingPrizeMap = contest.getPrizes().stream()
+                .collect(Collectors.toMap(Prize::getRank, p -> p));
 
-        if (modifyContestRequest.isPrizeEnabled() && modifyContestRequest.getPrizes() != null) {
-            List<Prize> newPrizes = modifyContestRequest.getPrizes().stream()
-                    .map(dto -> Prize.builder()
+        List<Prize> updatedPrizes = new ArrayList<>();
+
+        if (modifyContestRequest.getPrizes() != null) {
+            for (ModifyContestRequest.PrizeDto dto : modifyContestRequest.getPrizes()) {
+                Prize prize = existingPrizeMap.get(dto.getRank());
+
+                if (prize == null) {
+                    prize = Prize.builder()
                             .rank(dto.getRank())
                             .name(dto.getName())
                             .numberOfWinners(dto.getNumberOfWinners())
-                            .build())
-                    .collect(Collectors.toList());
+                            .contest(contest)
+                            .build();
+                } else {
+                    prize.setName(dto.getName());
+                    prize.setNumberOfWinners(dto.getNumberOfWinners());
+                }
 
-            newPrizes.forEach(prize -> {
-                prize.setContest(contest);
-                contest.getPrizes().add(prize);
-            });
+                updatedPrizes.add(prize);
+            }
         }
+
+        Set<Integer> requestedRanks = modifyContestRequest.getPrizes() == null ? Set.of() :
+                modifyContestRequest.getPrizes().stream()
+                        .map(prizes -> prizes.getRank())
+                        .collect(Collectors.toSet());
+
+        contest.getPrizes().clear();
+        contest.getPrizes().addAll(updatedPrizes);
+
         List<ContestWargameKind> problemKindsList = modifyContestRequest.getProblemKinds();
         Set<ContestWargameKind> problemKindsSet = new HashSet<>(problemKindsList);
 
@@ -226,7 +243,7 @@ public class ContestService {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new SolvedException(ContestErrorCode.CONTEST_NOT_FOUND));
 
-        // 대회 종료 여부 확인 or 상태 갱신
+        // 대회 종료 여부 확인
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
         ZonedDateTime contestEndKST = contest.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
 
@@ -234,45 +251,72 @@ public class ContestService {
             throw new SolvedException(ContestErrorCode.CONTEST_NOT_ENDED);
         }
 
+        boolean hasWinners = prizeRepository.existsWinnersByContestId(contestId);
+        List<Prize> prizes = prizeRepository.findByContestIdWithWinners(contestId);
 
-        // 상별 우승자 결정 or 조회
-        for (Prize prize : contest.getPrizes()) {
-            if (prize.getWinners() == null || prize.getWinners().isEmpty()) {
-                Set<User> winners = determineWinnersForPrize(contest, prize);
-                prize.setWinners(winners);
+        if (!hasWinners) {
+            // 다른 트랜잭션이 저장하기 전까지만 실제 수상자 생성
+            if (!prizeRepository.existsWinnersByContestId(contestId)) {
+                Set<Team> awardedTeams = new HashSet<>();
+                for (Prize prize : prizes) {
+                    if (prize.getNumberOfWinners() <= 0) continue;
+
+                    Set<User> winners = determineWinnersForPrize(contest, prize, awardedTeams);
+                    prize.setWinners(winners);
+                }
+                prizeRepository.saveAll(prizes);
             }
+            prizes = prizeRepository.findByContestIdWithWinners(contestId);
         }
 
         return ContestResultDto.builder()
                 .id(contest.getId())
                 .title(contest.getTitle())
-                .prizes(contest.getPrizes().stream()
-                        .map(prize -> ContestResultDto.PrizeResultDto.builder()
-                                .rank(prize.getRank())
-                                .name(prize.getName())
-                                .winners(prize.getWinners().stream()
-                                        .map(u -> {
-                                            if (contest.getType() == ContestType.INDIVIDUAL) {
-                                                return u.getNickname();
-                                            } else { // TEAM or GROUP
-                                                Team team = teamRepository.findByContestIdAndMembersContains(contest.getId(), u)
-                                                        .orElseThrow();
-                                                return team.getName() + " (" + u.getNickname() + ")";
-                                            }
-                                        })
-                                        .collect(Collectors.toList()))
-                                .build())
+                .prizes(prizes.stream()
+                        .map(prize -> {
+                            List<String> teamInfo = teamRepository.findByContestId(contest.getId()).stream()
+                                    .filter(team -> team.getMembers().stream()
+                                            .anyMatch(prize.getWinners()::contains))
+                                    .map(team -> team.getName() + " (" +
+                                            team.getMembers().stream()
+                                                    .map(User::getNickname)
+                                                    .collect(Collectors.joining(", ")) + ")")
+                                    .collect(Collectors.toList());
+
+                            return ContestResultDto.PrizeResultDto.builder()
+                                    .rank(prize.getRank())
+                                    .name(prize.getName())
+                                    .numberOfWinners(prize.getNumberOfWinners())
+                                    .winners(teamInfo)
+                                    .build();
+                        })
                         .collect(Collectors.toList()))
                 .build();
     }
 
-    private Set<User> determineWinnersForPrize(Contest contest, Prize prize) {
-        return teamRepository.findByContestId(contest.getId()).stream()
-                    .sorted((t1, t2) -> Integer.compare(t2.getPoints(), t1.getPoints()))
-                    .limit(prize.getNumberOfWinners())
-                    .flatMap(team -> team.getMembers().stream())
-                    .collect(Collectors.toSet());
+    private Set<User> determineWinnersForPrize(Contest contest, Prize prize, Set<Team> alreadyAwardedTeams) {
+        List<Team> allTeams = teamRepository.findByContestId(contest.getId()).stream()
+                .sorted((t1, t2) -> Integer.compare(t2.getPoints(), t1.getPoints()))
+                .collect(Collectors.toList());
+
+        // 이미 수상한 팀 제거
+        List<Team> eligibleTeams = allTeams.stream()
+                .filter(t -> !alreadyAwardedTeams.contains(t))
+                .collect(Collectors.toList());
+
+        // 이번 상의 대상 팀 선정
+        List<Team> winners = eligibleTeams.stream()
+                .limit(prize.getNumberOfWinners())
+                .collect(Collectors.toList());
+
+        // 이번에 수상한 팀들 추가 (다음 상에서 제외되도록)
+        alreadyAwardedTeams.addAll(winners);
+
+        return winners.stream()
+                .flatMap(t -> t.getMembers().stream())
+                .collect(Collectors.toSet());
     }
+
 
     @Transactional
     public void joinContest(Long contestId, Long userId) {
